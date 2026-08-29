@@ -1,0 +1,380 @@
+[
+  { "id": "A01", "pool": "A", "rarity": "凡", "title": "雪中乞翁",
+    "desc": "大雪封了山道，一乞翁蜷在山门外，怀里死死护着半卷旧书。",
+    "tags": [{ "key": "qigai", "stance": "恩", "weight": 1 }],
+    "options": [
+      { "text": "邀他炉边取暖", "fits": ["C"], "daoxin": 4 },
+      { "text": "买下那半卷旧书", "fits": ["A"], "daoxin": -1 } ] },
+
+  { "id": "A02", "pool": "A", "rarity": "凡", "title": "山道遇匪",
+    "desc": "几名山贼拦路叫喊，刀都卷了口，眼里的凶光却不含糊。",
+    "tags": [{ "key": "shanzei", "stance": "怨", "weight": 2 }],
+    "options": [
+      { "text": "严词喝退", "fits": ["C"], "daoxin": 2 },
+      { "text": "绕小径而过", "fits": ["A"] } ] },
+
+  { "id": "A03", "pool": "A", "rarity": "凡", "title": "晨钟自鸣",
+    "desc": "无风无雨，护山阵的老钟忽然自鸣，震得满谷晨雾直打转。",
+    "options": [
+      { "text": "循声巡山", "fits": ["C"], "daoxin": 1 },
+      { "text": "遣弟子查验", "fits": ["A"] } ] },
+
+  { "id": "A04", "pool": "A", "rarity": "凡", "title": "挑水道童",
+    "desc": "小道童挑水拾级而上，洒了半桶也不肯歇，喘声像破风箱。",
+    "options": [
+      { "text": "接过担子挑一程", "fits": ["C"], "daoxin": 3 },
+      { "text": "教他省力的法门", "fits": ["A"], "daoxin": 2 } ] },
+
+  { "id": "A05", "pool": "A", "rarity": "凡", "title": "断碑残文",
+    "desc": "山门旁半截断碑埋在土里，碑上残文古拙，似是开山祖师手书。",
+    "options": [
+      { "text": "拓印碑文", "fits": ["A"] },
+      { "text": "以灵气温养残碑", "fits": ["C"] } ] },
+
+  { "id": "A06", "pool": "A", "rarity": "灵", "title": "雨夜叩门",
+    "desc": "雨夜有人叩门借宿，行囊简陋，草鞋却干净得反常。",
+    "options": [
+      { "text": "留他过夜", "fits": ["A"], "daoxin": 3 },
+      { "text": "借宿不留人", "fits": ["C"] } ] },
+
+  { "id": "A07", "pool": "A", "rarity": "灵", "title": "后山笋熟",
+    "desc": "春雷过后，后山灵笋破土而出，笋衣上雷气未散。",
+    "options": [
+      { "text": "采笋分与同门", "fits": ["C"], "daoxin": 2 },
+      { "text": "留笋养山", "fits": ["A"], "daoxin": 1 } ] },
+
+  { "id": "A08", "pool": "A", "rarity": "珍", "title": "云游相士",
+    "desc": "相士在坊市口支摊，不收钱，只说要替上山人看看骨相。",
+    "options": [
+      { "text": "请他看相", "fits": ["D"] },
+      { "text": "笑而不语", "fits": ["A"] } ] },
+
+  { "id": "B01", "pool": "B", "rarity": "凡", "title": "同门切磋",
+    "desc": "师弟在演武场叫阵，说新得了法门，想讨教几招。",
+    "options": [
+      { "text": "应下切磋", "fits": ["C"] },
+      { "text": "点拨他几句", "fits": ["A"], "daoxin": 2 } ] },
+
+  { "id": "B02", "pool": "B", "rarity": "凡", "title": "藏经罚抄",
+    "desc": "你打坐误了洒扫，被执事罚去藏经阁抄录功法总纲。",
+    "options": [
+      { "text": "老实抄完", "fits": ["A"] },
+      { "text": "边抄边悟", "fits": ["C"] } ] },
+
+  { "id": "B03", "pool": "B", "rarity": "凡", "title": "灵田拔草",
+    "desc": "灵田里混进偷灵气的杂草，白日拔净，夜里又生。",
+    "options": [
+      { "text": "亲手连根拔除", "fits": ["A"], "daoxin": 1 },
+      { "text": "请老农来看", "fits": ["C"] } ] },
+
+  { "id": "B04", "pool": "B", "rarity": "凡", "title": "坊市喧声",
+    "desc": "坊市里两名散修争执不下，围观的人越聚越多。",
+    "options": [
+      { "text": "上前劝解", "fits": ["C"], "daoxin": 3 },
+      { "text": "趁人多摆个摊", "fits": ["A"] } ] },
+
+  { "id": "B05", "pool": "B", "rarity": "凡", "title": "夜行货郎",
+    "desc": "夜里有货郎叩山门，担上杂物零零碎碎，一枚丹丸却油光发亮。",
+    "tags": [{ "key": "huolang", "stance": "债", "weight": 2 }],
+    "options": [
+      { "text": "赊下那枚丹丸", "fits": ["C"], "daoxin": -2 },
+      { "text": "只买些针线杂物", "fits": ["A"] } ] },
+
+  { "id": "B06", "pool": "B", "rarity": "灵", "title": "药师晒药",
+    "desc": "采药师在药园翻晒灵草，指尖翻飞，药香熏得人发困。",
+    "options": [
+      { "text": "帮他翻晒", "fits": ["A"], "daoxin": 2 },
+      { "text": "求教药性", "fits": ["C"] } ] },
+
+  { "id": "B07", "pool": "B", "rarity": "灵", "title": "剑冢观剑",
+    "desc": "剑冢里一柄断剑嗡嗡轻鸣，似在应和你的呼吸。",
+    "options": [
+      { "text": "盘膝观剑", "fits": ["A"] },
+      { "text": "以指抚锋", "fits": ["C"] } ] },
+
+  { "id": "B08", "pool": "B", "rarity": "珍", "title": "乞翁来访",
+    "desc": "雪中乞翁拾级登门，旧书已读完，向你长揖到地。",
+    "recycle": "qigai",
+    "options": [
+      { "text": "还书赠粮", "fits": ["A", "D"] },
+      { "text": "请他讲书里的事", "fits": ["C"], "daoxin": 2 } ] },
+
+  { "id": "C01", "pool": "C", "rarity": "凡", "title": "丹香满谷",
+    "desc": "炼丹炉头一炉丹成了，丹香顺着山风飘满整条山谷。",
+    "options": [
+      { "text": "分丹同享", "fits": ["C"], "daoxin": 3 },
+      { "text": "挑一粒自服", "fits": ["A"] } ] },
+
+  { "id": "C02", "pool": "C", "rarity": "凡", "title": "剑冢夜泣",
+    "desc": "深夜剑冢呜呜作响，似有旧剑在诉说未了的心愿。",
+    "options": [
+      { "text": "入冢探其因", "fits": ["E"] },
+      { "text": "培土暂压", "fits": ["A"] } ] },
+
+  { "id": "C03", "pool": "C", "rarity": "凡", "title": "药园蝶影",
+    "desc": "药园里来了一群淡金纹的蝶，专往灵草芯上落。",
+    "options": [
+      { "text": "静观不扰", "fits": ["A"], "daoxin": 1 },
+      { "text": "诱蝶入笼", "fits": ["A"], "daoxin": -1 } ] },
+
+  { "id": "C04", "pool": "C", "rarity": "灵", "title": "古方残页",
+    "desc": "藏经阁夹层抖出半页古方，纸上的药名残缺不全。",
+    "options": [
+      { "text": "照方试炼", "fits": ["A"] },
+      { "text": "收入藏经阁", "fits": ["C"] } ] },
+
+  { "id": "C05", "pool": "C", "rarity": "灵", "title": "剑冢认主",
+    "desc": "剑冢深处有一柄无主古剑，剑身刻着陌生的名字，对你低鸣。",
+    "tags": [{ "key": "gujian", "stance": "债", "weight": 2 }],
+    "options": [
+      { "text": "认主祭炼", "fits": ["D"] },
+      { "text": "送回剑冢深处", "fits": ["A"] } ] },
+
+  { "id": "C06", "pool": "C", "rarity": "珍", "title": "雪岭药农",
+    "desc": "雪岭下来的药农背着背篓，篓里灵草还带着雪碴。",
+    "options": [
+      { "text": "以灵石易之", "fits": ["A"] },
+      { "text": "帮他下山", "fits": ["C"], "daoxin": 2 } ] },
+
+  { "id": "C07", "pool": "C", "rarity": "仙", "title": "丹鼎生莲",
+    "desc": "丹鼎开炉并无丹成，鼎口却托出一朵青莲，莲心有火不熄。",
+    "options": [
+      { "text": "服莲悟道", "fits": ["D"] },
+      { "text": "分莲入药", "fits": ["C"], "daoxin": 2 } ] },
+
+  { "id": "D01", "pool": "D", "rarity": "凡", "title": "神游旧地",
+    "desc": "神识出游，无意间飘回上山前的旧屋，灶膛似乎还有余温。",
+    "options": [
+      { "text": "探望亲族", "fits": ["C"], "daoxin": 4 },
+      { "text": "在屋顶坐了坐", "fits": ["A"] } ] },
+
+  { "id": "D02", "pool": "D", "rarity": "凡", "title": "梦里授艺",
+    "desc": "梦中一位白眉老者演示拳架，醒来枕边落着一枚松针。",
+    "options": [
+      { "text": "虚心求教", "fits": ["A"] },
+      { "text": "醒来记诵", "fits": ["D"] } ] },
+
+  { "id": "D03", "pool": "D", "rarity": "凡", "title": "云海观潮",
+    "desc": "你坐在崖边看云海如潮汐起落，心湖也跟着一涨一落。",
+    "options": [
+      { "text": "御风逐浪", "fits": ["C"] },
+      { "text": "静坐观潮", "fits": ["A"] } ] },
+
+  { "id": "D04", "pool": "D", "rarity": "灵", "title": "贼首寻仇",
+    "desc": "当年山道的贼首寻上门来，身后乌泱泱跟了一大群喽啰。",
+    "recycle": "shanzei",
+    "options": [
+      { "text": "赔些灵石了结", "fits": ["B"] },
+      { "text": "一战退敌", "fits": ["A", "B"] } ] },
+
+  { "id": "D05", "pool": "D", "rarity": "灵", "title": "货郎讨债",
+    "desc": "夜行货郎又来了，笑眯眯摊开账本，说赊的丹该还了。",
+    "recycle": "huolang",
+    "options": [
+      { "text": "如数奉还", "fits": ["B"] },
+      { "text": "以物抵债", "fits": ["A"] } ] },
+
+  { "id": "D06", "pool": "D", "rarity": "珍", "title": "月下琴音",
+    "desc": "崖边忽然响起琴声，弹的是你幼年听过的调子，闻者忘忧。",
+    "tags": [{ "key": "qinshi", "stance": "缘", "weight": 3 }],
+    "options": [
+      { "text": "驻足听曲", "fits": ["C"] },
+      { "text": "以灵石相赠", "fits": ["A"], "daoxin": 2 } ] },
+
+  { "id": "D07", "pool": "D", "rarity": "仙", "title": "星河垂辉",
+    "desc": "神识溯游而上，竟触到星河边缘，星辉如细雨落在神魂上。",
+    "options": [
+      { "text": "摘一缕星辉", "fits": ["D"] },
+      { "text": "张开神魂承辉", "fits": ["C"] } ] },
+
+  { "id": "E01", "pool": "E", "rarity": "凡", "title": "灵雀衔枝",
+    "desc": "一只灵雀落在檐角，衔着枚不认得的果子，歪头打量你。",
+    "options": [
+      { "text": "以灵谷相换", "fits": ["A"] },
+      { "text": "笑而不取", "fits": ["C"], "daoxin": 1 } ] },
+
+  { "id": "E02", "pool": "E", "rarity": "凡", "title": "蛇蜕挂枝",
+    "desc": "路旁老树枝上挂着一张完整的蛇蜕，日光下泛着微光。",
+    "options": [
+      { "text": "收蜕入药", "fits": ["A"] },
+      { "text": "循蜕寻蛇", "fits": ["C"] } ] },
+
+  { "id": "E03", "pool": "E", "rarity": "凡", "title": "稚兽误入",
+    "desc": "一只毛茸茸的稚兽撞进灵田，卡在篱笆里吱吱直叫。",
+    "options": [
+      { "text": "送它归山", "fits": ["C"], "daoxin": 3 },
+      { "text": "留它在园里帮闲", "fits": ["A"] } ] },
+
+  { "id": "E04", "pool": "E", "rarity": "灵", "title": "白狐衔草",
+    "desc": "白狐后腿带伤，口中衔着一株异草，径直放在你脚边。",
+    "tags": [{ "key": "huyao", "stance": "缘", "weight": 2 }],
+    "options": [
+      { "text": "为它疗伤", "fits": ["C"], "daoxin": 4 },
+      { "text": "收下异草", "fits": ["A"], "daoxin": -2 } ] },
+
+  { "id": "E05", "pool": "E", "rarity": "灵", "title": "鹤唳云端",
+    "desc": "有鹤自云端掠过，长唳之声过处，满山灵气都荡了荡。",
+    "options": [
+      { "text": "随鹤而行", "fits": ["A"] },
+      { "text": "聆唳悟气", "fits": ["C"] } ] },
+
+  { "id": "E06", "pool": "E", "rarity": "珍", "title": "兽潮前兆",
+    "desc": "山中群兽不约而同往深处迁，连檐下的灵雀都弃了窝。",
+    "options": [
+      { "text": "严守山门", "fits": ["C"] },
+      { "text": "入林探其因", "fits": ["E"] } ] },
+
+  { "id": "F01", "pool": "F", "rarity": "凡", "title": "虚空裂缝",
+    "desc": "后山天际悬着一道细缝，缝里偶尔漏出几个看不懂的字。",
+    "options": [
+      { "text": "以神识探之", "fits": ["A", "B"] },
+      { "text": "远而避之", "fits": ["A"] } ] },
+
+  { "id": "F02", "pool": "F", "rarity": "凡", "title": "星坠如雨",
+    "desc": "夜里有星子坠在后山，落地无声，只余一圈浅浅白痕。",
+    "options": [
+      { "text": "拾其碎屑", "fits": ["A"] },
+      { "text": "坐而观星", "fits": ["C"] } ] },
+
+  { "id": "F03", "pool": "F", "rarity": "灵", "title": "故剑归主",
+    "desc": "虚空裂缝里探出半透明的剑影，剑柄径直落在你腰间古剑。",
+    "recycle": "gujian",
+    "after": "恩",
+    "options": [
+      { "text": "奉剑归还", "fits": ["A", "D"] },
+      { "text": "携剑一战", "fits": ["A", "B"] } ] },
+
+  { "id": "F04", "pool": "F", "rarity": "灵", "title": "镜中另我",
+    "desc": "井水映出的你总慢半拍，眼神却比你要老辣得多。",
+    "options": [
+      { "text": "与之对坐论道", "fits": ["A"] },
+      { "text": "碎镜而去", "fits": ["C"] } ] },
+
+  { "id": "F05", "pool": "F", "rarity": "珍", "title": "界外棋声",
+    "desc": "虚空深处传来落子声，清脆如玉，隔着虚空敲在神魂上。",
+    "options": [
+      { "text": "隔界观棋", "fits": ["D"] },
+      { "text": "执子应一手", "fits": ["A", "B"] } ] },
+
+  { "id": "F06", "pool": "F", "rarity": "仙", "title": "虚空垂钓",
+    "desc": "虚空里坐着个蓑衣人，钓竿垂进星河，刚钓起一尾发光的鱼。",
+    "options": [
+      { "text": "求他分一篓", "fits": ["D"] },
+      { "text": "只借竿一用", "fits": ["C"] } ] },
+
+  { "id": "F07", "pool": "F", "rarity": "珍", "title": "狐女登门",
+    "desc": "白衣女子登门拜访，眉眼含笑，身后似有狐尾影子一闪而过。",
+    "recycle": "huyao",
+    "options": [
+      { "text": "设宴款待", "fits": ["C"], "daoxin": 3 },
+      { "text": "问那株异草来历", "fits": ["A"] } ] },
+
+  { "id": "G01", "pool": "G", "rarity": "凡", "title": "草木含情",
+    "desc": "你走过药园，满园灵草齐齐弯腰，像在向谁行礼。",
+    "options": [
+      { "text": "温言慰之", "fits": ["A"] },
+      { "text": "闭目听其语", "fits": ["C"] } ] },
+
+  { "id": "G02", "pool": "G", "rarity": "凡", "title": "梦中点化",
+    "desc": "梦里有个声音念了句口诀，醒来满口生津，灵台清明。",
+    "options": [
+      { "text": "静听不问", "fits": ["A"] },
+      { "text": "细问前程", "fits": ["C"] } ] },
+
+  { "id": "G03", "pool": "G", "rarity": "灵", "title": "琴师重逢",
+    "desc": "琴师踏月而来，说你当年那支曲没听完，今日特来补上。",
+    "recycle": "qinshi",
+    "options": [
+      { "text": "与他合奏", "fits": ["D"] },
+      { "text": "求一曲安神", "fits": ["C"] } ] },
+
+  { "id": "G04", "pool": "G", "rarity": "珍", "title": "天雨灵米",
+    "desc": "天降白米般的灵雨，沾草木则荣，落水则化甘泉。",
+    "options": [
+      { "text": "接雨入窖", "fits": ["A"], "daoxin": -1 },
+      { "text": "任雨润山", "fits": ["D"], "daoxin": 3 } ] },
+
+  { "id": "G05", "pool": "G", "rarity": "仙", "title": "天音绕梁",
+    "desc": "天际仙音漫过山头，闻者各有所悟，痴坐到日暮方醒。",
+    "options": [
+      { "text": "悟其全篇", "fits": ["D"] },
+      { "text": "录其残章", "fits": ["A"] } ] },
+
+  { "id": "H01", "pool": "H", "rarity": "凡", "title": "云游借宿",
+    "desc": "灰袍老道敲门借宿，鞋底磨穿，眼神却亮得吓人。",
+    "options": [
+      { "text": "好生款待", "fits": ["C"], "daoxin": 3 },
+      { "text": "让厢房自便", "fits": ["A"] } ] },
+
+  { "id": "H02", "pool": "H", "rarity": "灵", "title": "座前听讲",
+    "desc": "邻山有大能开讲，闻讯而来的修士把山道都坐满了。",
+    "options": [
+      { "text": "侍立听讲", "fits": ["A"] },
+      { "text": "挤上前发问", "fits": ["D"] } ] },
+
+  { "id": "H03", "pool": "H", "rarity": "灵", "title": "剑仙过境",
+    "desc": "一道剑光横贯天际，余波扫过山门，满冢旧剑齐声嗡鸣。",
+    "options": [
+      { "text": "引波入剑冢", "fits": ["A", "F"] },
+      { "text": "迎波淬体", "fits": ["A", "B"] } ] },
+
+  { "id": "H04", "pool": "H", "rarity": "珍", "title": "大能论道",
+    "desc": "两位大能隔空论道，偏拿你这座山当棋盘，山灵瑟瑟发抖。",
+    "options": [
+      { "text": "从中调和", "fits": ["D"], "daoxin": 3 },
+      { "text": "袖手旁观", "fits": ["A"] } ] },
+
+  { "id": "H05", "pool": "H", "rarity": "仙", "title": "垂青一顾",
+    "desc": "云端有道目光落下，在你身上停了片刻，如春水拂面。",
+    "options": [
+      { "text": "长揖受教", "fits": ["D"] },
+      { "text": "求一句点化", "fits": ["A"] } ] },
+
+  { "id": "I01", "pool": "I", "rarity": "灵", "title": "劫云初聚",
+    "desc": "头顶聚起铅色劫云，雷声在云层里滚来滚去，迟迟不落。",
+    "options": [
+      { "text": "迎劫而炼", "fits": ["A", "B"] },
+      { "text": "布阵缓劫", "fits": ["C"] } ] },
+
+  { "id": "I02", "pool": "I", "rarity": "珍", "title": "心魔叩关",
+    "desc": "劫云未落心魔先至，幻象里全是当年没走的那条路。",
+    "options": [
+      { "text": "直面本心", "fits": ["D", "B"] },
+      { "text": "顺势入幻", "fits": ["A", "B"] } ] },
+
+  { "id": "I03", "pool": "I", "rarity": "珍", "title": "雷池淬体",
+    "desc": "劫雷落地积成一片雷池，池水翻滚，隐有龙形游走。",
+    "options": [
+      { "text": "入池受炼", "fits": ["A", "B"] },
+      { "text": "收雷入炉", "fits": ["A", "F"] } ] },
+
+  { "id": "I04", "pool": "I", "rarity": "仙", "title": "霄外神雷",
+    "desc": "劫云裂开，一道白得发黑的雷柱直贯而下，天地俱寂。",
+    "options": [
+      { "text": "以身为炉", "fits": ["D", "B"] },
+      { "text": "借雷冲关", "fits": ["A", "B"] } ] },
+
+  { "id": "J01", "pool": "J", "rarity": "灵", "title": "仙界来信",
+    "desc": "一只纸鹤落在案头，字迹陌生，落款却是个熟识的道号。",
+    "options": [
+      { "text": "修书回复", "fits": ["A"] },
+      { "text": "束之高阁", "fits": ["C"] } ] },
+
+  { "id": "J02", "pool": "J", "rarity": "珍", "title": "飞升遗音",
+    "desc": "前些天有人在此飞升，山岩上还留着未散尽的半句道音。",
+    "options": [
+      { "text": "循音悟道", "fits": ["D"] },
+      { "text": "以神识送行", "fits": ["A"], "daoxin": 2 } ] },
+
+  { "id": "J03", "pool": "J", "rarity": "仙", "title": "仙门敕令",
+    "desc": "天上降下一道金符，文字不识，意思却自行浮上心头。",
+    "options": [
+      { "text": "依令行事", "fits": ["D", "B"] },
+      { "text": "婉拒其邀", "fits": ["A"] } ] },
+
+  { "id": "J04", "pool": "J", "rarity": "仙", "title": "天门初启",
+    "desc": "夜半天顶裂开一线，门后光景一闪即逝，像谁忘了关门。",
+    "options": [
+      { "text": "探手入门", "fits": ["A", "B"] },
+      { "text": "记其方位", "fits": ["E"] } ] }
+]

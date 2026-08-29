@@ -1,0 +1,11 @@
+{
+  "port": 8787,
+  "ark_base_url": "https://ark.cn-beijing.volces.com/api/v3",
+  "ark_model": "glm-5-3-flash",
+  "ark_api_key": "",
+  "timeout_ms": 5000,
+  "failure_threshold": 3,
+  "local_mode_minutes": 10,
+  "max_tokens": 300,
+  "temperature": 0.9
+}

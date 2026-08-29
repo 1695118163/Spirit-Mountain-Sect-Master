@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>灵山掌门</title>
+<link rel="stylesheet" href="css/main.css">
+</head>
+<body>
+<canvas id="bg"></canvas>
+<div id="app">
+  <header id="topbar" class="panel">
+    <div id="res-bar">
+      <div class="res-row" data-res="lingqi"><span class="res-name">灵气</span><span class="res-val">0</span><small class="res-rate"></small></div>
+      <div class="res-row" data-res="xiufu"><span class="res-name">修为</span><span class="res-val">0</span><small class="res-rate"></small></div>
+      <div class="res-row" data-res="lingshi"><span class="res-name">灵石</span><span class="res-val">0</span><small class="res-rate"></small></div>
+      <div class="res-row" data-res="danyao"><span class="res-name">丹药</span><span class="res-val">0</span><small class="res-rate"></small><button id="btn-pill" data-tip="服丹：60 秒内全局产量翻倍">服丹</button></div>
+    </div>
+    <div id="buff-bar"></div>
+    <div id="top-right">
+      <span id="llm-dot" class="dot off" data-tip="LLM 状态"></span>
+      <button id="btn-settings" class="icon-btn" data-tip="设置">设置</button>
+    </div>
+  </header>
+
+  <aside id="left-panel" class="panel">
+    <h2 class="panel-title">洞天福地</h2>
+    <div id="building-list"></div>
+  </aside>
+
+  <main id="center" class="panel">
+    <div id="realm-name">练气</div>
+    <div id="xp-bar"><div id="xp-fill"></div><span id="xp-text">修为 0/150</span></div>
+    <div id="breath-wrap">
+      <button id="btn-breath"><span class="breath-label">吐 纳</span></button>
+    </div>
+    <button id="btn-break" class="hidden">突 破</button>
+    <div id="forewarn" class="hidden">远处隐有异动…</div>
+  </main>
+
+  <aside id="right-panel" class="panel">
+    <h2 class="panel-title">见闻</h2>
+    <div id="log-list"></div>
+    <h2 class="panel-title">福泽</h2>
+    <div id="perm-list"></div>
+    <button id="btn-rebirth" class="btn-primary">转 生</button>
+  </aside>
+</div>
+
+<div id="modal-root"></div>
+<div id="toast-root"></div>
+<div id="fatal-overlay" class="hidden"></div>
+
+<script src="js/util.js"></script>
+<script src="js/state.js"></script>
+<script src="js/economy.js"></script>
+<script src="js/realm.js"></script>
+<script src="js/events.js"></script>
+<script src="js/llm.js"></script>
+<script src="js/save.js"></script>
+<script src="js/ui.js"></script>
+<script src="js/tick.js"></script>
+<script src="js/dev.js"></script>
+<script src="js/boot.js"></script>
+</body>
+</html>
