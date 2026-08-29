@@ -313,6 +313,9 @@
   function setForewarn(v) { refs.forewarn.classList.toggle('hidden', !v); }
 
   /* ── 弹窗基建 ── */
+  function isModalOpen() {
+    return refs.modalRoot ? refs.modalRoot.children.length > 0 : false;
+  }
   function makeModal() {
     const mask = document.createElement('div');
     mask.className = 'modal-mask';
@@ -431,6 +434,46 @@
     }
     const hint = document.createElement('div');
     hint.className = 'bt-hint';
+    hint.textContent = '点击任意处继续';
+    ov.appendChild(hint);
+    document.body.appendChild(ov);
+    const close = () => { ov.remove(); renderAll(); };
+    ov.addEventListener('click', close);
+    setTimeout(() => { if (ov.parentNode) close(); }, (g.LS.BAL.breakthrough && g.LS.BAL.breakthrough.anim_ms) || 1500);
+  }
+
+  /* ── 突破失败 / 走火入魔过场（暗色水墨） ── */
+  function showFailOverlay(title, text, isQihuo) {
+    sfx('bell');
+    const ov = document.createElement('div');
+    ov.id = 'breakthrough-overlay';
+    ov.style.background = isQihuo ? '#2b2222' : '#3a3330'; // 走火入魔更暗
+    for (let i = 0; i < 5; i++) {
+      const sp = document.createElement('span');
+      sp.className = 'ink-splash';
+      const size = 120 + Math.random() * 260;
+      sp.style.width = size + 'px';
+      sp.style.height = size + 'px';
+      sp.style.left = (10 + Math.random() * 80) + '%';
+      sp.style.top = (10 + Math.random() * 70) + '%';
+      sp.style.animationDelay = (i * 0.12) + 's';
+      sp.style.background = 'radial-gradient(circle, rgba(168,50,50,.35), transparent 70%)'; // 朱砂墨渍
+      ov.appendChild(sp);
+    }
+    const t = document.createElement('div');
+    t.className = 'bt-text';
+    t.style.color = '#f5f0e6';
+    t.style.fontSize = '30px';
+    t.textContent = '【' + title + '】';
+    ov.appendChild(t);
+    const div = document.createElement('div');
+    div.className = 'bt-text';
+    div.style.color = 'rgba(245,240,230,.85)';
+    div.textContent = text || '';
+    ov.appendChild(div);
+    const hint = document.createElement('div');
+    hint.className = 'bt-hint';
+    hint.style.color = 'rgba(245,240,230,.5)';
     hint.textContent = '点击任意处继续';
     ov.appendChild(hint);
     document.body.appendChild(ov);
@@ -631,8 +674,8 @@
 
   g.LS.ui = {
     initRefs, renderAll, renderResources, renderBuildings, renderCenter,
-    renderChronicle, renderPermList, pushLog, markNewBuildings,
-    showEventModal, closeEventModal, showOfflinePopup, showBreakthroughOverlay,
+    renderChronicle, renderPermList, pushLog, markNewBuildings, isModalOpen,
+    showEventModal, closeEventModal, showOfflinePopup, showBreakthroughOverlay, showFailOverlay,
     showSettings, showRebirthPanel, showTutorial, toast, tweenNumber,
     setLLMStatus, setForewarn, updateBuffBar, drawBg, sfx
   };

@@ -28,11 +28,15 @@
         recent_ids: [],
         recent_negatives: 0,
         open: null,
+        pending: false,
+        queue: [],
         log: []
       },
       tags: {},
       chains: [],
       pill: { progress_s: 0, last_serve_at: 0 },
+      stagnation: { since: Date.now(), fired_for_realm: -1 },
+      bt: { fail_streak: 0, fail_cooldown_until: 0 },
       prestige: { count: 0, points: 0, total_points: 0, spent: 0, bought: [], lifetime_best_realm: 0, first_event_after_rebirth: false },
       stats: { play_seconds: 0, clicks: 0, events_total: 0, events_llm: 0, events_fallback: 0, breakthroughs: 0, prestige_count: 0, offline_claimed: 0, negative_settled: 0, total_settled: 0 },
       settings: { sound: true, llm_enabled: true }

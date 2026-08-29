@@ -76,10 +76,11 @@ function runProfile(opts) {
       if (best) LS.economy.buyBuilding(best);
     }
 
-    // 突破
+    // 突破（模拟器强制成功：失败率/走火入魔属玩家体验层，确定性模拟用 forceSuccess 排除随机性）
     if (LS.realm.canBreakthrough()) {
       const next = BAL.realms[realmIdx() + 1];
-      LS.realm.doBreakthrough();
+      if (LS.S.bt) LS.S.bt.fail_cooldown_until = 0;
+      LS.realm.doBreakthrough({ forceSuccess: true });
       breakthroughs.push({ t, realm: next.index, name: next.name });
       // 已至飞升：经济模拟意义已完成，提前收束
       if (next.index >= 9) return { breakthroughs, stalls, rateSamples, endState: LS.S, ascendedAt: t };

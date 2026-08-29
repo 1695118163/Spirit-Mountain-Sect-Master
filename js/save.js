@@ -8,10 +8,18 @@
   const KEY = 'lingshan_save_v1';
   const KEY_BACKUP = 'lingshan_save_backup';
   const KEY_TMP = 'lingshan_save_tmp';
-  const SAVE_VERSION = 1;
+  const SAVE_VERSION = 2;
 
   const MIGRATIONS = {
-    // 1: (s) => { s.settings = s.settings || {}; s.v = 2; return s; }
+    // v1 → v2：补 突破失败体系（bt）/ 停滞彩蛋（stagnation）/ 事件队列（queue）
+    1: (s) => {
+      s.stagnation = s.stagnation || { since: Date.now(), fired_for_realm: -1 };
+      s.bt = s.bt || { fail_streak: 0, fail_cooldown_until: 0 };
+      if (s.event_state && !Array.isArray(s.event_state.queue)) s.event_state.queue = [];
+      if (s.event_state) s.event_state.pending = false;
+      s.v = 2;
+      return s;
+    }
   };
 
   function ls() { return (typeof localStorage !== 'undefined') ? localStorage : null; }

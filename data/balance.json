@@ -35,7 +35,36 @@
   "xiuwei_rate_factor": 0.1,
   "breakthrough": {
     "cost_mode": "consume",
-    "anim_ms": 1500
+    "anim_ms": 1500,
+    "success_rate_by_realm": [
+      1,
+      1,
+      0.95,
+      0.9,
+      0.85,
+      0.8,
+      0.75,
+      0.7,
+      0.65,
+      0.6
+    ],
+    "dao_heart_bonus": {
+      "high": 30,
+      "low": -30,
+      "pct": 0.05
+    },
+    "fail_keep_xp_ratio": 0.5,
+    "qihuo": {
+      "base_chance": 0.25,
+      "chance_growth_per_realm": 0.05,
+      "max_chance": 0.5,
+      "xp_loss_ratio": 0.5,
+      "debuff_mult": 0.5,
+      "debuff_duration_s_min": 120,
+      "debuff_duration_s_max": 300
+    },
+    "pity_success": 3,
+    "fail_cooldown_s": 30
   },
   "buildings": [
     {
@@ -792,5 +821,43 @@
       "建筑：随时间自动产出。先买便宜的把产出滚起来，永远别让灵石闲着。",
       "奇遇：约每炷香上门，三选一。「离去」永远安全——但故事都是选出来的人才有。"
     ]
+  },
+  "stagnation": {
+    "min_stay_s_by_realm": [
+      480,
+      600,
+      720,
+      840,
+      960,
+      1080,
+      1200,
+      1320,
+      1440,
+      1560
+    ],
+    "good_weight": 0.6,
+    "insight": {
+      "xp_pct_of_need_min": 0.3,
+      "xp_pct_of_need_max": 0.5,
+      "click_buff_mult": 3,
+      "click_buff_duration_s": 60
+    },
+    "xinmo": {
+      "xp_lose_pct_min": 0.05,
+      "xp_lose_pct_max": 0.15,
+      "debuff_mult": 0.7,
+      "debuff_duration_s_min": 60,
+      "debuff_duration_s_max": 180
+    },
+    "texts": {
+      "insight_title": "顿悟",
+      "insight_text": "你在此境枯坐已久，忽有一线灵光自识海亮起——原来如此，原来如此！",
+      "xinmo_title": "心魔",
+      "xinmo_text": "久困此境，道心蒙尘。夜半打坐时，你竟分不清哪一缕真气是自己的。",
+      "fail_title": "突破未成",
+      "fail_text": "轰然一震，气海震荡。境界壁垒纹丝不动，你吐出一口浊气，盘膝再修。",
+      "qihuo_title": "走火入魔",
+      "qihuo_text": "真气逆行乱窜，如万蚁噬脉！你强压翻涌的气血，许久才把这口血咽回去。"
+    }
   }
 }

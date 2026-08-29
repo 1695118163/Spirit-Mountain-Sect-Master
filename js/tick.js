@@ -79,6 +79,51 @@
     return doOfflineSettle(gap);
   }
 
+  /**
+   * 停滞彩蛋：同一境界停留超过阈值 → 顿悟（好事，加修为+点击增益）
+   * 或心魔（坏事，扣修为+产量减益）；练气/筑基只出好事。每境界每次停留只触发一次。
+   */
+  function stagnationTick(now) {
+    const bal = BAL();
+    const stg = bal.stagnation;
+    if (!stg) return;
+    const s = S();
+    const st = s.stagnation || (s.stagnation = { since: now, fired_for_realm: -1 });
+    if (st.fired_for_realm === s.realm.index) return;
+    const need = (stg.min_stay_s_by_realm || [])[s.realm.index];
+    if (!need || (now - st.since) / 1000 < need) return;
+    st.fired_for_realm = s.realm.index;
+    st.since = now;
+    const next = bal.realms[s.realm.index + 1];
+    const needXp = next && next.need_xp ? next.need_xp : 100;
+    const good = s.realm.index <= 1 || Math.random() < (stg.good_weight || 0.6); // 低境只出好事
+    const T = (stg.texts || {});
+    const eco = g.LS.economy;
+    if (good) {
+      const ins = stg.insight || {};
+      const gain = needXp * g.LS.util.rand(ins.xp_pct_of_need_min || 0.3, ins.xp_pct_of_need_max || 0.5);
+      s.resources.xiufu += gain;
+      g.LS.state.addBuff({
+        id: 'insight_click', mult: 1, click_mult: ins.click_buff_mult || 3,
+        ts_end: now + (ins.click_buff_duration_s || 60) * 1000
+      });
+      if (g.LS.ui && g.LS.ui.toast) g.LS.ui.toast('【顿悟】' + (T.insight_text || ''));
+      if (g.LS.ui && g.LS.ui.pushLog) g.LS.ui.pushLog({ title: '顿悟', choice: '停滞中灵光一闪', gainText: '修为 +' + g.LS.util.fmt(gain) });
+    } else {
+      const xm = stg.xinmo || {};
+      const lose = s.resources.xiufu * g.LS.util.rand(xm.xp_lose_pct_min || 0.05, xm.xp_lose_pct_max || 0.15);
+      s.resources.xiufu = Math.max(0, s.resources.xiufu - lose);
+      g.LS.state.addBuff({
+        id: 'xinmo_debuff', mult: xm.debuff_mult || 0.7,
+        ts_end: now + g.LS.util.randInt(xm.debuff_duration_s_min || 60, xm.debuff_duration_s_max || 180) * 1000
+      });
+      if (g.LS.ui && g.LS.ui.toast) g.LS.ui.toast('【心魔】' + (T.xinmo_text || ''));
+      if (g.LS.ui && g.LS.ui.pushLog) g.LS.ui.pushLog({ title: '心魔', choice: '久困此境，道心蒙尘', gainText: '修为 -' + g.LS.util.fmt(lose) });
+    }
+    eco.clampAll();
+    if (g.LS.save && g.LS.save.save) g.LS.save.save();
+  }
+
   function loopStep() {
     const now = Date.now();
     const dt = (now - lastTick) / 1000;
@@ -92,6 +137,7 @@
       return;
     }
     advanceGame(dt, { mode: 'online' }); // 后台节流的大 dt 全额补算（隐藏期间按在线效率累计）
+    stagnationTick(now);
     g.LS.events.maybeTriggerEvent(now);
     if (now >= nextRenderAt) {
       nextRenderAt = now + TICK_MS;
@@ -111,5 +157,5 @@
     lastTick = Date.now() - Math.min(Date.now() - lastTick, CATCHUP_THRESHOLD_S * 1000 - 1000);
   }
 
-  g.LS.tick = { TICK_MS, CATCHUP_THRESHOLD_S, startLoop, loopStep, advanceGame, settleOffline, doOfflineSettle, onVisibilityChange, offlineEfficiency };
+  g.LS.tick = { TICK_MS, CATCHUP_THRESHOLD_S, startLoop, loopStep, advanceGame, settleOffline, doOfflineSettle, onVisibilityChange, offlineEfficiency, stagnationTick };
 })(typeof window !== 'undefined' ? window : globalThis);

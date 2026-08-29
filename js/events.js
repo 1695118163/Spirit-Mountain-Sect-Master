@@ -211,6 +211,38 @@
 
   /* ── 主流程 ── */
 
+  /* ── 事件队列：同一时间只弹一个，未处理的排队（上限 3 条，超出丢最旧） ── */
+
+  function enqueueOrShow(finalEv) {
+    const s = S();
+    const busy = !!s.event_state.open || (g.LS.ui && g.LS.ui.isModalOpen && g.LS.ui.isModalOpen());
+    if (busy) {
+      if (s.event_state.queue.length >= 3) {
+        s.event_state.queue.shift();
+        if (g.LS.ui && g.LS.ui.toast) g.LS.ui.toast('见闻太多，一则旧事随风散去。');
+      }
+      s.event_state.queue.push(finalEv);
+      return;
+    }
+    s.event_state.open = finalEv;
+    s.event_state.opened_at = Date.now();
+    if (g.LS.ui && g.LS.ui.showEventModal) g.LS.ui.showEventModal(finalEv);
+  }
+
+  /** 当前弹窗结算后调用：依次展示队列中的下一条（面板被玩家占用时轮询等待） */
+  function pumpQueue(attempt) {
+    const s = S();
+    if (!s.event_state.queue.length || s.event_state.open) return;
+    if (g.LS.ui && g.LS.ui.isModalOpen && g.LS.ui.isModalOpen()) {
+      if ((attempt || 0) < 60) setTimeout(() => pumpQueue((attempt || 0) + 1), 2000); // 面板开着就等
+      return;
+    }
+    const ev = s.event_state.queue.shift();
+    s.event_state.open = ev;
+    s.event_state.opened_at = Date.now();
+    if (g.LS.ui && g.LS.ui.showEventModal) g.LS.ui.showEventModal(ev);
+  }
+
   function openEventFlow(ev, rarity, fromKarma) {
     const s = S();
     const slots = rollSlots(ev);
@@ -219,6 +251,7 @@
     const hint = fromKarma ? '本次事件必须与此前的『' + ev.title + '』形成呼应，写它回来报恩或讨债' : '';
 
     const proceed = (useLLMResult) => {
+      s.event_state.pending = false; // 管线结束，允许下一次触发
       if (useLLMResult) {
         finalEv = {
           id: U().uid(),
@@ -239,16 +272,13 @@
       } else {
         S().stats.events_fallback += 1;
       }
-      s.event_state.open = finalEv;
-      s.event_state.opened_at = Date.now();
-      s.stats.events_total += 1;
-      if (g.LS.ui && g.LS.ui.showEventModal) g.LS.ui.showEventModal(finalEv);
+      enqueueOrShow(finalEv);
     };
 
     const llmOk = g.LS.llm && g.LS.llm.isHealthy() && s.settings.llm_enabled;
     if (llmOk) {
       const payload = g.LS.llm.buildHistoryPayload(slots, hint);
-      // LLM 与 5.5s 兜底竞速：超时/失败即内置池，玩家无感知
+      // LLM 与 20s 兜底竞速：超时/失败即内置池，玩家无感知
       Promise.race([
         g.LS.llm.requestEvent(payload).catch(() => null),
         new Promise(res => setTimeout(() => res(null), 20000))
@@ -260,7 +290,9 @@
 
   function drawEvent() {
     const s = S();
-    if (s.event_state.open) return;
+    if (s.event_state.pending) return; // 防重入：管线占用时不触发；弹窗开着的新事件由队列承接
+    s.event_state.pending = true;
+    scheduleNext(); // 触发即重排：无论后续成败，绝不连发顶掉当前事件
     let ev = null;
     let rarity = null;
     let fromKarma = false;
@@ -291,7 +323,11 @@
       pickedRarity = ev.rarity;
     }
 
-    if (!ev) { scheduleNext(); return; }
+    if (!ev) {
+      s.event_state.pending = false; // 无库存等异常：释放管线，下个周期再试
+      scheduleNext();
+      return;
+    }
 
     // 预告条 3 秒后弹窗（弹窗出现前主界面角落预告）
     if (g.LS.ui && g.LS.ui.setForewarn) g.LS.ui.setForewarn(true);
@@ -368,13 +404,15 @@
     if (g.LS.ui && g.LS.ui.closeEventModal) g.LS.ui.closeEventModal();
     if (g.LS.ui && g.LS.ui.renderChronicle) g.LS.ui.renderChronicle();
     if (g.LS.save && g.LS.save.save) g.LS.save.save();
+    // 队列里还有排队的见闻：稍后自动弹出（面板被玩家占用时 pumpQueue 内部会等待）
+    if (s.event_state.queue.length) setTimeout(() => pumpQueue(0), 800);
   }
 
   /* ── 调度入口（tick 每 250ms 调） ── */
 
   function maybeTriggerEvent(now) {
     const s = S();
-    if (s.event_state.open) return;                    // 弹窗打开期间不再触发
+    if (s.event_state.pending) return;      // 管线占用期间不触发；弹窗开着的新事件走队列
     if (typeof document !== 'undefined' && document.visibilityState !== 'visible') return;
     if (now < s.event_state.next_event_at) return;
     // 连锁标记：第 N 次抽取时插播（首发包连锁落空为一次普通抽取）
@@ -387,7 +425,7 @@
   }
 
   g.LS.events = {
-    drawEvent, chooseOption, maybeTriggerEvent, scheduleNext,
+    drawEvent, chooseOption, maybeTriggerEvent, scheduleNext, pumpQueue,
     rollSlots, rollRarity, pickByRarity, materializeSlot,
     buildFallbackEvent, buildBuiltinFinal, karmaCheck, resolveTag,
     intervalMs, isNegativeSlot

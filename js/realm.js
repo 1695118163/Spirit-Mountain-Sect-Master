@@ -27,30 +27,86 @@
   function canBreakthrough() {
     const next = nextRealm();
     if (!next || next.need_xp == null) return false;
-    return S().resources.xiufu >= next.need_xp;
+    const s = S();
+    if (s.bt && s.bt.fail_cooldown_until > Date.now()) return false; // 失败后调息冷却
+    return s.resources.xiufu >= next.need_xp;
   }
 
-  function doBreakthrough() {
+  /**
+   * 突破执行。opts.forceSuccess=true 时必成（balance_check 模拟 / dev 调试用）。
+   * 成功率按目标境界配置；失败保留部分修为并可能走火入魔（产量减益 + 修为重挫）；
+   * 连败 pity_success 次后必成（防挫败）；道心影响成功率。
+   */
+  function doBreakthrough(opts) {
     const next = nextRealm();
     if (!next || next.need_xp == null) return false;
-    if (S().resources.xiufu < next.need_xp) return false;
     const s = S();
-    // cost_mode 'consume'：突破消耗全部当前修为（扣表中所需；清零重攒）
-    if (!BAL().breakthrough || BAL().breakthrough.cost_mode !== 'gate') {
-      s.resources.xiufu = Math.max(0, s.resources.xiufu - next.need_xp);
+    if (s.resources.xiufu < next.need_xp) return false;
+    const bal = BAL();
+    const bt = bal.breakthrough || {};
+    const now = Date.now();
+    if (s.bt && s.bt.fail_cooldown_until > now) return false;
+
+    // ── 成功率判定 ──
+    let rate = (bt.success_rate_by_realm && bt.success_rate_by_realm[next.index] != null)
+      ? bt.success_rate_by_realm[next.index] : 1;
+    if (rate < 1 && bt.dao_heart_bonus) {
+      if (s.dao_heart > bt.dao_heart_bonus.high) rate += bt.dao_heart_bonus.pct;
+      else if (s.dao_heart < bt.dao_heart_bonus.low) rate -= bt.dao_heart_bonus.pct;
+      rate = Math.max(0.1, Math.min(1, rate));
+    }
+    const pity = bt.pity_success || 3;
+    const streak = (s.bt && s.bt.fail_streak) || 0;
+    const success = (opts && opts.forceSuccess) || streak >= pity - 1 || Math.random() < rate;
+
+    if (!success) {
+      // ── 失败分支 ──
+      s.resources.xiufu = Math.max(0, s.resources.xiufu * (bt.fail_keep_xp_ratio != null ? bt.fail_keep_xp_ratio : 0.5));
+      s.bt.fail_streak = streak + 1;
+      s.bt.fail_cooldown_until = now + (bt.fail_cooldown_s || 30) * 1000;
+      const texts = (bal.stagnation && bal.stagnation.texts) || {};
+      let isQihuo = false;
+      if (bt.qihuo) {
+        let q = (bt.qihuo.base_chance || 0.25) + next.index * (bt.qihuo.chance_growth_per_realm || 0.05);
+        q = Math.min(q, bt.qihuo.max_chance || 0.5);
+        if (Math.random() < q) {
+          isQihuo = true;
+          s.resources.xiufu *= (1 - (bt.qihuo.xp_loss_ratio || 0.5));
+          g.LS.state.addBuff({
+            id: 'qihuo_debuff',
+            mult: bt.qihuo.debuff_mult || 0.5,
+            ts_end: now + g.LS.util.randInt(bt.qihuo.debuff_duration_s_min || 120, bt.qihuo.debuff_duration_s_max || 300) * 1000
+          });
+        }
+      }
+      const title = isQihuo ? (texts.qihuo_title || '走火入魔') : (texts.fail_title || '突破未成');
+      const text = isQihuo ? (texts.qihuo_text || '') : (texts.fail_text || '');
+      if (g.LS.ui && g.LS.ui.showFailOverlay) g.LS.ui.showFailOverlay(title, text, isQihuo);
+      if (g.LS.ui && g.LS.ui.pushLog) {
+        g.LS.ui.pushLog({ title, choice: '冲关' + next.name + '失利', gainText: isQihuo ? '真气逆行，产量受挫' : '修为保留过半，稍作调息' });
+      }
+      if (g.LS.save && g.LS.save.save) g.LS.save.save();
+      return false;
+    }
+
+    // ── 成功分支 ──
+    if (!bal.breakthrough || bal.breakthrough.cost_mode !== 'gate') {
+      s.resources.xiufu = 0; // 消耗全部当前修为（清零重攒）
     } else {
       s.resources.xiufu = 0;
     }
     s.realm.index = next.index;
     s.prestige.lifetime_best_realm = Math.max(s.prestige.lifetime_best_realm, next.index);
+    if (s.bt) s.bt.fail_streak = 0;
+    if (s.stagnation) { s.stagnation.since = now; s.stagnation.fired_for_realm = -1; } // 停滞计时重置
     if (next.reward_lingshi) s.resources.lingshi += next.reward_lingshi;
     s.stats.breakthroughs += 1;
     // 新解锁建筑标记（卡片"新"角标置顶 30 秒）
     if (g.LS.ui && g.LS.ui.markNewBuildings) g.LS.ui.markNewBuildings(next.unlock_buildings || []);
     if (g.LS.ui && g.LS.ui.showBreakthroughOverlay) {
-      const bt = (BAL().realm_break_text || []).find(x => x.index === next.index);
+      const bt2 = (bal.realm_break_text || []).find(x => x.index === next.index);
       const gainText = next.reward_lingshi ? '灵石 +' + g.LS.util.fmt(next.reward_lingshi) : '';
-      g.LS.ui.showBreakthroughOverlay(bt ? bt.text : next.name, gainText);
+      g.LS.ui.showBreakthroughOverlay(bt2 ? bt2.text : next.name, gainText);
     }
     if (g.LS.ui && g.LS.ui.pushLog) {
       g.LS.ui.pushLog({ title: '破境 · ' + next.name, choice: '境界精进', gainText: next.reward_lingshi ? '灵石 +' + g.LS.util.fmt(next.reward_lingshi) : '' });
@@ -61,7 +117,7 @@
     }
     // 化神解锁转生提示
     if ((next.traits || []).indexOf('unlock_rebirth') !== -1 && g.LS.ui && g.LS.ui.toast) {
-      g.LS.ui.toast(BAL().texts.rebirth_first_hint);
+      g.LS.ui.toast(bal.texts.rebirth_first_hint);
     }
     if (g.LS.save && g.LS.save.save) g.LS.save.save();
     return true;
