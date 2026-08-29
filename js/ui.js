@@ -71,6 +71,7 @@
     refs.forewarn = $id('forewarn');
     refs.modalRoot = $id('modal-root');
     refs.toastRoot = $id('toast-root');
+    refs.topbar = $id('topbar');
     refs.bg = $id('bg');
 
     // 吐纳：点击 + 按住连点（每 150ms）
@@ -616,6 +617,10 @@
 
   /* ── toast 与数字补间 ── */
   function toast(msg, dur) {
+    // 顶栏换行变高时动态下移提示条，保证永不遮挡资源栏
+    if (refs.topbar && refs.toastRoot) {
+      refs.toastRoot.style.top = (refs.topbar.offsetHeight + 18) + 'px';
+    }
     const el = document.createElement('div');
     el.className = 'toast';
     el.textContent = msg;
