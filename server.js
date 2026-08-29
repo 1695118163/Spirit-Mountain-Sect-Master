@@ -274,7 +274,11 @@ async function handle(req, res) {
     try {
       const balance = JSON.parse(fs.readFileSync(path.join(ROOT, 'data', 'balance.json'), 'utf8'));
       const events = JSON.parse(fs.readFileSync(path.join(ROOT, 'data', 'events.json'), 'utf8'));
-      return sendJSON(res, 200, { ok: true, balance, events });
+      let chains = [];
+      try {
+        chains = JSON.parse(fs.readFileSync(path.join(ROOT, 'data', 'chains.json'), 'utf8')).chains || [];
+      } catch (e) { /* chains.json 可选 */ }
+      return sendJSON(res, 200, { ok: true, balance, events, chains });
     } catch (e) {
       return sendJSON(res, 500, { ok: false, message: '读取数据文件失败：' + e.message });
     }

@@ -21,7 +21,12 @@
         const balance = await r1.json();
         const events = await r2.json();
         if (balance && Array.isArray(balance.buildings) && Array.isArray(events)) {
-          return { balance, events };
+          let chains = [];
+          try {
+            const r3 = await fetch('./data/chains.json');
+            if (r3.ok) chains = (await r3.json()).chains || [];
+          } catch (e) {}
+          return { balance, events, chains };
         }
       }
     } catch (e) { /* file:// 下此处会留一条 CORS 控制台噪音，属预期 */ }
@@ -29,7 +34,7 @@
     try {
       const r = await (await fetch('http://127.0.0.1:8787/api/balance')).json();
       if (r && r.ok && r.balance && Array.isArray(r.balance.buildings)) {
-        return { balance: r.balance, events: r.events };
+        return { balance: r.balance, events: r.events, chains: r.chains || [] };
       }
     } catch (e) {}
     // ③ 双双失败：整屏遮罩报错
@@ -42,6 +47,7 @@
     if (!data) return;
     g.LS.BAL = data.balance;
     g.LS.EVT = data.events;
+    g.LS.CHAINS = data.chains || [];
 
     // 存档：load → migrate（失败已备份并开新档）
     const r = g.LS.save.load();

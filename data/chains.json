@@ -1,0 +1,95 @@
+{
+  "version": 1,
+  "chains": [
+    {
+      "id": "chain_yuye",
+      "trigger_event": "A06",
+      "trigger_option": "A",
+      "trigger_chance": 0.65,
+      "continue_chance": 0.8,
+      "stages": [
+        { "title": "夜半铃音", "rarity": "凡",
+          "desc": "你留他过夜。夜半时分，檐下铃音无风自响。你推窗看去，那货郎坐在院中，掌心托着一枚青铃，正侧耳听着什么。",
+          "options": [
+            { "text": "问铃的来历", "fits": ["E"], "daoxin": 1 },
+            { "text": "佯装未见，闭窗回房", "fits": ["C"], "daoxin": 0 }
+          ] },
+        { "title": "铃中故人", "rarity": "灵",
+          "desc": "货郎也不瞒你：铃是他亡妻旧物，摇一声，能听见山下集市白日的喧声。他说修行人耳根要清净，这铃在你手上，比在他手里强。",
+          "options": [
+            { "text": "以灵石买下这枚铃", "fits": ["A"], "daoxin": 0 },
+            { "text": "分文不取，只谢他坦诚", "fits": ["D"], "daoxin": 3 }
+          ] },
+        { "title": "铃归旧山", "rarity": "珍",
+          "desc": "天明雨霁，货郎背起空担下山。行出几步，他回头笑道：此去集市路远，铃声里的旧事，就托付给山上人了。",
+          "options": [
+            { "text": "送他到山门", "fits": ["C"], "daoxin": 2 },
+            { "text": "目送他远去", "fits": ["A"], "daoxin": 1 }
+          ] }
+      ]
+    },
+    {
+      "id": "chain_jianling",
+      "trigger_event": "C05",
+      "trigger_option": "A",
+      "trigger_chance": 0.6,
+      "continue_chance": 0.8,
+      "stages": [
+        { "title": "剑灵初醒", "rarity": "灵",
+          "desc": "祭炼当夜，古剑在你掌心微微发烫，一缕稚嫩的剑灵探出头来，怯生生地打量着这位新主人。",
+          "options": [
+            { "text": "温言安抚", "fits": ["C"], "daoxin": 2 },
+            { "text": "以剑意淬其锋", "fits": ["A"], "daoxin": -1 }
+          ] },
+        { "title": "剑名前尘", "rarity": "珍",
+          "desc": "剑灵渐渐认了你。它不会说话，只在夜深时于鞘中轻鸣，剑身上那行陌生的小字，被你摩挲得愈发清亮。",
+          "options": [
+            { "text": "为它取个新名字", "fits": ["D"], "daoxin": 2 },
+            { "text": "保留原名的痕迹", "fits": ["A"], "daoxin": 1 }
+          ] }
+      ]
+    },
+    {
+      "id": "chain_huye",
+      "trigger_event": "E04",
+      "trigger_option": "A",
+      "trigger_chance": 0.6,
+      "continue_chance": 0.8,
+      "stages": [
+        { "title": "狐踪夜至", "rarity": "灵",
+          "desc": "当夜，白狐叼着一小包山参回来，轻轻放在你门前。它盯着你看了片刻，眼里竟有点不好意思。",
+          "options": [
+            { "text": "收下山参", "fits": ["A"], "daoxin": 0 },
+            { "text": "把山参喂它服下", "fits": ["C"], "daoxin": 3 }
+          ] },
+        { "title": "山谷同行", "rarity": "珍",
+          "desc": "自那以后，白狐常来。你耕田，它在垄边打盹；你炼丹，它蹲在炉边烤火。灵山的日子，多了一串小小的脚印。",
+          "options": [
+            { "text": "给它起个名字", "fits": ["D"], "daoxin": 2 },
+            { "text": "由它去留随意", "fits": ["A"], "daoxin": 1 }
+          ] }
+      ]
+    },
+    {
+      "id": "chain_danxiang",
+      "trigger_event": "C01",
+      "trigger_option": "A",
+      "trigger_chance": 0.55,
+      "continue_chance": 0.8,
+      "stages": [
+        { "title": "同门来谢", "rarity": "凡",
+          "desc": "分出去的丹药成了同门茶余饭后的谈资。次日清晨，几名弟子抬着一坛新酿的灵酒堵在你门口，说是谢礼。",
+          "options": [
+            { "text": "与他们共饮", "fits": ["C"], "daoxin": 2 },
+            { "text": "收下酒婉拒", "fits": ["A"], "daoxin": 0 }
+          ] },
+        { "title": "灵膳夜宴", "rarity": "灵",
+          "desc": "酒到酣处，有人提议把那炉丹的方子公给全门。你说好。当夜灵山灯火通明，丹房的烟比往日都旺。",
+          "options": [
+            { "text": "公开丹方", "fits": ["D"], "daoxin": 4 },
+            { "text": "留一手核心火候", "fits": ["A"], "daoxin": -2 }
+          ] }
+      ]
+    }
+  ]
+}

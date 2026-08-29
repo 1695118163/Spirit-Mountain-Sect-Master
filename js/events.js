@@ -356,6 +356,60 @@
 
   function isNegativeSlot(slot) { return slot && (slot.type === 'B' || slot.type === 'F'); }
 
+  /* ── 剧情链：起点事件选了特定选项 → 按概率接续下一幕（每幕照常预掷结算），「离去」即断 ── */
+
+  function maybeContinueChain(ev, key) {
+    const CH = g.LS.CHAINS || [];
+    if (!CH.length || key === 'C') return; // 离去即断，故事留给选的人
+    let chain = null;
+    let stageIdx = -1;
+    if (typeof ev.id === 'string' && ev.id.indexOf('chain:') === 0) {
+      const parts = ev.id.split(':');
+      chain = CH.find(c => c.id === parts[1]);
+      stageIdx = parseInt(parts[2], 10);
+    } else {
+      chain = CH.find(c => c.trigger_event === ev.id && (c.trigger_option === 'any' || c.trigger_option === key));
+    }
+    if (!chain || !Array.isArray(chain.stages) || !chain.stages.length) return;
+    let chance;
+    if (stageIdx === -1) {
+      chance = chain.trigger_chance != null ? chain.trigger_chance : 0.6;
+    } else {
+      if (stageIdx >= chain.stages.length - 1) return; // 已是最后一幕
+      chance = chain.continue_chance != null ? chain.continue_chance : 0.8;
+    }
+    if (Math.random() >= chance) return;
+    const nextIdx = stageIdx + 1;
+    const stage = chain.stages[nextIdx];
+    const stageEv = {
+      id: chain.id + ':stage' + nextIdx,
+      pool: 'CHAIN',
+      rarity: stage.rarity || '灵',
+      title: stage.title,
+      desc: stage.desc,
+      options: stage.options,
+      tags: []
+    };
+    const slots = rollSlots(stageEv); // 每幕照常本地预掷数值
+    const finalEv = {
+      id: 'chain:' + chain.id + ':' + nextIdx,
+      source: 'chain',
+      rarity: stage.rarity || '灵',
+      recycle: null,
+      after: null,
+      builtinTags: stage.tags || [],
+      title: stage.title,
+      desc: stage.desc,
+      options: [
+        { key: 'A', text: stage.options[0].text, slot: slots[0], daoxin: stage.options[0].daoxin || 0 },
+        { key: 'B', text: stage.options[1].text, slot: slots[1], daoxin: stage.options[1].daoxin || 0 },
+        { key: 'C', text: BAL().texts.event_leave, slot: null, daoxin: 0 }
+      ]
+    };
+    // 稍作停顿再续：像翻到下一页
+    setTimeout(() => { if (g.LS.S && g.LS.S.event_state) enqueueOrShow(finalEv); }, 700);
+  }
+
   function chooseOption(key) {
     const s = S();
     const ev = s.event_state.open;
@@ -404,6 +458,8 @@
     if (g.LS.ui && g.LS.ui.closeEventModal) g.LS.ui.closeEventModal();
     if (g.LS.ui && g.LS.ui.renderChronicle) g.LS.ui.renderChronicle();
     if (g.LS.save && g.LS.save.save) g.LS.save.save();
+    // 剧情链续接：起点/上一幕选了特定选项 → 按概率推入下一幕（复用队列，天然连贯）
+    maybeContinueChain(ev, key);
     // 队列里还有排队的见闻：稍后自动弹出（面板被玩家占用时 pumpQueue 内部会等待）
     if (s.event_state.queue.length) setTimeout(() => pumpQueue(0), 800);
   }
@@ -425,7 +481,7 @@
   }
 
   g.LS.events = {
-    drawEvent, chooseOption, maybeTriggerEvent, scheduleNext, pumpQueue,
+    drawEvent, chooseOption, maybeTriggerEvent, scheduleNext, pumpQueue, maybeContinueChain,
     rollSlots, rollRarity, pickByRarity, materializeSlot,
     buildFallbackEvent, buildBuiltinFinal, karmaCheck, resolveTag,
     intervalMs, isNegativeSlot

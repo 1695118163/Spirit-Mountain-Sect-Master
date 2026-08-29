@@ -335,7 +335,8 @@
     removeModals();
     const { mask, card } = makeModal();
     card.classList.add('rarity-' + (ev.rarity || '凡'));
-    const rarityTag = '<span class="rarity-tag">' + (ev.rarity || '凡') + '</span>';
+    const rarityTag = '<span class="rarity-tag">' + (ev.rarity || '凡') + '</span>' +
+      (ev.source === 'chain' ? '<span class="rarity-tag">续</span>' : '');
     card.innerHTML =
       '<div class="modal-title">' + rarityTag + escapeHtml(ev.title) + '</div>' +
       '<div class="ev-countdown" id="ev-cd"></div>' +
