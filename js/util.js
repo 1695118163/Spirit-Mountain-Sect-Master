@@ -56,5 +56,47 @@
     return s + ' 秒';
   }
 
-  g.LS.util = { fmt, clamp, rand, randInt, uid, weightedPick, mapMap, fmtDur, trimZeros };
+  /* ── 游戏历法（山中无甲子）：现实 1 秒 = 游戏 1 天，按 balance.json game_time 换算 ── */
+
+  const CN_DIGIT = ['零', '一', '二', '三', '四', '五', '六', '七', '八', '九'];
+  const CN_MONTH = ['正月', '二月', '三月', '四月', '五月', '六月', '七月', '八月', '九月', '十月', '冬月', '腊月'];
+
+  function numToCn(n) {
+    n = Math.max(0, Math.floor(n));
+    if (n < 10) return CN_DIGIT[n];
+    if (n < 20) return n === 10 ? '十' : '十' + CN_DIGIT[n % 10];
+    if (n < 100) return CN_DIGIT[Math.floor(n / 10)] + '十' + (n % 10 ? CN_DIGIT[n % 10] : '');
+    return String(n);
+  }
+
+  /** 游戏天总数 → 「灵曜三年·冬月廿一」 */
+  function fmtGameDate(totalDays) {
+    const gt = (g.LS.BAL && g.LS.BAL.game_time) || {};
+    const yLen = gt.months_per_year || 12;
+    const dLen = gt.days_per_month || 30;
+    totalDays = Math.max(0, Math.floor(totalDays));
+    const year = (gt.start_year || 1) + Math.floor(totalDays / (yLen * dLen));
+    const dayOfYear = totalDays % (yLen * dLen);
+    const month = Math.floor(dayOfYear / dLen);
+    const day = dayOfYear % dLen + 1;
+    return (gt.year_name || '灵曜') + numToCn(year) + '年·' + (CN_MONTH[month] || (month + 1) + '月') + numToCn(day) + '日';
+  }
+
+  /** 游戏天总数 → 时长中文：「三载零二月」/「八月」/「廿五日」 */
+  function fmtGameDur(totalDays) {
+    const gt = (g.LS.BAL && g.LS.BAL.game_time) || {};
+    const yLen = gt.months_per_year || 12;
+    const dLen = gt.days_per_month || 30;
+    totalDays = Math.max(0, Math.floor(totalDays));
+    const years = Math.floor(totalDays / (yLen * dLen));
+    const months = Math.floor((totalDays % (yLen * dLen)) / dLen);
+    const days = totalDays % dLen;
+    const parts = [];
+    if (years) parts.push(numToCn(years) + '载');
+    if (months) parts.push((years ? '零' : '') + numToCn(months) + '月');
+    if (days || !parts.length) parts.push(numToCn(days) + '日');
+    return parts.join('');
+  }
+
+  g.LS.util = { fmt, clamp, rand, randInt, uid, weightedPick, mapMap, fmtDur, fmtGameDate, fmtGameDur, numToCn, trimZeros };
 })(typeof window !== 'undefined' ? window : globalThis);

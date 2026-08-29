@@ -109,6 +109,8 @@ button:not(:disabled):active { transform: translateY(1px); }
 }
 @keyframes pulse { 0%, 100% { box-shadow: 0 0 6px var(--gold); } 50% { box-shadow: 0 0 22px var(--gold); } }
 
+#game-date { font-size: 15px; letter-spacing: 3px; color: var(--cyan); }
+#real-time { font-size: 11px; color: var(--ink-soft); letter-spacing: 1px; }
 #realm-name { font-size: 34px; letter-spacing: 12px; }
 
 #xp-bar {

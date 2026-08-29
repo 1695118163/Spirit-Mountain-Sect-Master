@@ -859,5 +859,12 @@
       "qihuo_title": "走火入魔",
       "qihuo_text": "真气逆行乱窜，如万蚁噬脉！你强压翻涌的气血，许久才把这口血咽回去。"
     }
+  },
+  "game_time": {
+    "year_name": "灵曜",
+    "start_year": 3,
+    "months_per_year": 12,
+    "days_per_month": 30,
+    "day_per_second": 1
   }
 }

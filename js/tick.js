@@ -40,6 +40,9 @@
       s.stats.play_seconds += dt;
       eco.autoPillTick(Date.now()); // 元婴被动：自动服丹
     }
+    // 游戏历法：现实 1 秒 = 游戏 day_per_second 天（在线离线同速，山中无甲子）
+    const dps = (bal.game_time && bal.game_time.day_per_second) || 1;
+    s.game_days = (s.game_days || 0) + dt * dps;
     g.LS.state.tickBuffs(Date.now());
     eco.clampAll();
   }

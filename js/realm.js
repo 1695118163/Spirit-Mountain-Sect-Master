@@ -192,6 +192,7 @@
     fresh.prestige.first_event_after_rebirth = fresh.prestige.bought.indexOf('qianshijiyuan') !== -1;
     fresh.prestige.points += gain;
     fresh.prestige.total_points += gain;
+    fresh.rebirth_at = Date.now(); // 本世修行计时起点
     // 初始资本
     const capital = bal.prestige.upgrades.find(u => u.id === 'chushiziben');
     if (capital && fresh.prestige.bought.indexOf('chushiziben') !== -1) {

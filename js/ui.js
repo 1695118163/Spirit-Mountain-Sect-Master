@@ -55,6 +55,8 @@
     });
     refs.buildingList = $id('building-list');
     refs.realmName = $id('realm-name');
+    refs.gameDate = $id('game-date');
+    refs.realTime = $id('real-time');
     refs.xpFill = $id('xp-fill');
     refs.xpText = $id('xp-text');
     refs.btnBreath = $id('btn-breath');
@@ -243,6 +245,18 @@
   /* ── 中央修炼区 ── */
   function renderCenter() {
     const bal = g.LS.BAL, s = g.LS.S;
+    // 游戏历法（山中无甲子）+ 现实时钟 · 本世修行
+    if (refs.gameDate) {
+      const gd = g.LS.util.fmtGameDate(s.game_days || 0);
+      if (lastStr.gameDate !== gd) { refs.gameDate.textContent = gd; lastStr.gameDate = gd; }
+      const d = new Date();
+      const dps = (bal.game_time && bal.game_time.day_per_second) || 1;
+      const lifeDays = Math.max(0, (Date.now() - (s.rebirth_at || s.created_at)) / 1000 * dps);
+      const rt = '现实 ' + d.getFullYear() + '年' + (d.getMonth() + 1) + '月' + d.getDate() + '日 ' +
+        String(d.getHours()).padStart(2, '0') + ':' + String(d.getMinutes()).padStart(2, '0') +
+        ' · 本世修行 ' + g.LS.util.fmtGameDur(lifeDays);
+      if (lastStr.realTime !== rt) { refs.realTime.textContent = rt; lastStr.realTime = rt; }
+    }
     const realm = bal.realms[s.realm.index];
     const nameStr = realm.name;
     if (lastStr.realm !== nameStr) { refs.realmName.textContent = nameStr; lastStr.realm = nameStr; }
@@ -384,7 +398,7 @@
       if (Math.abs(v) < 1e-9) continue;
       rows += '<div class="offline-gain-row"><span>' + resName(k) + '</span><b class="og-' + k + '">+' + fmtSafe(v) + '</b></div>';
     }
-    const durTxt = g.LS.util.fmtDur(result.gap);
+    const durTxt = g.LS.util.fmtGameDur(result.gap * ((bal.game_time && bal.game_time.day_per_second) || 1)); // 离山游戏时长：山中无甲子
     const cappedTxt = result.capped ? '<div class="offline-capped">' + t.offline_capped_hint + '</div>' : '';
     card.innerHTML =
       '<div class="modal-title">' + t.offline_title + '</div>' +
