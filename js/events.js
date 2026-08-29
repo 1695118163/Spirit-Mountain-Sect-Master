@@ -251,7 +251,7 @@
       // LLM 与 5.5s 兜底竞速：超时/失败即内置池，玩家无感知
       Promise.race([
         g.LS.llm.requestEvent(payload).catch(() => null),
-        new Promise(res => setTimeout(() => res(null), 5500))
+        new Promise(res => setTimeout(() => res(null), 20000))
       ]).then(r => proceed(r));
     } else {
       proceed(null);

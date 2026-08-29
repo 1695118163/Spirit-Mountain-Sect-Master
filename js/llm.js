@@ -17,9 +17,10 @@
   function getStatus() { return disabledByQuota ? 'off' : health; }
   function retryLLM() { disabledByQuota = false; checkHealth(); }
 
+  let modelName = '';
   function setStatus(st) {
     health = st;
-    if (g.LS.ui && g.LS.ui.setLLMStatus) g.LS.ui.setLLMStatus(getStatus());
+    if (g.LS.ui && g.LS.ui.setLLMStatus) g.LS.ui.setLLMStatus(getStatus(), modelName);
   }
 
   function fetchTimeout(u, ms, opts) {
@@ -35,6 +36,7 @@
       const r = await fetchTimeout(PROXY + '/api/health', 2500);
       const j = await r.json();
       if (disabledByQuota) return;         // 额度停用后不自动复活，等用户重试
+      modelName = j.model || '';
       setStatus(j.ok && j.has_key ? 'ok' : 'off');
     } catch (e) {
       if (!disabledByQuota) setStatus('off');
@@ -63,7 +65,8 @@
     const recent = (s.event_state.log || []).slice(0, 5).map(l => ({ title: l.title, chosen: l.choice }));
     return {
       realm: { index: s.realm.index, name: BAL().realms[s.realm.index].name },
-      dao_heart: s.dao_heart,
+      // 游戏内道心 ±100，映射到 system prompt 约定的 0-100 区间
+      dao_heart: Math.round((s.dao_heart + 100) / 2),
       tags,
       recent,
       stats: { play_seconds: Math.floor(s.stats.play_seconds), total_events: s.stats.events_total },
@@ -113,7 +116,7 @@
       return parsed;
     }
     if (typeof fetch === 'undefined') throw new Error('no fetch');
-    const r = await fetchTimeout(PROXY + '/api/event', 6000, {
+    const r = await fetchTimeout(PROXY + '/api/event', 21000, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(payload)

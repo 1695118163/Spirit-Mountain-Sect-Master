@@ -300,14 +300,14 @@
 
   /* ── LLM 状态灯 ── */
   const LLM_TIPS = {
-    ok: '仙缘已至：方舟 GLM-5.3-Flash 连接正常，奇遇由活水生成。',
+    ok: '仙缘已至：方舟 {model} 连接正常，奇遇由活水生成。',
     degraded: '仙缘在途：方舟暂时不应（超时或限流），本次奇遇由内置池出题，稍后自动恢复。',
     off: '云深不知处：未配置密钥或本地代理未启动，奇遇由内置池出题，玩法不受影响。'
   };
-  function setLLMStatus(st) {
+  function setLLMStatus(st, modelName) {
     if (!refs.llmDot) return;
     refs.llmDot.className = 'dot ' + st;
-    refs.llmDot.dataset.tip = LLM_TIPS[st] || LLM_TIPS.off;
+    refs.llmDot.dataset.tip = (LLM_TIPS[st] || LLM_TIPS.off).replace('{model}', modelName || 'GLM 模型');
   }
 
   function setForewarn(v) { refs.forewarn.classList.toggle('hidden', !v); }

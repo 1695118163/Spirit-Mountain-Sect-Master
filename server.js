@@ -154,7 +154,9 @@ async function callArk(payload) {
         ],
         temperature: CONFIG.temperature,
         max_tokens: CONFIG.max_tokens,
-        stream: false
+        stream: false,
+        // GLM-5.2 等思考型模型默认开启思考，会吃满超时；奇遇文案不需要思考链
+        thinking: { type: 'disabled' }
       }),
       signal: ctrl.signal
     });
