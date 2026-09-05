@@ -10,7 +10,7 @@
     const BAL = g.LS.BAL || {};
     const firstDelay = (BAL.events && BAL.events.first_delay_s) || 150;
     return {
-      v: 1,
+      v: 4,
       created_at: Date.now(),
       lastSeen: Date.now(),
       last_seen_max: Date.now(),
