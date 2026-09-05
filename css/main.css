@@ -36,11 +36,29 @@ body::before {
   transition: background 2.5s ease;
 }
 #tint-day.moon::after {
-  content: ""; position: absolute; right: 11%; top: 9%;
-  width: 46px; height: 46px; border-radius: 50%;
-  background: radial-gradient(circle at 38% 38%, rgba(245,240,230,.95), rgba(245,240,230,.28) 68%, transparent 72%);
-  box-shadow: 0 0 34px rgba(245,240,230,.28);
+  content: ""; position: absolute; right: 10%; top: 7%;
+  width: 64px; height: 64px; border-radius: 50%;
+  background: radial-gradient(circle at 38% 38%, rgba(245,240,230,.98), rgba(245,240,230,.35) 66%, transparent 72%);
+  box-shadow: 0 0 46px rgba(245,240,230,.4), 0 0 110px rgba(245,240,230,.18);
 }
+
+/* ── 夜色主题：入夜整页换夜行水墨（body.night 切换 CSS 变量） ── */
+body.night {
+  --paper: #343b47;
+  --ink: #e8e2d2;
+  --paper-dim: #2b313b;
+  --ink-soft: rgba(232, 226, 210, .55);
+  --cyan: #8fadc0;
+  --cinnabar: #d0685a;
+  --gold: #d4a94e;
+}
+body.night .panel { background: #3a4150; }
+body.night .b-card { background: rgba(255, 255, 255, .06); }
+body.night .b-icon { stroke: var(--ink); }
+body.night .ev-option { background: rgba(255, 255, 255, .07); }
+body.night #btn-breath { box-shadow: 0 4px 24px rgba(0,0,0,.4), inset 0 0 30px rgba(143,173,192,.12); }
+body.night #xp-bar { background: var(--paper-dim); }
+body.night .toast { background: #e8e2d2; color: #343b47; }
 
 #app {
   position: relative; z-index: 1;
@@ -194,8 +212,9 @@ button:not(:disabled):active { transform: translateY(1px); }
   font-size: 11px; padding: 1px 6px; border-radius: 3px;
 }
 .b-icon {
-  width: 20px; height: 20px; margin-right: 6px; vertical-align: -4px;
-  stroke: var(--ink); fill: none; stroke-width: 3; stroke-linecap: round; stroke-linejoin: round; opacity: .85;
+  width: 30px; height: 30px; margin-right: 8px; vertical-align: -8px;
+  stroke: var(--ink); fill: none; stroke-width: 3.2; stroke-linecap: round; stroke-linejoin: round; opacity: 1;
+  filter: drop-shadow(0 1px 1px rgba(43,43,43,.25));
 }
 .b-icon .seal { fill: var(--cinnabar); stroke: none; }
 

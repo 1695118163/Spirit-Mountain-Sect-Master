@@ -296,22 +296,35 @@
         String(d.getHours()).padStart(2, '0') + ':' + String(d.getMinutes()).padStart(2, '0') +
         ' · 本世修行 ' + g.LS.util.fmtGameDur(lifeDays);
       if (lastStr.realTime !== rt) { refs.realTime.textContent = rt; lastStr.realTime = rt; }
-      // 山色四时：游戏月份定季节、现实时钟定昼夜（纯 CSS 变量叠色，零 rAF）
+      // 山色四时：每季从 2~3 种天时变体随机锁定一种，换季换月时换天色；现实时钟定昼夜（整页夜色主题）
       if (refs.tintSeason) {
         const monthsPerYear = (bal.game_time && bal.game_time.months_per_year) || 12;
-        const m = Math.floor(((s.game_days || 0) % monthsPerYear) / (monthsPerYear / 4));
-        const seasonTints = ['rgba(110,150,110,.10)', 'rgba(40,70,90,.14)', 'rgba(170,110,55,.10)', 'rgba(140,140,145,.12)'];
-        const season = seasonTints[Math.min(3, m)];
-        if (lastStr.season !== season) { refs.tintSeason.style.background = season; lastStr.season = season; }
+        const dayPerMonth = (bal.game_time && bal.game_time.days_per_month) || 30;
+        const seasonIdx = Math.min(3, Math.floor(((s.game_days || 0) % monthsPerYear) / (monthsPerYear / 4)));
+        const monthIdx = Math.floor((s.game_days || 0) / dayPerMonth) % monthsPerYear;
+        const seasonCfg = (bal.seasons || [])[seasonIdx];
+        const monthKey = monthIdx + ':' + seasonIdx;
+        if (lastStr.monthIdx !== monthKey) {
+          lastStr.monthIdx = monthKey;
+          if (seasonCfg && seasonCfg.tints.length) {
+            const pick = seasonCfg.tints[Math.floor(Math.random() * seasonCfg.tints.length)];
+            lastStr.seasonTint = pick;
+            refs.tintSeason.style.background = pick;
+          }
+        } else if (lastStr.seasonTint && refs.tintSeason.style.background !== lastStr.seasonTint) {
+          refs.tintSeason.style.background = lastStr.seasonTint;
+        }
+        // 昼夜：入夜（20 点~次日 5 点）整页切换夜色主题，黄昏一层朱砂残照
         const hh = d.getHours();
-        let dayTint = 'rgba(0,0,0,0)';
-        let moon = false;
-        if (hh >= 20 || hh < 5) { dayTint = 'rgba(25,45,85,.18)'; moon = true; }
-        else if (hh >= 17) { dayTint = 'rgba(168,50,50,.10)'; }
-        const dayKey = dayTint + (moon ? 'm' : '');
+        const isNight = hh >= 20 || hh < 5;
+        if (document.body.classList.contains('night') !== isNight) {
+          document.body.classList.toggle('night', isNight);
+        }
+        const duskTint = (hh >= 17 && hh < 20) ? 'rgba(168,50,50,.14)' : 'rgba(0,0,0,0)';
+        const dayKey = 'n' + isNight + duskTint;
         if (lastStr.day !== dayKey) {
-          refs.tintDay.style.background = dayTint;
-          refs.tintDay.classList.toggle('moon', moon);
+          refs.tintDay.style.background = duskTint;
+          refs.tintDay.classList.toggle('moon', isNight);
           lastStr.day = dayKey;
         }
       }
@@ -396,12 +409,16 @@
   function isModalOpen() {
     return refs.modalRoot ? refs.modalRoot.children.length > 0 : false;
   }
-  function makeModal() {
+  function makeModal(onMaskClose) {
     const mask = document.createElement('div');
     mask.className = 'modal-mask';
     const card = document.createElement('div');
     card.className = 'modal-card';
     mask.appendChild(card);
+    // 点遮罩空白关闭（事件弹窗传入「离去」回调）
+    mask.addEventListener('click', (e) => {
+      if (e.target === mask && onMaskClose) onMaskClose();
+    });
     refs.modalRoot.appendChild(mask);
     return { mask, card };
   }
@@ -413,7 +430,7 @@
   function showEventModal(ev) {
     sfx('guqin');
     removeModals();
-    const { mask, card } = makeModal();
+    const { mask, card } = makeModal(() => g.LS.events.chooseOption('C')); // 中途关闭等同于「离去」
     card.classList.add('rarity-' + (ev.rarity || '凡'));
     const srcTag = ev.source === 'chain' ? '续' : (ev.source === 'visitor' ? '访' : (ev.source === 'dream' ? '梦' : null));
     // 三世缘：本幕涉及前几世结缘的故人 → 隔世标 + 前缀一行
@@ -759,10 +776,10 @@
   /* ── 设置面板 ── */
   function showSettings() {
     removeModals();
-    const { card } = makeModal();
+    const { mask, card } = makeModal(removeModals);
     const s = g.LS.S;
     card.innerHTML =
-      '<div class="modal-title">设 置</div>' +
+      '<div class="modal-title">设 置<button class="icon-btn" id="set-close" style="float:right;font-size:12px;padding:3px 12px">合上</button></div>' +
       '<div class="set-row"><label>音效</label><input type="checkbox" id="set-sound" ' + (s.settings.sound ? 'checked' : '') + '></div>' +
       '<div class="set-row"><label>古琴（环境曲，留白即曲）</label><input type="checkbox" id="set-music" ' + (s.settings.music ? 'checked' : '') + '></div>' +
       '<div class="set-row"><label>LLM 动态奇遇</label><input type="checkbox" id="set-llm" ' + (s.settings.llm_enabled ? 'checked' : '') + '></div>' +
@@ -831,6 +848,7 @@
       fill.style.transition = 'width .2s';
       fill.style.width = '0%';
     }));
+    card.querySelector('#set-close').addEventListener('click', removeModals);
   }
 
   /* ── 转生面板 ── */
