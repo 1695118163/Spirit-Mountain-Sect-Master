@@ -85,11 +85,25 @@
       base += bLevel(b.id) * rate;
     }
 
+    // 第2.5步：建筑全局乘算（藏经阁/诛仙剑阵 all_mult_per_level，乘算层）
+    let allMult = 1;
+    for (const b of bal.buildings) {
+      const am = b.effects && b.effects.all_mult_per_level;
+      if (am && bLevel(b.id) > 0 && !stalled(b.id, now)) allMult *= 1 + am * bLevel(b.id);
+    }
+
     // 第3~6步：乘算层
     let v = base;
+    v *= allMult;
     v *= realmMultSafe();
     v *= 1 + (s.perm_bonus.all || 0) + (s.perm_bonus[resId] || 0);
     v *= prestigeMult(resId);
+    // 丹毒惩罚：每 10 点丹毒 -5% 产量，封顶 -30%
+    const toxic = s.pill_toxic || 0;
+    if (toxic > 0) {
+      const tp = (bal.pills && bal.pills.quality && bal.pills.quality.toxic_penalty) || { per_10_points: 0.05, cap: 0.30 };
+      v *= 1 - Math.min(tp.cap || 0.30, Math.floor(toxic / 10) * tp.per_10_points);
+    }
     for (const buff of s.buffs) {
       if (buff.mult && buff.ts_end > now) v *= buff.mult;
     }
@@ -241,7 +255,8 @@
     while (produced < maxPills && s.pill.progress_s >= itv) {
       if (s.resources.lingqi < bal.pill.cost_lingqi_per_pill) break; // 灵气不足，暂停
       s.resources.lingqi -= bal.pill.cost_lingqi_per_pill;
-      s.resources.danyao = Math.min(bal.pill.stock_cap, s.resources.danyao + 1);
+      const out = rollPillOutput();
+      grantPill(out.id, out.quality, 1);
       s.pill.progress_s -= itv;
       produced += 1;
     }
@@ -249,23 +264,44 @@
     return { produced };
   }
 
-  /** 服丹：1 颗 → 60 秒全局产量 ×2（冷却 90 秒） */
+  /** 服丹（快捷服灵力丹）：从库存低品质先扣，全局产量增益随品质倍增，丹毒随之 */
   function servePill() {
     const bal = BAL(), s = S();
     const now = Date.now();
-    if (s.resources.danyao < 1) return false;
+    if (!s.pill_stock) return false;
     if (now - (s.pill.last_serve_at || 0) < bal.pill.serve_cooldown_s * 1000) return false;
-    s.resources.danyao -= 1;
+    const order = ['凡', '灵', '珍', '仙'];
+    let key = null;
+    for (const q of order) {
+      const k = pillStockKey('lingli', q);
+      if (s.pill_stock[k]) { key = k; break; }
+    }
+    if (!key) return false;
+    s.pill_stock[key] -= 1;
+    if (s.pill_stock[key] <= 0) delete s.pill_stock[key];
+    const quality = key.split('_')[1];
+    const em = (pillQualityCfg().effect_mult)[quality] || 1;
     s.pill.last_serve_at = now;
-    g.LS.state.addBuff({ id: 'pill', mult: bal.pill.serve_buff_mult, ts_end: now + bal.pill.serve_duration_s * 1000 });
+    g.LS.state.addBuff({ id: 'pill', mult: bal.pill.serve_buff_mult * em, ts_end: now + bal.pill.serve_duration_s * 1000 });
+    addToxic((pillQualityCfg().toxic_by_quality)[quality] || 0);
     return true;
   }
 
-  /** 自动服丹（元婴被动）：丹药≥5 时每 5 分钟自动服 1 颗 */
+  /** 炼丹产出：按权重 roll 丹药种类与品质入库（种类权重表在 pills.json output_weights） */
+  function rollPillOutput() {
+    const cfg = BAL().pills || {};
+    const weights = cfg.output_weights || { lingli: 40, juqi: 25, ningshen: 10, qingxin: 8, pozhang: 5, xisui: 3, huanling: 4, bidust: 2, hugu: 2, yuanhang: 1 };
+    const ids = Object.keys(weights);
+    const id = g.LS.util.weightedPick(ids, k => weights[k]);
+    const cat = pillCat(id);
+    return cat ? { id, quality: rollPillQuality() } : { id: 'lingli', quality: '灵' };
+  }
+
+  /** 元婴被动：自动服丹（灵力丹库存 ≥5 时每 5 分钟自动服 1 颗） */
   function autoPillTick(now) {
     const bal = BAL(), s = S();
     if (s.realm.index < 3) return false; // 元婴(index3)解锁
-    if (s.resources.danyao < bal.pill.auto_serve_threshold) return false;
+    if (pillCount('lingli') < bal.pill.auto_serve_threshold) return false;
     if (now - (s.pill.last_serve_at || 0) < bal.pill.auto_serve_interval_s * 1000) return false;
     return servePill();
   }
@@ -357,12 +393,173 @@
     return { ok: false, reason: '未知技能' };
   }
 
+  /* ── 丹药细分：库存 / 服用 / 丹毒（数据在 data/pills.json） ── */
+
+  function pillCat(id) { return ((BAL().pills || {}).pills || []).find(p => p.id === id) || null; }
+  const FALLBACK_QUALITY = {
+    keys: ['凡', '灵', '珍', '仙'],
+    effect_mult: { 凡: 1.0, 灵: 1.5, 珍: 2.0, 仙: 2.5 },
+    toxic_by_quality: { 凡: 6, 灵: 3, 珍: 1, 仙: 0 },
+    toxic_decay_per_minute: 1,
+    toxic_penalty: { per_10_points: 0.05, cap: 0.30, poisoning_threshold: 60, poisoning_mult: 0.75, poisoning_duration_s: 300 }
+  };
+  function pillQualityCfg() { return (BAL().pills || {}).quality || FALLBACK_QUALITY; }
+  function pillStockKey(id, q) { return id + '_' + q; }
+  function pillTotal() {
+    const st = S().pill_stock || {};
+    return Object.keys(st).reduce((a, k) => a + (st[k] || 0), 0);
+  }
+  function pillCount(id) {
+    const st = S().pill_stock || {};
+    return Object.keys(st).filter(k => k.indexOf(id + '_') === 0).reduce((a, k) => a + (st[k] || 0), 0);
+  }
+  function grantPill(id, quality, n) {
+    const s = S();
+    if (!s.pill_stock) s.pill_stock = {};
+    const key = pillStockKey(id, quality);
+    s.pill_stock[key] = Math.min(99, (s.pill_stock[key] || 0) + n);
+  }
+  function rollPillQuality() {
+    const q = pillQualityCfg();
+    if (!q) return '灵';
+    const weights = { 凡: 60, 灵: 25, 珍: 12, 仙: 3 };
+    return g.LS.util.weightedPick(q.keys, k => weights[k] || 0);
+  }
+
+  /** 丹毒累积 + 攻心判定（每次服丹/获得低品丹药时调用） */
+  function addToxic(n) {
+    if (!n) return;
+    const s = S();
+    const q = pillQualityCfg();
+    const tp = q.toxic_penalty || {};
+    s.pill_toxic = (s.pill_toxic || 0) + n;
+    if (!s.pill_toxic_flag && s.pill_toxic >= (tp.poisoning_threshold || 60)) {
+      s.pill_toxic_flag = true;
+      g.LS.state.addBuff({ id: 'pill_toxic_debuff', mult: tp.poisoning_mult || 0.75, ts_end: Date.now() + (tp.poisoning_duration_s || 300) * 1000 });
+      if (g.LS.ui && g.LS.ui.toast) g.LS.ui.toast((q.texts && q.texts.poisoning_toast) || '丹毒攻心！');
+    }
+  }
+
+  /** 服用一颗丹：应用效果、累积丹毒、可能丹毒攻心 */
+  function consumePill(id, quality) {
+    const cat = pillCat(id);
+    const s = S();
+    if (!cat) return { ok: false, reason: '查无此丹' };
+    quality = quality || '灵';
+    const key = pillStockKey(id, quality);
+    if (!s.pill_stock || !s.pill_stock[key]) return { ok: false, reason: '没有这味' + quality + '品' + cat.name };
+    s.pill_stock[key] -= 1;
+    if (s.pill_stock[key] <= 0) delete s.pill_stock[key];
+    const q = pillQualityCfg() || { effect_mult: { 灵: 1 }, toxic_by_quality: { 灵: 3 } };
+    const em = q.effect_mult[quality] || 1;
+    const now = Date.now();
+    const bal = BAL();
+    let msg = quality + '品' + cat.name + '入腹';
+
+    switch (cat.category) {
+      case 'prod': {
+        const mult = cat.effect.mult * em;
+        g.LS.state.addBuff({ id: 'pill_prod', mult, ts_end: now + cat.effect.duration_s * 1000 });
+        msg += '，产量 ×' + mult.toFixed(1) + '（' + cat.effect.duration_s + ' 秒）';
+        break;
+      }
+      case 'xp': {
+        const next = bal.realms[s.realm.index + 1];
+        const need = next && next.need_xp ? next.need_xp : 1000;
+        const span = cat.effect.xp_pct_of_need_max - cat.effect.xp_pct_of_need_min;
+        const gain = need * (cat.effect.xp_pct_of_need_min + Math.random() * span) * em;
+        s.resources.xiufu += gain;
+        msg += '，修为 +' + g.LS.util.fmt(gain);
+        break;
+      }
+      case 'breakthrough': {
+        s.bt.breakthrough_bonus = (s.bt.breakthrough_bonus || 0) + cat.effect.rate_add * em;
+        msg += '，下次冲关成功率 +' + Math.round(cat.effect.rate_add * em * 100) + '%';
+        break;
+      }
+      case 'cure': {
+        s.pill_toxic = Math.max(0, (s.pill_toxic || 0) - cat.effect.toxic_reduce * em);
+        const before = s.buffs.length;
+        s.buffs = s.buffs.filter(bf => bf.id !== 'qihuo_debuff' && bf.id !== 'xinmo_debuff' && bf.id !== 'pill_toxic_debuff');
+        msg += '，丹毒心魔尽去' + (s.buffs.length < before ? '，神台复明' : '');
+        break;
+      }
+      case 'perm': {
+        const cap = ((bal.events.effect.D.cap_pct) || 100) / 100;
+        const add = cat.effect.perm_all_pct * em;
+        s.perm_bonus.all = g.LS.util.clamp((s.perm_bonus.all || 0) + add, 0, cap);
+        msg += '，永久产量 +' + Math.round(add * 100) + '%';
+        break;
+      }
+      case 'click': {
+        g.LS.state.addBuff({ id: 'pill_click', mult: 1, click_mult: cat.effect.click_mult * em, ts_end: now + cat.effect.duration_s * 1000 });
+        msg += '，点击 ×' + (cat.effect.click_mult * em).toFixed(0) + '（' + cat.effect.duration_s + ' 秒）';
+        break;
+      }
+      case 'shield': {
+        g.LS.state.addBuff({ id: 'pill_shield', mult: 1, ts_end: now + cat.effect.duration_s * 1000 });
+        msg += '，邪祟暂避（' + cat.effect.duration_s + ' 秒）';
+        break;
+      }
+      case 'heal': {
+        s.building_stalls = {};
+        msg += '，产业气机尽复';
+        break;
+      }
+      case 'fortune': {
+        s.event_state.next_event_at = now + cat.effect.next_event_in_s * 1000;
+        msg += '，机缘将至';
+        break;
+      }
+      case 'insight': {
+        const next = bal.realms[s.realm.index + 1];
+        const need = next && next.need_xp ? next.need_xp : 1000;
+        const gain = need * 0.4 * em;
+        s.resources.xiufu += gain;
+        g.LS.state.addBuff({ id: 'insight_click', mult: 1, click_mult: 3, ts_end: now + 60000 });
+        msg += '，豁然贯通，修为 +' + g.LS.util.fmt(gain);
+        break;
+      }
+      case 'luck': {
+        const qi = Math.max(100, computePerSecond('lingqi') * 120 * em);
+        const ls = Math.max(50, computePerSecond('lingshi') * 120 * em);
+        s.resources.lingqi += qi;
+        s.resources.lingshi += ls;
+        msg += '，灵气 +' + g.LS.util.fmt(qi) + '，灵石 +' + g.LS.util.fmt(ls);
+        break;
+      }
+      case 'rescue': {
+        s.bt.guaranteed = true;
+        msg += '，下次冲关必成';
+        break;
+      }
+      default:
+        msg += '。';
+    }
+
+    // 丹毒：按品质累积，可能丹毒攻心
+    const toxic = (q.toxic_by_quality || {})[quality] || 0;
+    if (toxic) addToxic(toxic);
+    return { ok: true, msg };
+  }
+
+  /** 丹毒随时间缓慢消散（主循环每 250ms 调） */
+  function toxicDecay(dtSec) {
+    const s = S();
+    const q = pillQualityCfg();
+    if (!q || !s.pill_toxic) return;
+    const perMin = q.toxic_decay_per_minute || 1;
+    s.pill_toxic = Math.max(0, s.pill_toxic - (dtSec / 60) * perMin);
+    if (s.pill_toxic < 30) s.pill_toxic_flag = false;
+  }
+
   g.LS.economy = {
     computePerSecond, xiuMult, prestigeMult, realmMultSafe,
     clickMult, clickQiGain, clickXpGain, breath,
     buildingCost, bulkCost, canAfford, pay, grant, costText, buyBuilding,
     pillInterval, pillTick, servePill, autoPillTick,
     upgradeState, buyUpgrade, hasPrestige, bLevel, clampAll,
-    abilityDef, abilityCooldownLeft, useAbility
+    abilityDef, abilityCooldownLeft, useAbility,
+    pillCat, pillQualityCfg, pillTotal, pillCount, grantPill, rollPillQuality, rollPillOutput, consumePill, toxicDecay
   };
 })(typeof window !== 'undefined' ? window : globalThis);

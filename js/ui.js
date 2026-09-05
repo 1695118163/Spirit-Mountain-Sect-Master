@@ -65,6 +65,7 @@
     refs.btnPill = $id('btn-pill');
     refs.btnSettings = $id('btn-settings');
     refs.btnCodex = $id('btn-codex');
+    refs.btnPillHouse = $id('btn-pillhouse');
     refs.btnRebirth = $id('btn-rebirth');
     refs.logList = $id('log-list');
     refs.permList = $id('perm-list');
@@ -118,6 +119,7 @@
     });
     refs.btnSettings.addEventListener('click', showSettings);
     if (refs.btnCodex) refs.btnCodex.addEventListener('click', showCodex);
+    if (refs.btnPillHouse) refs.btnPillHouse.addEventListener('click', showPillHouse);
     refs.btnRebirth.addEventListener('click', () => {
       if (!g.LS.realm.canRebirth()) { toast('修至化神，方见轮回之门。'); return; }
       showRebirthPanel();
@@ -138,7 +140,8 @@
     const eco = g.LS.economy;
     for (const res in refs.resRows) {
       const r = refs.resRows[res];
-      const v = s.resources[res] || 0;
+      // 丹药行显示细分库存总数（各品类丹药之和）
+      const v = res === 'danyao' && eco.pillTotal ? eco.pillTotal() : (s.resources[res] || 0);
       const str = fmtSafe(v);
       if (lastStr['v_' + res] !== str) {
         if (lastStr['v_' + res] !== undefined) {
@@ -432,7 +435,7 @@
     removeModals();
     const { mask, card } = makeModal(() => g.LS.events.chooseOption('C')); // 中途关闭等同于「离去」
     card.classList.add('rarity-' + (ev.rarity || '凡'));
-    const srcTag = ev.source === 'chain' ? '续' : (ev.source === 'visitor' ? '访' : (ev.source === 'dream' ? '梦' : null));
+    const srcTag = ev.source === 'chain' ? '续' : (ev.source === 'visitor' ? '访' : (ev.source === 'dream' ? '梦' : (ev.source === 'llm' ? 'AI 执笔' : null)));
     // 三世缘：本幕涉及前几世结缘的故人 → 隔世标 + 前缀一行
     const pastLife = ev.builtinTags && ev.builtinTags.some(t => g.LS.events.isPastLife(t.key));
     const fullTag = '<span class="rarity-tag">' + (ev.rarity || '凡') + '</span>' +
@@ -564,12 +567,12 @@
     setTimeout(() => { if (ov.parentNode) close(); }, (g.LS.BAL.breakthrough && g.LS.BAL.breakthrough.anim_ms) || 1500);
   }
 
-  /* ── 突破失败 / 走火入魔过场（暗色水墨） ── */
-  function showFailOverlay(title, text, isQihuo) {
+  /* ── 突破失败 / 走火入魔过场（暗色水墨，数值代价显式呈现） ── */
+  function showFailOverlay(title, text, isQihuo, details) {
     sfx('bell');
     const ov = document.createElement('div');
     ov.id = 'breakthrough-overlay';
-    ov.style.background = isQihuo ? '#2b2222' : '#3a3330'; // 走火入魔更暗
+    ov.style.background = isQihuo ? '#2b2222' : '#3a3330';
     for (let i = 0; i < 5; i++) {
       const sp = document.createElement('span');
       sp.className = 'ink-splash';
@@ -579,7 +582,7 @@
       sp.style.left = (10 + Math.random() * 80) + '%';
       sp.style.top = (10 + Math.random() * 70) + '%';
       sp.style.animationDelay = (i * 0.12) + 's';
-      sp.style.background = 'radial-gradient(circle, rgba(168,50,50,.35), transparent 70%)'; // 朱砂墨渍
+      sp.style.background = 'radial-gradient(circle, rgba(168,50,50,.35), transparent 70%)';
       ov.appendChild(sp);
     }
     const t = document.createElement('div');
@@ -593,6 +596,19 @@
     div.style.color = 'rgba(245,240,230,.85)';
     div.textContent = text || '';
     ov.appendChild(div);
+    // 数值代价明细：让玩家知道到底失去了什么
+    if (details) {
+      const dtl = document.createElement('div');
+      dtl.className = 'bt-text';
+      dtl.style.color = 'rgba(245,240,230,.65)';
+      dtl.style.fontSize = '14px';
+      dtl.style.marginTop = '10px';
+      const parts = ['修为剩余 ' + fmtSafe(details.xpLeft)];
+      if (isQihuo) parts.push('走火入魔：全局产量减半');
+      parts.push('调息 ' + details.cooldown + ' 秒后可再冲');
+      dtl.textContent = parts.join(' · ');
+      ov.appendChild(dtl);
+    }
     const hint = document.createElement('div');
     hint.className = 'bt-hint';
     hint.style.color = 'rgba(245,240,230,.5)';
@@ -614,26 +630,29 @@
       const base = g.LS.realm.breakthroughRate(next);
       const tactics = bt.tactics || {};
       const pill = bt.pill_guard || {};
+      const novice = (g.LS.S.stats.breakthroughs || 0) < 2; // 前两次突破给新手推荐
       let rows = '';
       ['steady', 'normal', 'bold'].forEach(k => {
         const t = tactics[k];
         if (!t) return;
         let r = Math.max(0.05, Math.min(1, base + t.rate_add + (usePill && pill.rate_add ? pill.rate_add : 0)));
         const sel = selTactic === k;
+        const rec = novice && k === 'normal';
         rows += '<button class="ev-option tactic-row' + (sel ? ' tactic-sel' : '') + '" data-t="' + k + '">' +
           '<span class="ev-badge ' + (t.rate_add > 0 ? 'ev-badge-good' : (t.rate_add < 0 ? 'ev-badge-bad' : 'ev-badge-buff')) + '">' + Math.round(r * 100) + '%</span> ' +
-          '<b>' + escapeHtml(t.name) + '</b>　' + escapeHtml(t.desc) +
+          '<b>' + escapeHtml(t.name) + '</b>' + (rec ? '<span class="ev-badge ev-badge-good">新手推荐</span>' : '') + '　' + escapeHtml(t.desc) +
           (t.reward_mult !== 1 ? '　<span class="log-gain">灵石 ×' + t.reward_mult + '</span>' : '') + '</button>';
       });
-      const canPill = g.LS.S.resources.danyao >= (pill.pills || 3);
+      const canPill = g.LS.economy.pillCount ? g.LS.economy.pillCount('pozhang') > 0 : false;
       card.innerHTML =
         '<div class="modal-title">冲关 · ' + escapeHtml(next.name) + '</div>' +
         '<div class="modal-desc">基础成功率 <b>' + Math.round(base * 100) + '%</b>' +
         (g.LS.S.dao_heart > (bt.dao_heart_bonus || {}).high ? '（道心加持）' : (g.LS.S.dao_heart < (bt.dao_heart_bonus || {}).low ? '（道心拖累）' : '')) +
-        '　连败保底：' + (bt.pity_success || 3) + ' 次</div>' +
+        '　连败保底：' + (bt.pity_success || 3) + ' 次必成</div>' +
         rows +
-        '<div class="set-row"><label>服丹护法（' + (pill.pills || 3) + ' 颗，成功率 +' + Math.round((pill.rate_add || 0) * 100) + '%）— 现有 ' + g.LS.S.resources.danyao + '</label>' +
+        '<div class="set-row"><label>破障丹护法（1 颗，成功率 +' + Math.round((pill.rate_add || 0) * 100) + '%）— 丹房现有 ' + (g.LS.economy.pillCount ? g.LS.economy.pillCount('pozhang') : 0) + '</label>' +
         '<input type="checkbox" id="bt-use-pill" ' + (usePill ? 'checked' : '') + (canPill ? '' : ' disabled') + '></div>' +
+        '<div class="modal-desc" style="font-size:12px;color:var(--ink-soft)">若失败：修为保留一半，可能走火入魔（全局产量减半片刻）——但连败三次必成，不必过虑。</div>' +
         '<div style="text-align:center;margin-top:10px"><button class="btn-primary" id="bt-go" style="padding:10px 34px;font-size:16px">出 关</button> ' +
         '<button class="icon-btn" id="bt-cancel">再想想</button></div>';
       card.querySelectorAll('[data-t]').forEach(b => {
@@ -647,6 +666,55 @@
       });
     };
     render('normal', false);
+  }
+
+  /* ── 丹房：丹药库存一览 / 服用 / 丹毒 ── */
+  function showPillHouse() {
+    removeModals();
+    const { card } = makeModal(removeModals);
+    const eco = g.LS.economy;
+    const render = () => {
+      const s = g.LS.S;
+      const q = eco.pillQualityCfg() || { toxic_penalty: {} };
+      const toxic = s.pill_toxic || 0;
+      const penalty = Math.min(q.toxic_penalty.cap || 0.30, Math.floor(toxic / 10) * (q.toxic_penalty.per_10_points || 0.05));
+      const poisioningSoon = toxic >= (q.toxic_penalty.poisoning_threshold || 60);
+      let rows = '';
+      for (const p of ((g.LS.BAL.pills && g.LS.BAL.pills.pills) || [])) {
+        const total = eco.pillCount(p.id);
+        const perQ = ['凡', '灵', '珍', '仙'].map(q2 => {
+          const n = (s.pill_stock || {})[eco.pillStockKey ? eco.pillStockKey(p.id, q2) : p.id + '_' + q2] || 0;
+          return n ? q2 + '×' + n : '';
+        }).filter(Boolean).join(' ') || '无';
+        rows += '<div class="rebirth-item"><div><b>' + escapeHtml(p.name) + '</b>' +
+          '<div style="font-size:11px;color:var(--ink-soft)">' + escapeHtml(p.desc) + '<br>库存：' + perQ + '</div></div>' +
+          '<button class="icon-btn" data-pill="' + p.id + '"' + (total ? '' : ' disabled') + '>服用</button></div>';
+      }
+      card.innerHTML =
+        '<div class="modal-title">丹 房<button class="icon-btn" id="ph-close" style="float:right;font-size:12px;padding:3px 12px">合上</button></div>' +
+        '<div class="modal-desc">丹毒 <b style="color:' + (toxic >= 30 ? 'var(--cinnabar)' : 'inherit') + '">' + Math.floor(toxic) + '</b>' +
+        '（当前产量 ' + (penalty > 0 ? '-' + Math.round(penalty * 100) + '%' : '无碍') + '）' +
+        (poisioningSoon ? '<span class="log-gain">　⚠ 再服低品丹将丹毒攻心！</span>' : '') +
+        '<br><span style="font-size:11px;color:var(--ink-soft)">丹毒随时间缓缓消散；清心丹可大幅化解；兵解转世丹毒尽去。</span></div>' +
+        rows +
+        '<div style="text-align:center;margin-top:10px"><button class="icon-btn" id="ph-close2">合上</button></div>';
+      card.querySelector('#ph-close').addEventListener('click', removeModals);
+      card.querySelector('#ph-close2').addEventListener('click', removeModals);
+      card.querySelectorAll('[data-pill]').forEach(btn => {
+        btn.addEventListener('click', () => {
+          // 同一种丹从低品质先服
+          const order = ['凡', '灵', '珍', '仙'];
+          for (const q2 of order) {
+            const r = eco.consumePill(btn.dataset.pill, q2);
+            if (r.ok) { sfx('click'); toast(r.msg); break; }
+          }
+          render();
+          renderResources();
+          renderAll();
+        });
+      });
+    };
+    render();
   }
 
   /* ── 图鉴面板：奇遇收集 / 剧情链 / 因果故人（跨转生保留） ── */
@@ -978,7 +1046,7 @@
     initRefs, renderAll, renderResources, renderBuildings, renderCenter,
     renderChronicle, renderPermList, pushLog, markNewBuildings, isModalOpen,
     showEventModal, closeEventModal, showOfflinePopup, showBreakthroughOverlay, showFailOverlay,
-    showSettings, showRebirthPanel, showTutorial, toast, tweenNumber, setBgm,
+    showSettings, showRebirthPanel, showTutorial, showPillHouse, toast, tweenNumber, setBgm,
     setLLMStatus, setForewarn, updateBuffBar, drawBg, sfx
   };
 })(typeof window !== 'undefined' ? window : globalThis);

@@ -172,15 +172,19 @@
     }
   }
 
-  function rollSlots(ev) {
-    const lowRealm = S().realm.index <= 1; // 练气/筑基零负面
-    return ev.options.map(opt => {
-      let fits = (opt.fits || ['A']).slice();
-      if (lowRealm) fits = fits.map(t => (t === 'B' || t === 'F') ? (Math.random() < 0.5 ? 'A' : 'C') : t);
-      const type = fits[U().randInt(0, fits.length - 1)];
-      return materializeSlot(type, ev.rarity, ev.id);
-    });
-  }
+    // 效果槽预掷：避尘丹护体（pill_shield buff）期间或练气/筑基，B/F 槽重掷为 A/C
+    function hasShield() {
+      return S().buffs.some(b => b.id === 'pill_shield' && b.ts_end > Date.now());
+    }
+    function rollSlots(ev) {
+      const protectedNow = S().realm.index <= 1 || hasShield();
+      return ev.options.map(opt => {
+        let fits = (opt.fits || ['A']).slice();
+        if (protectedNow) fits = fits.map(t => (t === 'B' || t === 'F') ? (Math.random() < 0.5 ? 'A' : 'C') : t);
+        const type = fits[U().randInt(0, fits.length - 1)];
+        return materializeSlot(type, ev.rarity, ev.id);
+      });
+    }
 
   /* ── 事件对象构建 ── */
 
@@ -273,6 +277,7 @@
         S().stats.events_fallback += 1;
       }
       enqueueOrShow(finalEv);
+      finalEv.baseId = ev.id; // LLM 文案事件也按其内置模板 id 计入去重，防「同一件事 4 分钟两遇」
     };
 
     const llmOk = g.LS.llm && g.LS.llm.isHealthy() && s.settings.llm_enabled;
@@ -551,7 +556,7 @@
           switch (opt.effect) {
             case 'boost': s.bt.visitor_effect = 'boost'; break;
             case 'disturb': s.bt.visitor_effect = 'disturb'; break;
-            case 'gift_pill': s.resources.danyao = Math.min(BAL().pill.stock_cap, s.resources.danyao + (BAL().visitors.gift_pill_n || 5)); gainText += ' 丹药 +' + (BAL().visitors.gift_pill_n || 5); break;
+            case 'gift_pill': { const q = g.LS.economy.rollPillQuality(); g.LS.economy.grantPill('lingli', q, BAL().visitors.gift_pill_n || 5); gainText += ' 得灵力丹' + (BAL().visitors.gift_pill_n || 5) + '颗（' + q + '品）'; break; }
             case 'pay_lingshi': s.resources.lingshi = Math.max(0, s.resources.lingshi * (1 - (BAL().visitors.pay_lingshi_pct || 0.05))); break;
             case 'pay_pill': s.resources.danyao = Math.max(0, s.resources.danyao - (BAL().visitors.pay_pill_n || 5)); break;
             case 'calm': s.buffs = s.buffs.filter(bf => bf.id !== 'qihuo_debuff' && bf.id !== 'xinmo_debuff'); gainText += ' 心神安宁'; break;
@@ -571,8 +576,9 @@
       if (g.LS.ui && g.LS.ui.pushLog) g.LS.ui.pushLog({ title: ev.title, choice: '离去', gainText: '' });
     }
 
-    // recent_ids（10 分钟不重复）
-    s.event_state.recent_ids.unshift({ id: ev.id, ts: Date.now() });
+    // recent_ids（10 分钟不重复，LLM 事件按内置模板 id 去重）
+    const recentId = ev.baseId || ev.id;
+    s.event_state.recent_ids.unshift({ id: recentId, ts: Date.now() });
     if (s.event_state.recent_ids.length > BAL().events.rarity.recent_ids_max) s.event_state.recent_ids.pop();
 
     // 图鉴收录（跨转生保留）：内置事件按 id 计数；剧情链记看过的最高幕

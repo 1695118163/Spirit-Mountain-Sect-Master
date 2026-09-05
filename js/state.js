@@ -36,7 +36,9 @@
       chains: [],
       pill: { progress_s: 0, last_serve_at: 0 },
       stagnation: { since: Date.now(), fired_for_realm: -1 },
-      bt: { fail_streak: 0, fail_cooldown_until: 0, visitor_effect: '' },
+      bt: { fail_streak: 0, fail_cooldown_until: 0, visitor_effect: '', breakthrough_bonus: 0, guaranteed: false },
+      pill_stock: {},
+      pill_toxic: 0,
       game_days: 0,
       rebirth_at: Date.now(),
       collection: {},
@@ -72,6 +74,12 @@
       case 'B': {
         const res = slot.res;
         if (!(res in S.resources)) return null;
+        // 丹药奖励特判：细分为灵力丹入库（品质随机），不再堆通用计数
+        if (res === 'danyao' && slot.amount > 0 && g.LS.economy && g.LS.economy.grantPill) {
+          const q = g.LS.economy.rollPillQuality();
+          g.LS.economy.grantPill('lingli', q, Math.round(slot.amount));
+          return { res, delta: slot.amount };
+        }
         const cur = S.resources[res] || 0;
         let nv = cur + slot.amount;
         if (nv < 0) nv = 0;

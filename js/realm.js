@@ -59,31 +59,49 @@
     const now = Date.now();
     if (s.bt && s.bt.fail_cooldown_until > now) return false;
 
-    // ── 成功率判定：基础 × 道心 + 策略 + 服丹护法 ──
+    // ── 成功率判定：基础 × 道心 + 策略 + 破障丹 + 故人上门 + 心魔侵扰 ──
     let rate = breakthroughRate(next);
     let rewardMult = 1;
     if (opts && opts.tactic && bt.tactics && bt.tactics[opts.tactic]) {
       rate += bt.tactics[opts.tactic].rate_add;
       rewardMult = bt.tactics[opts.tactic].reward_mult;
     }
-    if (opts && opts.usePill && bt.pill_guard) {
-      if (s.resources.danyao < bt.pill_guard.pills) return false;
-      s.resources.danyao -= bt.pill_guard.pills;
+    if (opts && opts.usePill && bt.pill_guard && s.pill_stock) {
+      // 破障丹：低品质先扣
+      const order = ['凡', '灵', '珍', '仙'];
+      let key = null;
+      for (const q of order) { const k = 'pozhang_' + q; if (s.pill_stock[k]) { key = k; break; } }
+      if (!key) return false;
+      s.pill_stock[key] -= 1;
+      if (s.pill_stock[key] <= 0) delete s.pill_stock[key];
       rate += bt.pill_guard.rate_add;
     }
+    if (s.bt && s.bt.breakthrough_bonus) {
+      rate += s.bt.breakthrough_bonus; // 破障丹等来源的额外成功率
+      s.bt.breakthrough_bonus = 0;
+    }
+    let guaranteed = !!(s.bt && s.bt.guaranteed);
+    if (guaranteed) s.bt.guaranteed = false; // 渡厄丹：下次冲关必成，用后即清
     // 故人上门效果：恩人护法+、仇人搅局−（一次性，用后即清）
     if (s.bt && s.bt.visitor_effect && bt.visitors) {
       if (s.bt.visitor_effect === 'boost') rate += bt.visitors.boost_rate_add || 0.10;
       else if (s.bt.visitor_effect === 'disturb') rate += bt.visitors.disturb_rate_add || -0.10;
       s.bt.visitor_effect = '';
     }
+    // 心魔侵扰：元婴起冲关有一线可能被心魔缠上（渡厄丹可免），压一成成功率
+    let xinmoHit = false;
+    if (next.index >= 3 && !guaranteed && Math.random() < 0.15) {
+      xinmoHit = true;
+      rate -= 0.15;
+      if (g.LS.ui && g.LS.ui.toast) g.LS.ui.toast('冲关在即，一缕心魔悄然缠上识海——这一关，格外凶险。');
+    }
     rate = Math.max(0.05, Math.min(1, rate));
     const pity = bt.pity_success || 3;
     const streak = (s.bt && s.bt.fail_streak) || 0;
-    const success = (opts && opts.forceSuccess) || streak >= pity - 1 || Math.random() < rate;
+    const success = (opts && opts.forceSuccess) || guaranteed || streak >= pity - 1 || Math.random() < rate;
 
     if (!success) {
-      // ── 失败分支 ──
+      // ── 失败分支（数值代价显式呈现给玩家） ──
       s.resources.xiufu = Math.max(0, s.resources.xiufu * (bt.fail_keep_xp_ratio != null ? bt.fail_keep_xp_ratio : 0.5));
       s.bt.fail_streak = streak + 1;
       s.bt.fail_cooldown_until = now + (bt.fail_cooldown_s || 30) * 1000;
@@ -104,7 +122,12 @@
       }
       const title = isQihuo ? (texts.qihuo_title || '走火入魔') : (texts.fail_title || '突破未成');
       const text = isQihuo ? (texts.qihuo_text || '') : (texts.fail_text || '');
-      if (g.LS.ui && g.LS.ui.showFailOverlay) g.LS.ui.showFailOverlay(title, text, isQihuo);
+      const details = {
+        xpLeft: Math.floor(s.resources.xiufu),
+        qihuo: isQihuo,
+        cooldown: Math.ceil((bt.fail_cooldown_s || 30))
+      };
+      if (g.LS.ui && g.LS.ui.showFailOverlay) g.LS.ui.showFailOverlay(title, text, isQihuo, details);
       if (g.LS.ui && g.LS.ui.pushLog) {
         g.LS.ui.pushLog({ title, choice: '冲关' + next.name + '失利', gainText: isQihuo ? '真气逆行，产量受挫' : '修为保留过半，稍作调息' });
       }
@@ -114,11 +137,7 @@
     }
 
     // ── 成功分支 ──
-    if (!bal.breakthrough || bal.breakthrough.cost_mode !== 'gate') {
-      s.resources.xiufu = 0; // 消耗全部当前修为（清零重攒）
-    } else {
-      s.resources.xiufu = 0;
-    }
+    s.resources.xiufu = 0; // 突破消耗全部当前修为，清零重攒（cost_mode 仅作存档兼容记录）
     s.realm.index = next.index;
     s.prestige.lifetime_best_realm = Math.max(s.prestige.lifetime_best_realm, next.index);
     if (s.bt) s.bt.fail_streak = 0;
@@ -128,6 +147,13 @@
     if ((next.traits || []).indexOf('ascension') !== -1 && g.LS.events) g.LS.events.carveStele();
     if (next.reward_lingshi) s.resources.lingshi += Math.floor(next.reward_lingshi * rewardMult);
     s.stats.breakthroughs += 1;
+    // 心魔被压下的余韵
+    if (xinmoHit && g.LS.ui && g.LS.ui.toast) g.LS.ui.toast('心魔在气海翻腾——你咬牙把它压了下去，有惊无险。');
+    // 境界引导：每破一层讲一次这一层能干嘛（不熟悉修仙的玩家也能跟上）
+    const guides = bal.texts && bal.texts.guide_by_realm;
+    if (guides && guides[next.index] && g.LS.ui && g.LS.ui.toast) {
+      setTimeout(((t) => () => g.LS.ui.toast('【' + next.name + '】' + t, 5200))(guides[next.index]), 1600);
+    }
     // 新解锁建筑标记（卡片"新"角标置顶 30 秒）
     if (g.LS.ui && g.LS.ui.markNewBuildings) g.LS.ui.markNewBuildings(next.unlock_buildings || []);
     if (g.LS.ui && g.LS.ui.showBreakthroughOverlay) {
@@ -181,14 +207,8 @@
     try {
       const raw = localStorage.getItem('lingshan_save_v1') || JSON.stringify(S());
       localStorage.setItem('lingshan_save_backup', raw);
-      // 额外落盘一份到下载目录（file:// 下浏览器无法直接写项目 backups/，用下载方式留档）
-      const blob = new Blob([raw], { type: 'application/json' });
-      const a = document.createElement('a');
-      a.href = URL.createObjectURL(blob);
-      a.download = 'lingshan_backup_' + new Date().toISOString().replace(/[:.]/g, '-') + '.json';
-      document.body.appendChild(a);
-      a.click();
-      setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 1000);
+      // 站内提示代替强制下载：备份在备份键与「设置→导出」中均可取回
+      if (g.LS.ui && g.LS.ui.toast) g.LS.ui.toast('本世存档已封存备份（设置页可导出留档）。');
     } catch (e) { console.warn('[灵山掌门] 转生备份失败（不影响转生）：', e.message); }
   }
 

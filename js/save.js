@@ -8,7 +8,7 @@
   const KEY = 'lingshan_save_v1';
   const KEY_BACKUP = 'lingshan_save_backup';
   const KEY_TMP = 'lingshan_save_tmp';
-  const SAVE_VERSION = 5;
+  const SAVE_VERSION = 6;
 
   const MIGRATIONS = {
     // v1 → v2：补 突破失败体系（bt）/ 停滞彩蛋（stagnation）/ 事件队列（queue）
@@ -43,6 +43,21 @@
       if (s.settings && s.settings.music === undefined) s.settings.music = false;
       if (s.bt && s.bt.visitor_effect === undefined) s.bt.visitor_effect = '';
       s.v = 5;
+      return s;
+    },
+    // v5 → v6：丹药细分（旧 danyao 计数 → 灵力丹·灵品库存）+ 丹毒
+    5: (s) => {
+      if (!s.pill_stock || typeof s.pill_stock !== 'object') s.pill_stock = {};
+      if (typeof s.pill_toxic !== 'number' || !isFinite(s.pill_toxic)) s.pill_toxic = 0;
+      if (s.pill_toxic_flag === undefined) s.pill_toxic_flag = false;
+      if (s.bt && s.bt.breakthrough_bonus === undefined) s.bt.breakthrough_bonus = 0;
+      if (s.bt && s.bt.guaranteed === undefined) s.bt.guaranteed = false;
+      const legacy = (s.resources && s.resources.danyao) || 0;
+      if (legacy > 0 && !Object.keys(s.pill_stock).length) {
+        s.pill_stock['lingli_灵'] = Math.min(99, Math.floor(legacy));
+        s.resources.danyao = Math.min(99, Math.floor(legacy));
+      }
+      s.v = 6;
       return s;
     }
   };

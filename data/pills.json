@@ -1,0 +1,174 @@
+{
+  "version": 1,
+  "quality": {
+    "keys": [
+      "凡",
+      "灵",
+      "珍",
+      "仙"
+    ],
+    "effect_mult": {
+      "凡": 1,
+      "灵": 1.5,
+      "珍": 2,
+      "仙": 2.5
+    },
+    "toxic_by_quality": {
+      "凡": 6,
+      "灵": 3,
+      "珍": 1,
+      "仙": 0
+    },
+    "toxic_decay_per_minute": 1,
+    "toxic_penalty": {
+      "per_10_points": 0.05,
+      "cap": 0.3,
+      "poisoning_threshold": 60,
+      "poisoning_mult": 0.75,
+      "poisoning_duration_s": 300
+    },
+    "texts": {
+      "poisoning_toast": "丹毒攻心！浑身药力滞涩，产量受挫。",
+      "toxic_hint": "丹毒 {toxic}：每 10 点降低产量 5%，可用清心丹化解，也会随时间慢慢消散。"
+    }
+  },
+  "pills": [
+    {
+      "id": "lingli",
+      "name": "灵力丹",
+      "category": "prod",
+      "rarity_default": "灵",
+      "desc": "全身灵机鼓荡，六十息内产量倍增。",
+      "effect": {
+        "mult": 2,
+        "duration_s": 60
+      }
+    },
+    {
+      "id": "juqi",
+      "name": "聚气丹",
+      "category": "xp",
+      "rarity_default": "灵",
+      "desc": "一缕精纯药力沉入气海，修为顿进。",
+      "effect": {
+        "xp_pct_of_need_min": 0.05,
+        "xp_pct_of_need_max": 0.12
+      }
+    },
+    {
+      "id": "pozhang",
+      "name": "破障丹",
+      "category": "breakthrough",
+      "rarity_default": "珍",
+      "desc": "丹力护住气海，下次冲关气机顺畅不少。",
+      "effect": {
+        "rate_add": 0.15
+      }
+    },
+    {
+      "id": "qingxin",
+      "name": "清心丹",
+      "category": "cure",
+      "rarity_default": "灵",
+      "desc": "药性清冽，涤荡丹毒心魔，神台复明。",
+      "effect": {
+        "toxic_reduce": 15,
+        "clear_curse": true
+      }
+    },
+    {
+      "id": "xisui",
+      "name": "洗髓丹",
+      "category": "perm",
+      "rarity_default": "珍",
+      "desc": "脱胎换骨，根基自此稳固一分。",
+      "effect": {
+        "perm_all_pct": 0.03
+      }
+    },
+    {
+      "id": "ningshen",
+      "name": "凝神丹",
+      "category": "click",
+      "rarity_default": "灵",
+      "desc": "服之神台湛然，指下吐纳绵绵，一挥一落皆有感应。",
+      "effect": {
+        "click_mult": 3,
+        "duration_s": 90
+      }
+    },
+    {
+      "id": "bidust",
+      "name": "避尘丹",
+      "category": "shield",
+      "rarity_default": "灵",
+      "desc": "服后周身笼起一层清光，妖邪晦气不得近身。",
+      "effect": {
+        "neg_weight_mult": 0.5,
+        "duration_s": 600
+      }
+    },
+    {
+      "id": "hugu",
+      "name": "固元丹",
+      "category": "heal",
+      "rarity_default": "灵",
+      "desc": "药力温养百脉，气滞之处应手而解，炉灶复通。",
+      "effect": {
+        "clear_stalls": true
+      }
+    },
+    {
+      "id": "yuanhang",
+      "name": "远行丹",
+      "category": "fortune",
+      "rarity_default": "灵",
+      "desc": "服后神游物外，冥冥中似有机缘之兆遥遥相召。",
+      "effect": {
+        "next_event_in_s": 45
+      }
+    },
+    {
+      "id": "wudao",
+      "name": "悟道丹",
+      "category": "insight",
+      "rarity_default": "珍",
+      "desc": "一粒入腹，灵台如洗，苦思不解处霍然而通。",
+      "effect": {
+        "trigger_insight": true
+      }
+    },
+    {
+      "id": "huanling",
+      "name": "还灵丹",
+      "category": "luck",
+      "rarity_default": "灵",
+      "desc": "药力化作灵雨，泽被诸峰，门中上下各沾一分灵惠。",
+      "effect": {
+        "luck_pack": true
+      }
+    },
+    {
+      "id": "dushu",
+      "name": "渡厄丹",
+      "category": "rescue",
+      "rarity_default": "仙",
+      "desc": "传说中逆天改命的丹药，可解一时之厄。",
+      "effect": {
+        "breakthrough_guarantee": true
+      }
+    }
+  ],
+  "output_weights": {
+    "lingli": 38,
+    "juqi": 24,
+    "ningshen": 10,
+    "qingxin": 9,
+    "pozhang": 5,
+    "xisui": 3,
+    "huanling": 4,
+    "bidust": 3,
+    "hugu": 2,
+    "yuanhang": 2
+  }
+}
