@@ -358,6 +358,119 @@
 
   /* ── 剧情链：起点事件选了特定选项 → 按概率接续下一幕（每幕照常预掷结算），「离去」即断 ── */
 
+  /* ── 故人上门（visitor）：突破前/离线归来，有未了因果的故人亲身登门 ── */
+
+  function buildVisitorFinal(entry) {
+    const stageEv = {
+      id: 'visitor:' + entry.karma,
+      pool: 'VISITOR',
+      rarity: '灵',
+      title: entry.title,
+      desc: entry.desc,
+      options: entry.options,
+      tags: []
+    };
+    const slots = rollSlots(stageEv);
+    return {
+      id: 'visitor:' + entry.karma,
+      source: 'visitor',
+      rarity: '灵',
+      recycle: null,
+      after: null,
+      builtinTags: [],
+      title: entry.title,
+      desc: entry.desc,
+      options: [
+        { key: 'A', text: entry.options[0].text, slot: slots[0], daoxin: entry.options[0].daoxin || 0, effect: entry.options[0].effect || 'none' },
+        { key: 'B', text: entry.options[1].text, slot: slots[1], daoxin: entry.options[1].daoxin || 0, effect: entry.options[1].effect || 'none' },
+        { key: 'C', text: BAL().texts.event_leave, slot: null, daoxin: 0, effect: 'none' }
+      ]
+    };
+  }
+
+  /** moment: 'breakthrough' | 'offline'。命中返回 finalEv（调用方弹窗），否则 null。每 karma 每世一次。 */
+  function maybeVisitor(moment) {
+    const bal = BAL();
+    const cfg = bal.visitors;
+    if (!cfg || !cfg.entries || !cfg.entries.length) return null;
+    const s = S();
+    if (!s.visitor_seen) s.visitor_seen = {};
+    const chance = moment === 'breakthrough' ? cfg.pre_breakthrough_chance : cfg.offline_chance;
+    if (Math.random() >= chance) return null;
+    const unresolved = Object.keys(s.tags).map(k => s.tags[k]).filter(t => !t.recycled && t.weight >= 1);
+    const cands = [];
+    for (const entry of cfg.entries) {
+      if (s.visitor_seen[entry.karma]) continue;
+      if (unresolved.some(t => t.key === entry.karma)) cands.push(entry);
+    }
+    if (!cands.length) return null;
+    const entry = cands[U().randInt(0, cands.length - 1)];
+    s.visitor_seen[entry.karma] = true;
+    return buildVisitorFinal(entry);
+  }
+
+  /** 三世缘：该因果 key 是否在前几世结过缘（转生结转计数） */
+  function isPastLife(key) {
+    const leg = S().karma_legacy || {};
+    return !!(leg[key] && leg[key].worlds >= 1);
+  }
+
+  /* ── 托梦：长离线归来，弟子来报山中这几日 ── */
+
+  function rollDream(gapSec) {
+    const cfg = BAL().offline_dreams;
+    if (!cfg || Math.random() >= (cfg.chance || 0.5)) return null;
+    const hours = gapSec / 3600;
+    const tier = (cfg.tiers || []).find(t => hours >= t.min_hours && hours < t.max_hours);
+    if (!tier || !tier.events.length) return null;
+    const tpl = tier.events[U().randInt(0, tier.events.length - 1)];
+    const stageEv = { id: 'dream:' + tpl.title, pool: 'DREAM', rarity: '灵', title: tpl.title, desc: tpl.desc, options: tpl.options, tags: [] };
+    const slots = rollSlots(stageEv);
+    return {
+      id: 'dream:' + tpl.title,
+      source: 'dream',
+      rarity: '灵',
+      recycle: null,
+      after: null,
+      builtinTags: [],
+      title: tpl.title,
+      desc: tpl.desc,
+      options: [
+        { key: 'A', text: tpl.options[0].text, slot: slots[0], daoxin: tpl.options[0].daoxin || 0, effect: tpl.options[0].effect || 'none' },
+        { key: 'B', text: tpl.options[1].text, slot: slots[1], daoxin: tpl.options[1].daoxin || 0, effect: tpl.options[1].effect || 'none' },
+        { key: 'C', text: BAL().texts.event_leave, slot: null, daoxin: 0, effect: 'none' }
+      ]
+    };
+  }
+
+  /* ── 山志（编年手札）：大事自动记行，飞升/转生时凝成碑文 ── */
+
+  function chronicle(kind, vars) {
+    const s = S();
+    const cfg = BAL().chronicle;
+    if (!cfg) return;
+    let tpl = cfg.templates[kind];
+    if (!tpl) return;
+    const date = U().fmtGameDate(s.game_days || 0);
+    let line = tpl.replace('{date}', date);
+    for (const k in (vars || {})) line = line.split('{' + k + '}').join(vars[k]);
+    if (!s.chronicle_lines) s.chronicle_lines = [];
+    s.chronicle_lines.push(line);
+    if (s.chronicle_lines.length > (cfg.cap || 40)) s.chronicle_lines.shift();
+  }
+
+  /** 飞升/转生时：把本世山志凝成一篇碑文存入碑林（跨转生保留） */
+  function carveStele() {
+    const s = S();
+    const cfg = BAL().chronicle || {};
+    if (!s.chronicle_lines || !s.chronicle_lines.length) return;
+    const year = (BAL().game_time && BAL().game_time.start_year || 1) + Math.floor((s.game_days || 0) / (((BAL().game_time || {}).months_per_year || 12) * ((BAL().game_time || {}).days_per_month || 30)));
+    const title = (cfg.stele_title || '第{n}世').replace('{year}', String(year)).replace('{n}', String((s.prestige.count || 0) + 1));
+    const body = s.chronicle_lines.slice(-(cfg.stele_max_lines || 10));
+    if (!s.steles) s.steles = [];
+    s.steles.push({ title, body, footer: (cfg.stele_footer || '').replace('{realm}', BAL().realms[s.realm.index].name) });
+  }
+
   function maybeContinueChain(ev, key) {
     const CH = g.LS.CHAINS || [];
     if (!CH.length || key === 'C') return; // 离去即断，故事留给选的人
@@ -432,6 +545,18 @@
           s.stats.total_settled += 1;
         }
         if (opt.daoxin) g.LS.state.changeDaoHeart(opt.daoxin);
+        // 故人上门/托梦的即时抉择效果（boost/disturb 存给下次突破，其余立即结算）
+        if (opt.effect && opt.effect !== 'none') {
+          const eco = g.LS.economy;
+          switch (opt.effect) {
+            case 'boost': s.bt.visitor_effect = 'boost'; break;
+            case 'disturb': s.bt.visitor_effect = 'disturb'; break;
+            case 'gift_pill': s.resources.danyao = Math.min(BAL().pill.stock_cap, s.resources.danyao + (BAL().visitors.gift_pill_n || 5)); gainText += ' 丹药 +' + (BAL().visitors.gift_pill_n || 5); break;
+            case 'pay_lingshi': s.resources.lingshi = Math.max(0, s.resources.lingshi * (1 - (BAL().visitors.pay_lingshi_pct || 0.05))); break;
+            case 'pay_pill': s.resources.danyao = Math.max(0, s.resources.danyao - (BAL().visitors.pay_pill_n || 5)); break;
+            case 'calm': s.buffs = s.buffs.filter(bf => bf.id !== 'qihuo_debuff' && bf.id !== 'xinmo_debuff'); gainText += ' 心神安宁'; break;
+          }
+        }
       }
       // 写 tags（种因果）
       if (ev.builtinTags && ev.builtinTags.length) {
@@ -460,6 +585,9 @@
 
     s.event_state.log.unshift({ time: Date.now(), title: ev.title, choice: key === 'C' ? '离去' : (ev.options.find(o => o.key === key) || {}).text || '' });
     if (s.event_state.log.length > 5) s.event_state.log.pop();
+
+    // 山志：奇遇/上门/托梦各记一行
+    chronicle(ev.source === 'visitor' ? 'visitor' : (ev.source === 'dream' ? 'dream' : 'event'), { title: ev.title, choice: key === 'C' ? '离去' : (ev.options.find(o => o.key === key) || {}).text || '' });
 
     scheduleNext();
     g.LS.economy.clampAll();
@@ -490,6 +618,7 @@
 
   g.LS.events = {
     drawEvent, chooseOption, maybeTriggerEvent, scheduleNext, pumpQueue, maybeContinueChain,
+    maybeVisitor, rollDream, isPastLife, chronicle, carveStele,
     rollSlots, rollRarity, pickByRarity, materializeSlot,
     buildFallbackEvent, buildBuiltinFinal, karmaCheck, resolveTag,
     intervalMs, isNegativeSlot

@@ -71,6 +71,12 @@
       s.resources.danyao -= bt.pill_guard.pills;
       rate += bt.pill_guard.rate_add;
     }
+    // 故人上门效果：恩人护法+、仇人搅局−（一次性，用后即清）
+    if (s.bt && s.bt.visitor_effect && bt.visitors) {
+      if (s.bt.visitor_effect === 'boost') rate += bt.visitors.boost_rate_add || 0.10;
+      else if (s.bt.visitor_effect === 'disturb') rate += bt.visitors.disturb_rate_add || -0.10;
+      s.bt.visitor_effect = '';
+    }
     rate = Math.max(0.05, Math.min(1, rate));
     const pity = bt.pity_success || 3;
     const streak = (s.bt && s.bt.fail_streak) || 0;
@@ -102,6 +108,7 @@
       if (g.LS.ui && g.LS.ui.pushLog) {
         g.LS.ui.pushLog({ title, choice: '冲关' + next.name + '失利', gainText: isQihuo ? '真气逆行，产量受挫' : '修为保留过半，稍作调息' });
       }
+      if (g.LS.events) g.LS.events.chronicle(isQihuo ? 'qihuo' : 'event', { title, choice: '冲关失利' });
       if (g.LS.save && g.LS.save.save) g.LS.save.save();
       return false;
     }
@@ -116,6 +123,9 @@
     s.prestige.lifetime_best_realm = Math.max(s.prestige.lifetime_best_realm, next.index);
     if (s.bt) s.bt.fail_streak = 0;
     if (s.stagnation) { s.stagnation.since = now; s.stagnation.fired_for_realm = -1; } // 停滞计时重置
+    if (g.LS.events) g.LS.events.chronicle('breakthrough', { name: next.name });
+    // 飞升：本世山志刻碑
+    if ((next.traits || []).indexOf('ascension') !== -1 && g.LS.events) g.LS.events.carveStele();
     if (next.reward_lingshi) s.resources.lingshi += Math.floor(next.reward_lingshi * rewardMult);
     s.stats.breakthroughs += 1;
     // 新解锁建筑标记（卡片"新"角标置顶 30 秒）
@@ -188,6 +198,21 @@
     const gain = rebirthGain();
     const s = S();
     if (typeof localStorage !== 'undefined' && typeof document !== 'undefined') backupForRebirth();
+
+    // 三世缘：本世结过缘的故人（未回收 tag）结转到跨世账本，来世以转世之身重逢
+    if (!s.karma_legacy) s.karma_legacy = {};
+    Object.keys(s.tags || {}).forEach(k => {
+      const t = s.tags[k];
+      if (t && t.weight >= 1) {
+        const leg = s.karma_legacy[k] || { worlds: 0, last_stance: t.stance };
+        leg.worlds += 1;
+        leg.last_stance = t.stance;
+        s.karma_legacy[k] = leg;
+      }
+    });
+    // 山志刻碑：本世大事凝成碑文（跨转生保留）
+    if (g.LS.events) g.LS.events.carveStele();
+    g.LS.events && g.LS.events.chronicle && g.LS.events.chronicle('rebirth', {});
 
     // 重置范围：资源/建筑/境界/Buff 清零；保留：传承点、已兑换、tags 与图鉴（前世记忆）、道心
     const keepPrestige = s.prestige;

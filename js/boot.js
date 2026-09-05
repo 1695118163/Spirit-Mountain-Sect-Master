@@ -68,6 +68,7 @@
     g.LS.llm.checkHealth();
     setInterval(() => g.LS.llm.checkHealth(), 60000);
     g.LS.dev.initDev();
+    if (g.LS.S.settings.music && g.LS.ui.setBgm) g.LS.ui.setBgm(true);
 
     // 首次引导（仅首次，存档 flags 后不再弹）
     try {

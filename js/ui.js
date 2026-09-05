@@ -74,6 +74,8 @@
     refs.modalRoot = $id('modal-root');
     refs.toastRoot = $id('toast-root');
     refs.topbar = $id('topbar');
+    refs.tintSeason = $id('tint-season');
+    refs.tintDay = $id('tint-day');
     refs.bg = $id('bg');
 
     // 吐纳：点击 + 按住连点（每 150ms）
@@ -98,6 +100,14 @@
       if (g.LS.S.bt && g.LS.S.bt.fail_cooldown_until > Date.now()) {
         toast('调息之中，稍候再试（' + Math.ceil((g.LS.S.bt.fail_cooldown_until - Date.now()) / 1000) + ' 秒）');
         return;
+      }
+      // 故人上门：出关前有未了因果的故人拦在山门外（每 karma 每世一次）
+      const visitor = g.LS.events.maybeVisitor('breakthrough');
+      if (visitor) {
+        g.LS.S.event_state.open = visitor;
+        g.LS.S.stats.events_total += 1;
+        showEventModal(visitor);
+        return; // 处理完上门再点突破
       }
       showBreakthroughPanel(next);
     });
@@ -190,7 +200,7 @@
           }).join('，') : (b.effects.pill_per_level ? '每级每 60 秒产 1 颗丹（耗 50 灵气/颗）' : specialEffectText(b));
           const ab = bal.active_abilities && bal.active_abilities[b.id];
           card.innerHTML =
-            '<div class="b-head"><span class="b-name">' + b.name + '</span><span class="b-lv">Lv.' + (s.buildings[b.id] || 0) + '</span></div>' +
+            '<div class="b-head"><svg class="b-icon" viewBox="0 0 48 48"><use href="#ic-' + b.id + '"/></svg><span class="b-name">' + b.name + '</span><span class="b-lv">Lv.' + (s.buildings[b.id] || 0) + '</span></div>' +
             '<div class="b-desc" data-tip="' + b.desc + '\n当前：' + rateTxt + '">' + b.desc + '</div>' +
             '<div class="b-rate">' + rateTxt + '</div>' +
             '<button class="b-buy"></button>' +
@@ -286,6 +296,25 @@
         String(d.getHours()).padStart(2, '0') + ':' + String(d.getMinutes()).padStart(2, '0') +
         ' · 本世修行 ' + g.LS.util.fmtGameDur(lifeDays);
       if (lastStr.realTime !== rt) { refs.realTime.textContent = rt; lastStr.realTime = rt; }
+      // 山色四时：游戏月份定季节、现实时钟定昼夜（纯 CSS 变量叠色，零 rAF）
+      if (refs.tintSeason) {
+        const monthsPerYear = (bal.game_time && bal.game_time.months_per_year) || 12;
+        const m = Math.floor(((s.game_days || 0) % monthsPerYear) / (monthsPerYear / 4));
+        const seasonTints = ['rgba(110,150,110,.10)', 'rgba(40,70,90,.14)', 'rgba(170,110,55,.10)', 'rgba(140,140,145,.12)'];
+        const season = seasonTints[Math.min(3, m)];
+        if (lastStr.season !== season) { refs.tintSeason.style.background = season; lastStr.season = season; }
+        const hh = d.getHours();
+        let dayTint = 'rgba(0,0,0,0)';
+        let moon = false;
+        if (hh >= 20 || hh < 5) { dayTint = 'rgba(25,45,85,.18)'; moon = true; }
+        else if (hh >= 17) { dayTint = 'rgba(168,50,50,.10)'; }
+        const dayKey = dayTint + (moon ? 'm' : '');
+        if (lastStr.day !== dayKey) {
+          refs.tintDay.style.background = dayTint;
+          refs.tintDay.classList.toggle('moon', moon);
+          lastStr.day = dayKey;
+        }
+      }
     }
     const realm = bal.realms[s.realm.index];
     const nameStr = realm.name;
@@ -386,11 +415,16 @@
     removeModals();
     const { mask, card } = makeModal();
     card.classList.add('rarity-' + (ev.rarity || '凡'));
-    const rarityTag = '<span class="rarity-tag">' + (ev.rarity || '凡') + '</span>' +
-      (ev.source === 'chain' ? '<span class="rarity-tag">续</span>' : '');
+    const srcTag = ev.source === 'chain' ? '续' : (ev.source === 'visitor' ? '访' : (ev.source === 'dream' ? '梦' : null));
+    // 三世缘：本幕涉及前几世结缘的故人 → 隔世标 + 前缀一行
+    const pastLife = ev.builtinTags && ev.builtinTags.some(t => g.LS.events.isPastLife(t.key));
+    const fullTag = '<span class="rarity-tag">' + (ev.rarity || '凡') + '</span>' +
+      (srcTag ? '<span class="rarity-tag">' + srcTag + '</span>' : '') +
+      (pastLife ? '<span class="rarity-tag ev-badge-chain">隔世</span>' : '');
     card.innerHTML =
-      '<div class="modal-title">' + rarityTag + escapeHtml(ev.title) + '</div>' +
+      '<div class="modal-title">' + fullTag + escapeHtml(ev.title) + '</div>' +
       '<div class="ev-countdown" id="ev-cd"></div>' +
+      (pastLife ? '<div class="past-life-line">（前尘旧影，依稀是故人来。）</div>' : '') +
       '<div class="modal-desc">' + escapeHtml(ev.desc) + '</div>';
     for (const opt of ev.options) {
       const btn = document.createElement('button');
@@ -461,7 +495,16 @@
         const el = card.querySelector('.og-' + k);
         if (el) tweenNumber(el, 0, result.gains[k] || 0);
       }
-      setTimeout(() => { removeModals(); if (g.LS.save) g.LS.save.save(); }, 520);
+      setTimeout(() => {
+        removeModals();
+        if (g.LS.save) g.LS.save.save();
+        // 离线归来：故人候在山门外 / 弟子梦中来报——塞入事件队列随后弹出
+        const visitor = g.LS.events.maybeVisitor('offline');
+        if (visitor) { g.LS.S.event_state.queue.push(visitor); g.LS.S.stats.events_total += 1; }
+        const dream = g.LS.events.rollDream(result.gap);
+        if (dream) { g.LS.S.event_state.queue.push(dream); g.LS.S.stats.events_total += 1; }
+        if (g.LS.S.event_state.queue.length) setTimeout(() => g.LS.events.pumpQueue(0), 700);
+      }, 520);
     });
     card.appendChild(btn);
   }
@@ -614,19 +657,103 @@
     const tagNames = (bal.codex && bal.codex.tag_names) || {};
     for (const k in s.tags) {
       const t = s.tags[k];
+      const leg = (s.karma_legacy || {})[k];
       tagRows += '<div class="codex-chain"><b>' + escapeHtml(tagNames[k] || k) + '</b>　' +
         '<span class="' + (t.recycled ? 'log-choice' : 'log-gain') + '">' +
-        (t.stance || '') + '·' + (t.recycled ? '已了结' : '未了') + '（' + (t.weight || 1) + '）</span></div>';
+        (t.stance || '') + '·' + (t.recycled ? '已了结' : '未了') + '（' + (t.weight || 1) + '）</span>' +
+        (leg && leg.worlds ? '<span class="ev-badge ev-badge-chain">隔世 ' + leg.worlds + '</span>' : '') + '</div>';
     }
     if (!tagRows) tagRows = '<div class="codex-chain">此世尚无因果纠缠</div>';
+    // 碑林：历世碑文（跨转生保留）
+    let steleRows = '';
+    for (const st of (s.steles || []).slice().reverse()) {
+      steleRows += '<div class="stele"><div class="stele-title">' + escapeHtml(st.title) + '</div>' +
+        '<pre class="stele-body">' + escapeHtml(st.body.join('\n')) + '\n' + escapeHtml(st.footer || '') + '</pre>' +
+        '<button class="icon-btn stele-copy" style="font-size:11px;padding:2px 8px;min-height:0">复制</button></div>';
+    }
+    if (!steleRows) steleRows = '<div class="codex-chain">碑林尚空——飞升或兵解时，此世山志将刻为碑文。</div>';
     card.innerHTML =
       '<div class="modal-title">见 闻 录</div>' +
-      '<div class="modal-desc">奇遇集齐 ' + got + ' / ' + g.LS.EVT.length + '　·　图鉴与因果跨转生保留</div>' +
+      '<div class="modal-desc">奇遇集齐 ' + got + ' / ' + g.LS.EVT.length + '　·　图鉴、因果与碑林跨转生保留</div>' +
       '<h3 class="panel-title">奇遇图鉴</h3><div class="codex-grid">' + evRows + '</div>' +
       '<h3 class="panel-title">剧情链</h3>' + chainRows +
       '<h3 class="panel-title">因果故人</h3>' + tagRows +
+      '<h3 class="panel-title">碑林（山志）</h3>' + steleRows +
       '<div style="text-align:center;margin-top:12px"><button class="icon-btn" id="codex-close">合上</button></div>';
     card.querySelector('#codex-close').addEventListener('click', removeModals);
+    card.querySelectorAll('.stele-copy').forEach((btn, idx) => {
+      btn.addEventListener('click', () => {
+        const st = (s.steles || []).slice().reverse()[idx];
+        if (st) {
+          const text = st.title + '\n' + st.body.join('\n') + '\n' + (st.footer || '');
+          try { navigator.clipboard.writeText(text); toast('碑文已复制，可粘贴分享'); } catch (e) { toast('复制失败，请手动选择文本'); }
+        }
+      });
+    });
+  }
+
+  /* ── 弦外之音：WebAudio 合成古琴 BGM（D 宫五声，留白即曲） ── */
+  const BGM_SCALE = [220.0, 293.66, 329.63, 369.99, 440.0, 493.88, 587.33];
+  let bgmTimer = null, bgmNext = 0, bgmCount = 0;
+
+  function bgmPluck(freq, when, vol) {
+    const ctx = audioCtx;
+    const t = when || ctx.currentTime;
+    const g = ctx.createGain();
+    const lp = ctx.createBiquadFilter();
+    lp.type = 'lowpass'; lp.frequency.value = 1200;
+    g.connect(lp); lp.connect(ctx.destination);
+    const o1 = ctx.createOscillator(); o1.type = 'triangle'; o1.frequency.value = freq;
+    const o2 = ctx.createOscillator(); o2.type = 'sine'; o2.frequency.value = freq * 1.003;
+    const og = ctx.createGain(); og.gain.value = 0.5;
+    o1.connect(og); o2.connect(og); og.connect(g);
+    g.gain.setValueAtTime(0, t);
+    g.gain.linearRampToValueAtTime(vol || 0.045, t + 0.004);
+    g.gain.exponentialRampToValueAtTime(0.0001, t + 1.8);
+    const buf = ctx.createBuffer(1, Math.floor(ctx.sampleRate * 0.01), ctx.sampleRate);
+    const d = buf.getChannelData(0);
+    for (let i = 0; i < d.length; i++) d[i] = (Math.random() * 2 - 1) * Math.exp(-i / 120);
+    const nb = ctx.createBufferSource(); nb.buffer = buf;
+    const ng = ctx.createGain(); ng.gain.value = 0.03;
+    nb.connect(ng); ng.connect(lp);
+    o1.start(t); o2.start(t); nb.start(t);
+    o1.stop(t + 1.9); o2.stop(t + 1.9);
+  }
+
+  function bgmXiao(when) {
+    const ctx = audioCtx;
+    const t = when;
+    const o = ctx.createOscillator(); o.type = 'sine'; o.frequency.value = 293.66;
+    const g = ctx.createGain();
+    o.connect(g); g.connect(ctx.destination);
+    g.gain.setValueAtTime(0, t);
+    g.gain.linearRampToValueAtTime(0.026, t + 0.8);
+    g.gain.setValueAtTime(0.026, t + 1.6);
+    g.gain.exponentialRampToValueAtTime(0.0001, t + 3.2);
+    o.start(t); o.stop(t + 3.3);
+  }
+
+  function bgmStep() {
+    if (!g.LS.S || !g.LS.S.settings.music || document.hidden) return;
+    try {
+      audioCtx = audioCtx || new (window.AudioContext || window.webkitAudioContext)();
+      if (audioCtx.state === 'suspended') audioCtx.resume();
+      const now = audioCtx.currentTime;
+      if (bgmNext < now) bgmNext = now + 0.6;
+      if (bgmNext < now + 2) {
+        const f = BGM_SCALE[Math.floor(Math.random() * BGM_SCALE.length)];
+        bgmPluck(f, bgmNext);
+        if (Math.random() < 0.18) bgmPluck(BGM_SCALE[(BGM_SCALE.indexOf(f) + 3) % BGM_SCALE.length], bgmNext + 0.14, 0.03);
+        bgmCount++;
+        if (bgmCount % 14 === 0) bgmXiao(bgmNext + 0.3); // 每十几音进一声箫
+        bgmNext += 2 + Math.random() * 7; // 音间留白 2~9 秒
+      }
+    } catch (e) { /* 音频失败静默 */ }
+  }
+
+  function setBgm(on) {
+    if (on) { if (!bgmTimer) { bgmTimer = setInterval(bgmStep, 800); bgmStep(); } }
+    else { clearInterval(bgmTimer); bgmTimer = null; }
   }
 
   /* ── 设置面板 ── */
@@ -637,6 +764,7 @@
     card.innerHTML =
       '<div class="modal-title">设 置</div>' +
       '<div class="set-row"><label>音效</label><input type="checkbox" id="set-sound" ' + (s.settings.sound ? 'checked' : '') + '></div>' +
+      '<div class="set-row"><label>古琴（环境曲，留白即曲）</label><input type="checkbox" id="set-music" ' + (s.settings.music ? 'checked' : '') + '></div>' +
       '<div class="set-row"><label>LLM 动态奇遇</label><input type="checkbox" id="set-llm" ' + (s.settings.llm_enabled ? 'checked' : '') + '></div>' +
       '<div class="set-llm-status">奇遇文案由火山方舟免费额度生成；不填或额度耗尽时自动改用内置事件池，游戏始终完整可玩，绝不产生任何费用。</div>' +
       '<div class="set-row"><label>密钥（写入 config.json）</label><input class="set-input" id="set-key" type="password" placeholder="粘贴 ark_api_key"><button class="btn-primary" id="set-key-save">保存</button></div>' +
@@ -647,6 +775,11 @@
       '<div class="danger-zone set-row"><label>重置游戏（长按 3 秒）</label><button id="btn-reset"><span class="hold-fill"></span>长按重置</button></div>';
 
     card.querySelector('#set-sound').addEventListener('change', (e) => { s.settings.sound = e.target.checked; g.LS.save.save(); });
+    card.querySelector('#set-music').addEventListener('change', (e) => {
+      s.settings.music = e.target.checked;
+      setBgm(s.settings.music);
+      g.LS.save.save();
+    });
     card.querySelector('#set-llm').addEventListener('change', (e) => { s.settings.llm_enabled = e.target.checked; g.LS.save.save(); });
     card.querySelector('#set-savenow').addEventListener('click', () => { g.LS.save.save(); toast('已存档'); });
     card.querySelector('#set-retry-llm').addEventListener('click', () => { g.LS.llm.retryLLM(); toast('正在重新探测 LLM……'); });
@@ -827,7 +960,7 @@
     initRefs, renderAll, renderResources, renderBuildings, renderCenter,
     renderChronicle, renderPermList, pushLog, markNewBuildings, isModalOpen,
     showEventModal, closeEventModal, showOfflinePopup, showBreakthroughOverlay, showFailOverlay,
-    showSettings, showRebirthPanel, showTutorial, toast, tweenNumber,
+    showSettings, showRebirthPanel, showTutorial, toast, tweenNumber, setBgm,
     setLLMStatus, setForewarn, updateBuffBar, drawBg, sfx
   };
 })(typeof window !== 'undefined' ? window : globalThis);

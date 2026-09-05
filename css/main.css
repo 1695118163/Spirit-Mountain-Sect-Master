@@ -30,6 +30,18 @@ body::before {
 
 #bg { position: fixed; inset: 0; z-index: 0; pointer-events: none; }
 
+/* ── 山色四时：季节与昼夜色调层（纯 CSS 变量叠色，零 rAF） ── */
+#tint-season, #tint-day {
+  position: fixed; inset: 0; z-index: 0; pointer-events: none;
+  transition: background 2.5s ease;
+}
+#tint-day.moon::after {
+  content: ""; position: absolute; right: 11%; top: 9%;
+  width: 46px; height: 46px; border-radius: 50%;
+  background: radial-gradient(circle at 38% 38%, rgba(245,240,230,.95), rgba(245,240,230,.28) 68%, transparent 72%);
+  box-shadow: 0 0 34px rgba(245,240,230,.28);
+}
+
 #app {
   position: relative; z-index: 1;
   height: 100vh;
@@ -181,6 +193,19 @@ button:not(:disabled):active { transform: translateY(1px); }
   position: absolute; top: -6px; right: -6px; background: var(--cinnabar); color: var(--paper);
   font-size: 11px; padding: 1px 6px; border-radius: 3px;
 }
+.b-icon {
+  width: 20px; height: 20px; margin-right: 6px; vertical-align: -4px;
+  stroke: var(--ink); fill: none; stroke-width: 3; stroke-linecap: round; stroke-linejoin: round; opacity: .85;
+}
+.b-icon .seal { fill: var(--cinnabar); stroke: none; }
+
+/* ── 隔世重逢前缀行 ── */
+.past-life-line { font-size: 12px; color: #7a5ba6; margin-bottom: 8px; letter-spacing: 1px; }
+
+/* ── 碑林 ── */
+.stele { border: 1px solid rgba(43,43,43,.3); border-radius: 4px; padding: 8px 10px; margin: 6px 0; background: rgba(255,255,255,.4); }
+.stele-title { font-weight: bold; letter-spacing: 2px; margin-bottom: 4px; color: var(--ink); }
+.stele-body { font-size: 12px; line-height: 1.8; color: var(--ink-soft); white-space: pre-wrap; font-family: inherit; margin: 0 0 4px; }
 
 /* ── 见闻 / 福泽 ── */
 #log-list { min-height: 120px; max-height: 32vh; overflow-y: auto; font-size: 12px; }

@@ -112,6 +112,7 @@
       });
       if (g.LS.ui && g.LS.ui.toast) g.LS.ui.toast('【顿悟】' + (T.insight_text || ''));
       if (g.LS.ui && g.LS.ui.pushLog) g.LS.ui.pushLog({ title: '顿悟', choice: '停滞中灵光一闪', gainText: '修为 +' + g.LS.util.fmt(gain) });
+      g.LS.events.chronicle('insight', {});
     } else {
       const xm = stg.xinmo || {};
       const lose = s.resources.xiufu * g.LS.util.rand(xm.xp_lose_pct_min || 0.05, xm.xp_lose_pct_max || 0.15);
@@ -122,6 +123,7 @@
       });
       if (g.LS.ui && g.LS.ui.toast) g.LS.ui.toast('【心魔】' + (T.xinmo_text || ''));
       if (g.LS.ui && g.LS.ui.pushLog) g.LS.ui.pushLog({ title: '心魔', choice: '久困此境，道心蒙尘', gainText: '修为 -' + g.LS.util.fmt(lose) });
+      g.LS.events.chronicle('xinmo', {});
     }
     eco.clampAll();
     if (g.LS.save && g.LS.save.save) g.LS.save.save();

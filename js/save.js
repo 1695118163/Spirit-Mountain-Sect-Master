@@ -8,7 +8,7 @@
   const KEY = 'lingshan_save_v1';
   const KEY_BACKUP = 'lingshan_save_backup';
   const KEY_TMP = 'lingshan_save_tmp';
-  const SAVE_VERSION = 4;
+  const SAVE_VERSION = 5;
 
   const MIGRATIONS = {
     // v1 → v2：补 突破失败体系（bt）/ 停滞彩蛋（stagnation）/ 事件队列（queue）
@@ -33,6 +33,16 @@
       if (!s.chain_seen || typeof s.chain_seen !== 'object') s.chain_seen = {};
       if (!s.ability_cd || typeof s.ability_cd !== 'object') s.ability_cd = {};
       s.v = 4;
+      return s;
+    },
+    // v4 → v5：补 三世缘（karma_legacy）/ 山志碑林（chronicle_lines/steles）/ BGM 开关
+    4: (s) => {
+      if (!s.karma_legacy || typeof s.karma_legacy !== 'object') s.karma_legacy = {};
+      if (!Array.isArray(s.chronicle_lines)) s.chronicle_lines = [];
+      if (!Array.isArray(s.steles)) s.steles = [];
+      if (s.settings && s.settings.music === undefined) s.settings.music = false;
+      if (s.bt && s.bt.visitor_effect === undefined) s.bt.visitor_effect = '';
+      s.v = 5;
       return s;
     }
   };

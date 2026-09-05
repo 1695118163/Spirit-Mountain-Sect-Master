@@ -943,5 +943,440 @@
       "huyao": "报恩白狐",
       "qinshi": "月下琴师"
     }
+  },
+  "visitors": {
+    "pre_breakthrough_chance": 0.5,
+    "offline_chance": 0.45,
+    "entries": [
+      {
+        "karma": "qigai",
+        "title": "乞翁护法",
+        "stance": "恩",
+        "desc": "你将出关，山门外却立着那雪中老乞，拄杖而笑：当年一饭之恩，今日愿为掌门护法。",
+        "options": [
+          {
+            "text": "请他护法",
+            "fits": [
+              "C"
+            ],
+            "daoxin": 2,
+            "effect": "boost"
+          },
+          {
+            "text": "婉谢好意",
+            "fits": [
+              "A"
+            ],
+            "daoxin": 1,
+            "effect": "none"
+          }
+        ]
+      },
+      {
+        "karma": "shanzei",
+        "title": "贼首堵门",
+        "stance": "怨",
+        "desc": "冲关的紧要关头，山道贼首竟聚众堵了山门，鼓噪之声直上山头。",
+        "options": [
+          {
+            "text": "严阵喝退",
+            "fits": [
+              "C"
+            ],
+            "daoxin": 2,
+            "effect": "none"
+          },
+          {
+            "text": "闭门强闯",
+            "fits": [
+              "B"
+            ],
+            "daoxin": -1,
+            "effect": "disturb"
+          }
+        ]
+      },
+      {
+        "karma": "huolang",
+        "title": "货郎登门",
+        "stance": "债",
+        "desc": "夜行货郎笑吟吟立在阶下，摊开账本：赊的账，也该清了。",
+        "options": [
+          {
+            "text": "如数奉还",
+            "fits": [
+              "B"
+            ],
+            "daoxin": 2,
+            "effect": "pay_lingshi"
+          },
+          {
+            "text": "以物抵债",
+            "fits": [
+              "B"
+            ],
+            "daoxin": -1,
+            "effect": "pay_pill"
+          }
+        ]
+      },
+      {
+        "karma": "gujian",
+        "title": "故剑助阵",
+        "stance": "恩",
+        "desc": "出关前夕，冢中故剑自鸣不止，剑音清越，似愿随你入阵一战。",
+        "options": [
+          {
+            "text": "携剑入关",
+            "fits": [
+              "C"
+            ],
+            "daoxin": 1,
+            "effect": "boost"
+          },
+          {
+            "text": "留剑守山",
+            "fits": [
+              "A"
+            ],
+            "daoxin": 0,
+            "effect": "none"
+          }
+        ]
+      },
+      {
+        "karma": "huyao",
+        "title": "狐妖赠礼",
+        "stance": "缘",
+        "desc": "月下白狐衔着一只木匣登门，匣中丹丸异香扑鼻，放下便走，头也不回。",
+        "options": [
+          {
+            "text": "收下丹丸",
+            "fits": [
+              "A"
+            ],
+            "daoxin": 1,
+            "effect": "gift_pill"
+          },
+          {
+            "text": "追去还礼",
+            "fits": [
+              "C"
+            ],
+            "daoxin": 3,
+            "effect": "none"
+          }
+        ]
+      },
+      {
+        "karma": "qinshi",
+        "title": "琴师抚弦",
+        "stance": "缘",
+        "desc": "冲关前夜，琴师踏月而至：闻你气机不稳，特来抚琴一段，为你压惊。",
+        "options": [
+          {
+            "text": "听琴安神",
+            "fits": [
+              "C"
+            ],
+            "daoxin": 2,
+            "effect": "calm"
+          },
+          {
+            "text": "心绪自定",
+            "fits": [
+              "A"
+            ],
+            "daoxin": 0,
+            "effect": "none"
+          }
+        ]
+      }
+    ],
+    "boost_rate_add": 0.1,
+    "disturb_rate_add": -0.1,
+    "pay_lingshi_pct": 0.05,
+    "pay_pill_n": 5,
+    "gift_pill_n": 5
+  },
+  "offline_dreams": {
+    "chance": 0.55,
+    "tiers": [
+      {
+        "min_hours": 2,
+        "max_hours": 4,
+        "events": [
+          {
+            "title": "夜灯无影",
+            "desc": "弟子来报：这几夜灵田里总有灯影晃动，提灯去查，又空无一人。",
+            "options": [
+              {
+                "text": "彻查灯影",
+                "fits": [
+                  "C"
+                ],
+                "daoxin": 1
+              },
+              {
+                "text": "由它去吧",
+                "fits": [
+                  "A"
+                ],
+                "daoxin": 0
+              }
+            ]
+          },
+          {
+            "title": "灵泉泛沫",
+            "desc": "弟子来报：灵泉眼这几日泛起细沫，泉水却比往日甘冽。",
+            "options": [
+              {
+                "text": "取水验之",
+                "fits": [
+                  "A"
+                ],
+                "daoxin": 0
+              },
+              {
+                "text": "封泉静养",
+                "fits": [
+                  "C"
+                ],
+                "daoxin": 1
+              }
+            ]
+          },
+          {
+            "title": "鹤栖檐角",
+            "desc": "弟子来报：有鹤连宿檐角，赶也赶不走，只歪头看你窗户。",
+            "options": [
+              {
+                "text": "撒谷喂鹤",
+                "fits": [
+                  "A"
+                ],
+                "daoxin": 2
+              },
+              {
+                "text": "登高送鹤",
+                "fits": [
+                  "C"
+                ],
+                "daoxin": 1
+              }
+            ]
+          },
+          {
+            "title": "客留空帖",
+            "desc": "弟子来报：有客来访未遇，留下一张空帖，帖角有淡淡剑气。",
+            "options": [
+              {
+                "text": "收帖供奉",
+                "fits": [
+                  "E"
+                ],
+                "daoxin": 0
+              },
+              {
+                "text": "随手搁置",
+                "fits": [
+                  "A"
+                ],
+                "daoxin": 0
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "min_hours": 4,
+        "max_hours": 8,
+        "events": [
+          {
+            "title": "山中夜话",
+            "desc": "弟子来报：夜半闻得林中有人对弈，落子清越，寻去只见两方石凳尚温。",
+            "options": [
+              {
+                "text": "席地对弈",
+                "fits": [
+                  "D"
+                ],
+                "daoxin": 0
+              },
+              {
+                "text": "敛容一拜",
+                "fits": [
+                  "C"
+                ],
+                "daoxin": 2
+              }
+            ]
+          },
+          {
+            "title": "草庐新痕",
+            "desc": "弟子来报：后山多出一座空草庐，灶是热的，人却无踪。",
+            "options": [
+              {
+                "text": "留庐待人",
+                "fits": [
+                  "C"
+                ],
+                "daoxin": 1
+              },
+              {
+                "text": "入庐小憩",
+                "fits": [
+                  "A"
+                ],
+                "daoxin": 0
+              }
+            ]
+          },
+          {
+            "title": "药香满谷",
+            "desc": "弟子来报：这几日满谷药香不散，蜂蝶皆醉，落在檐下不飞。",
+            "options": [
+              {
+                "text": "采香入药",
+                "fits": [
+                  "A"
+                ],
+                "daoxin": 0
+              },
+              {
+                "text": "静谷养香",
+                "fits": [
+                  "D"
+                ],
+                "daoxin": 2
+              }
+            ]
+          },
+          {
+            "title": "稚子献桃",
+            "desc": "弟子来报：山下来了个牧童，送上一篮鲜桃，说是给山上老神仙的。",
+            "options": [
+              {
+                "text": "回赠灵果",
+                "fits": [
+                  "A"
+                ],
+                "daoxin": 3
+              },
+              {
+                "text": "笑纳鲜桃",
+                "fits": [
+                  "C"
+                ],
+                "daoxin": 1
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "min_hours": 8,
+        "max_hours": 99,
+        "events": [
+          {
+            "title": "碑前生花",
+            "desc": "弟子来报：后山旧碑之前，竟开出一丛雪色花，夜夜有光，如有人日日浇灌。",
+            "options": [
+              {
+                "text": "移花入册",
+                "fits": [
+                  "D"
+                ],
+                "daoxin": 0
+              },
+              {
+                "text": "筑栏护花",
+                "fits": [
+                  "C"
+                ],
+                "daoxin": 2
+              }
+            ]
+          },
+          {
+            "title": "星坠成潭",
+            "desc": "弟子来报：夜里有星坠入灵泉，泉水至今泛着碎星，掬水一捧，掌心微热。",
+            "options": [
+              {
+                "text": "引星入体",
+                "fits": [
+                  "D"
+                ],
+                "daoxin": 0
+              },
+              {
+                "text": "守潭不取",
+                "fits": [
+                  "C"
+                ],
+                "daoxin": 1
+              }
+            ]
+          },
+          {
+            "title": "故人音书",
+            "desc": "弟子来报：案头多出一封无署名的信，字迹被水洇过，只辨得「珍重」二字。",
+            "options": [
+              {
+                "text": "焚香回信",
+                "fits": [
+                  "E"
+                ],
+                "daoxin": 2
+              },
+              {
+                "text": "收信入怀",
+                "fits": [
+                  "A"
+                ],
+                "daoxin": 0
+              }
+            ]
+          },
+          {
+            "title": "山鸣如应",
+            "desc": "弟子来报：你离山这几日，每到深夜，主峰便低鸣一声，像是在数着日子。",
+            "options": [
+              {
+                "text": "登顶相和",
+                "fits": [
+                  "C"
+                ],
+                "daoxin": 2
+              },
+              {
+                "text": "静听其意",
+                "fits": [
+                  "A"
+                ],
+                "daoxin": 1
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  "chronicle": {
+    "cap": 40,
+    "templates": {
+      "breakthrough": "{date}，破境入{name}，钟鸣竟日。",
+      "event": "{date}，遇「{title}」，{choice}。",
+      "visitor": "{date}，{title}，山中一叙。",
+      "insight": "{date}，静极生悟，道心一澄。",
+      "qihuo": "{date}，走火入魔，闭关调息。",
+      "xinmo": "{date}，心魔来袭，折修自省。",
+      "dream": "{date}，梦中山事，醒来怅然。",
+      "rebirth": "{date}，兵解转世，此世终。",
+      "ascension": "{date}，飞升，山鸣谷应。"
+    },
+    "stele_title": "灵曜{year}年 · 第{n}世",
+    "stele_max_lines": 10,
+    "stele_footer": "——{realm}之世"
   }
 }
