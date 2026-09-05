@@ -40,10 +40,27 @@
       s.stats.play_seconds += dt;
       eco.autoPillTick(Date.now()); // 元婴被动：自动服丹
     }
+    const now = Date.now();
     // 游戏历法：现实 1 秒 = 游戏 day_per_second 天（在线离线同速，山中无甲子）
     const dps = (bal.game_time && bal.game_time.day_per_second) || 1;
     s.game_days = (s.game_days || 0) + dt * dps;
     if (g.LS.economy && g.LS.economy.toxicDecay) g.LS.economy.toxicDecay(dt); // 丹毒随时间消散
+    // 前尘心障（丹瘾种因，转生不清）：道心被缓缓侵蚀
+    if (Array.isArray(s.persistent_curses) && s.persistent_curses.indexOf('danyin') !== -1) {
+      s.dao_heart = g.LS.util.clamp((s.dao_heart || 0) - 0.5 * (dt / 60), -100, 100);
+    }
+    // 修炼迟滞（可磨净的 debuff）：挂机消耗修为加速其消退
+    const next = bal.realms[s.realm.index + 1];
+    const needXp = next && next.need_xp ? next.need_xp : 1000;
+    for (const bf of s.buffs) {
+      if (bf.cure === 'xp' && bf.ts_end > now) {
+        const burn = Math.min(s.resources.xiufu || 0, needXp * 0.001 * dt);
+        if (burn > 0) {
+          s.resources.xiufu -= burn;
+          bf.ts_end -= 2500 * dt; // 每秒磨掉约 2.5 秒苦楚
+        }
+      }
+    }
     g.LS.state.tickBuffs(Date.now());
     eco.clampAll();
   }

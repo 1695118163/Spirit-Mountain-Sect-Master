@@ -37,6 +37,13 @@
         gn.gain.setValueAtTime(.18, t);
         gn.gain.exponentialRampToValueAtTime(.001, t + 1);
         o.start(t); o.stop(t + 1.1);
+      } else if (type === 'drum') {
+        // A5 鼓点：低频下扫，垫在钟鸣里
+        o.frequency.setValueAtTime(120, t);
+        o.frequency.exponentialRampToValueAtTime(45, t + .35);
+        gn.gain.setValueAtTime(.3, t);
+        gn.gain.exponentialRampToValueAtTime(.001, t + .4);
+        o.start(t); o.stop(t + .45);
       } else if (type === 'guqin') {
         o.frequency.setValueAtTime(440, t);
         o.frequency.linearRampToValueAtTime(660, t + .25);
@@ -65,6 +72,7 @@
     refs.btnPill = $id('btn-pill');
     refs.btnSettings = $id('btn-settings');
     refs.btnCodex = $id('btn-codex');
+    refs.btnHelp = $id('btn-help');
     refs.btnPillHouse = $id('btn-pillhouse');
     refs.btnRebirth = $id('btn-rebirth');
     refs.logList = $id('log-list');
@@ -85,6 +93,7 @@
       const r = g.LS.economy.breath();
       sfx('click');
       spawnRipple();
+      spawnFloatText('+' + fmtSafe(r.qi) + ' 灵气');
     };
     refs.btnBreath.addEventListener('pointerdown', (e) => {
       e.preventDefault();
@@ -119,6 +128,7 @@
     });
     refs.btnSettings.addEventListener('click', showSettings);
     if (refs.btnCodex) refs.btnCodex.addEventListener('click', showCodex);
+    if (refs.btnHelp) refs.btnHelp.addEventListener('click', showHelpPanel);
     if (refs.btnPillHouse) refs.btnPillHouse.addEventListener('click', showPillHouse);
     refs.btnRebirth.addEventListener('click', () => {
       if (!g.LS.realm.canRebirth()) { toast('修至化神，方见轮回之门。'); return; }
@@ -134,6 +144,31 @@
     setTimeout(() => el.remove(), 720);
   }
 
+  /** A4：吐纳飘字（+X 灵气，上浮淡出 600ms） */
+  function spawnFloatText(text) {
+    if (!refs.btnBreath || g.LS.ambient && g.LS.ambient.isReduced && g.LS.ambient.isReduced()) return;
+    const el = document.createElement('span');
+    el.className = 'float-num';
+    el.textContent = text;
+    refs.btnBreath.parentElement.appendChild(el);
+    setTimeout(() => el.remove(), 620);
+  }
+
+  /** A4：资源值跨整千/整万时弹跳一次 */
+  function popIfMilestone(el, v) {
+    const step = v >= 1e4 ? 1e4 : 1e3;
+    const k = Math.floor(Math.abs(v) / step);
+    const key = el.className + k;
+    if (lastStr['pop_' + key] === undefined) { lastStr['pop_' + key] = true; return; }
+    if (lastStr['popMilestone_' + (el.id || el.className)] !== String(k)) {
+      lastStr['popMilestone_' + (el.id || el.className)] = String(k);
+      el.classList.remove('num-pop');
+      void el.offsetWidth; // 重启动画
+      el.classList.add('num-pop');
+      setTimeout(() => el.classList.remove('num-pop'), 220);
+    }
+  }
+
   /* ── 资源栏（脏比对） ── */
   function renderResources() {
     const s = g.LS.S;
@@ -147,6 +182,7 @@
         if (lastStr['v_' + res] !== undefined) {
           r.val.classList.add('tick-flash');
           setTimeout(((el) => () => el.classList.remove('tick-flash'))(r.val), 180);
+          popIfMilestone(r.val, v); // 跨整千/整万弹跳
         }
         r.val.textContent = str;
         lastStr['v_' + res] = str;
@@ -155,6 +191,7 @@
       const rStr = rate > 0 ? fmtSafe(rate) + '/秒' : '';
       if (lastStr['r_' + res] !== rStr) { r.rate.textContent = rStr; lastStr['r_' + res] = rStr; }
     }
+    checkHints(); // 概念即遇即讲
     updateBuffBar();
   }
 
@@ -202,9 +239,12 @@
             return '+' + b.effects.rate[res] + ' ' + (rn ? rn.name : res) + '/秒/级';
           }).join('，') : (b.effects.pill_per_level ? '每级每 60 秒产 1 颗丹（耗 50 灵气/颗）' : specialEffectText(b));
           const ab = bal.active_abilities && bal.active_abilities[b.id];
+          // B3 首购建议：首次买得起后追加进 tooltip
+          const sug = (bal.help && bal.help.building_suggest) || {};
+          const sugTip = (s.first_afford_seen && s.first_afford_seen[b.id] && (s.buildings[b.id] || 0) === 0 && sug[b.id]) ? '\n建议：' + sug[b.id] : '';
           card.innerHTML =
             '<div class="b-head"><svg class="b-icon" viewBox="0 0 48 48"><use href="#ic-' + b.id + '"/></svg><span class="b-name">' + b.name + '</span><span class="b-lv">Lv.' + (s.buildings[b.id] || 0) + '</span></div>' +
-            '<div class="b-desc" data-tip="' + b.desc + '\n当前：' + rateTxt + '">' + b.desc + '</div>' +
+            '<div class="b-desc" data-tip="' + b.desc + '\n当前：' + rateTxt + sugTip + '">' + b.desc + '</div>' +
             '<div class="b-rate">' + rateTxt + '</div>' +
             '<button class="b-buy"></button>' +
             (ab && (s.buildings[b.id] || 0) > 0 ? '<button class="b-ability" data-ab="' + b.id + '"></button>' : '');
@@ -250,6 +290,13 @@
       btn.disabled = !ok;
       const txt = (lv === 0 ? '建造' : '升级') + ' · ' + eco.costText(cost);
       if (lastStr.bbtn[b.id] !== txt) { btn.textContent = txt; lastStr.bbtn[b.id] = txt; }
+      // B3 首次买得起：登记 + toast 一次建议（tooltip 从此刻起追加建议行）
+      if (ok && !(s.first_afford_seen || {})[b.id]) {
+        if (!s.first_afford_seen) s.first_afford_seen = {};
+        s.first_afford_seen[b.id] = true;
+        const sug = (bal.help && bal.help.building_suggest) || {};
+        if (sug[b.id] && lv === 0) toast('【' + b.name + '】' + sug[b.id], 4600);
+      }
       // 建筑主动技能：冷却倒计时与可用态
       const abBtn = card.querySelector('.b-ability');
       if (abBtn) {
@@ -299,6 +346,15 @@
         String(d.getHours()).padStart(2, '0') + ':' + String(d.getMinutes()).padStart(2, '0') +
         ' · 本世修行 ' + g.LS.util.fmtGameDur(lifeDays);
       if (lastStr.realTime !== rt) { refs.realTime.textContent = rt; lastStr.realTime = rt; }
+      // A3 天气：ambient 层按现实时间 2~5 分钟翻新（雨/雪/雾），笔记由 ambient 记录
+      if (g.LS.ambient) {
+        g.LS.ambient.rollWeather(s.game_days);
+        // A2 墨鹤：每分钟碰一次运气
+        if (!renderCenter._craneT || Date.now() - renderCenter._craneT > 60000) {
+          renderCenter._craneT = Date.now();
+          g.LS.ambient.maybeCrane();
+        }
+      }
       // 山色四时：每季从 2~3 种天时变体随机锁定一种，换季换月时换天色；现实时钟定昼夜（整页夜色主题）
       if (refs.tintSeason) {
         const monthsPerYear = (bal.game_time && bal.game_time.months_per_year) || 12;
@@ -434,6 +490,13 @@
     sfx('guqin');
     removeModals();
     const { mask, card } = makeModal(() => g.LS.events.chooseOption('C')); // 中途关闭等同于「离去」
+    // A6 卷轴初展：横卷展开仪式（500ms 锁死；仙品先一道朱线扫过）
+    mask.classList.add('scroll-open');
+    if ((ev.rarity || '') === '仙') {
+      const sweep = document.createElement('div');
+      sweep.className = 'cinnabar-sweep';
+      card.appendChild(sweep);
+    }
     card.classList.add('rarity-' + (ev.rarity || '凡'));
     const srcTag = ev.source === 'chain' ? '续' : (ev.source === 'visitor' ? '访' : (ev.source === 'dream' ? '梦' : (ev.source === 'llm' ? 'AI 执笔' : null)));
     // 三世缘：本幕涉及前几世结缘的故人 → 隔世标 + 前缀一行
@@ -530,8 +593,9 @@
   }
 
   /* ── 突破过场 ── */
-  function showBreakthroughOverlay(text, gainText) {
+  function showBreakthroughOverlay(text, gainText, realmIdx) {
     sfx('bell');
+    if (g.LS.ui.sfx) sfx('drum'); // A5 鼓点：钟鸣里垫一声低沉下扫
     const ov = document.createElement('div');
     ov.id = 'breakthrough-overlay';
     for (let i = 0; i < 5; i++) {
@@ -545,6 +609,18 @@
       sp.style.animationDelay = (i * 0.12) + 's';
       ov.appendChild(sp);
     }
+    // A5 一笔通玄：凌空大字横笔写出（clip-path 揭示模拟笔势），末了朱印落款
+    const charRow = document.createElement('div');
+    charRow.style.marginBottom = '14px';
+    const ch = document.createElement('span');
+    ch.className = 'br-write' + (realmIdx >= 7 ? ' cinnabar' : '');
+    ch.textContent = breakthroughChar(realmIdx);
+    const seal = document.createElement('span');
+    seal.className = 'br-seal';
+    seal.textContent = '灵山';
+    charRow.appendChild(ch);
+    charRow.appendChild(seal);
+    ov.appendChild(charRow);
     const div = document.createElement('div');
     div.className = 'bt-text';
     div.textContent = text || '';
@@ -565,6 +641,43 @@
     const close = () => { ov.remove(); renderAll(); };
     ov.addEventListener('click', close);
     setTimeout(() => { if (ov.parentNode) close(); }, (g.LS.BAL.breakthrough && g.LS.BAL.breakthrough.anim_ms) || 1500);
+  }
+
+  /** 概念即遇即讲：每个关键节点首次出现时解释一句（seen_hints 去重） */
+  function hintOnce(key, fallbackText) {
+    const s = g.LS.S;
+    if (!s.seen_hints) s.seen_hints = {};
+    if (s.seen_hints[key]) return;
+    s.seen_hints[key] = true;
+    const hints = (g.LS.BAL.texts && g.LS.BAL.texts.hints) || {};
+    toast(hints[key] || fallbackText || '', 4200);
+  }
+  const HINT_CHECKS = {
+    first_max_xp: (s) => { const nx = g.LS.BAL.realms[s.realm.index + 1]; return nx && nx.need_xp && s.resources.xiufu >= nx.need_xp; },
+    first_pill_stock: (s) => Object.keys(s.pill_stock || {}).some(k => s.pill_stock[k] > 0),
+    first_toxic: (s) => (s.pill_toxic || 0) >= 10,
+    first_visitor: (s) => !!s.visitor_seen && Object.keys(s.visitor_seen).length > 0,
+    first_buff: (s) => s.buffs.length > 0,
+    first_rebirth_ready: (s) => s.realm.index >= (g.LS.BAL.prestige.unlock_realm_index || 4),
+    first_fail: (s) => (s.bt && s.bt.fail_streak > 0) || s.first_fail_flag === true,
+    first_insight: (s) => (s.chronicle_lines || []).some(l => l.indexOf('悟') !== -1),
+    first_xinmo: (s) => (s.chronicle_lines || []).some(l => l.indexOf('心魔') !== -1)
+  };
+  function checkHints() {
+    const s = g.LS.S;
+    if (!s.seen_hints) return;
+    for (const key in HINT_CHECKS) {
+      if (!s.seen_hints[key] && HINT_CHECKS[key](s)) {
+        hintOnce(key);
+        break; // 一次 tick 只讲一条，不刷屏
+      }
+    }
+  }
+
+  /* ── A5 一笔通玄：突破大字（数据来自 help.json breakthrough_chars） ── */
+  function breakthroughChar(idx) {
+    const chars = (g.LS.BAL.help && g.LS.BAL.help.breakthrough_chars) || {};
+    return chars[String(idx)] || chars.default || '破';
   }
 
   /* ── 突破失败 / 走火入魔过场（暗色水墨，数值代价显式呈现） ── */
@@ -666,6 +779,23 @@
       });
     };
     render('normal', false);
+  }
+
+  /* ── B1 仙途指要：分节帮助面板（文案在 help.json help_topics） ── */
+  function showHelpPanel() {
+    removeModals();
+    const { card } = makeModal(removeModals);
+    const topics = (g.LS.BAL.help && g.LS.BAL.help.help_topics) || {};
+    let html = '<div class="modal-title">仙 途 指 要<button class="icon-btn" id="hp-close" style="float:right;font-size:12px;padding:3px 12px">合上</button></div>';
+    for (const key in topics) {
+      const t = topics[key];
+      html += '<h3 class="panel-title">' + escapeHtml(t.title) + '</h3>' +
+        t.lines.map(l => '<div class="codex-chain">' + escapeHtml(l) + '</div>').join('');
+    }
+    html += '<div style="text-align:center;margin-top:12px"><button class="icon-btn" id="hp-close2">合上</button></div>';
+    card.innerHTML = html;
+    card.querySelector('#hp-close').addEventListener('click', removeModals);
+    card.querySelector('#hp-close2').addEventListener('click', removeModals);
   }
 
   /* ── 丹房：丹药库存一览 / 服用 / 丹毒 ── */
@@ -1044,7 +1174,7 @@
 
   g.LS.ui = {
     initRefs, renderAll, renderResources, renderBuildings, renderCenter,
-    renderChronicle, renderPermList, pushLog, markNewBuildings, isModalOpen,
+    renderChronicle, renderPermList, pushLog, markNewBuildings, isModalOpen, hintOnce,
     showEventModal, closeEventModal, showOfflinePopup, showBreakthroughOverlay, showFailOverlay,
     showSettings, showRebirthPanel, showTutorial, showPillHouse, toast, tweenNumber, setBgm,
     setLLMStatus, setForewarn, updateBuffBar, drawBg, sfx

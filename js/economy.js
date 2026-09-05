@@ -98,12 +98,13 @@
     v *= realmMultSafe();
     v *= 1 + (s.perm_bonus.all || 0) + (s.perm_bonus[resId] || 0);
     v *= prestigeMult(resId);
-    // 丹毒惩罚：每 10 点丹毒 -5% 产量，封顶 -30%
+    // 丹毒惩罚：每 10 点丹毒 −3% 产量，封顶 −30%；前尘心障（丹瘾种因）再 −15%
     const toxic = s.pill_toxic || 0;
     if (toxic > 0) {
-      const tp = (bal.pills && bal.pills.quality && bal.pills.quality.toxic_penalty) || { per_10_points: 0.05, cap: 0.30 };
+      const tp = (bal.pills && bal.pills.quality && bal.pills.quality.toxic_penalty) || { per_10_points: 0.03, cap: 0.30 };
       v *= 1 - Math.min(tp.cap || 0.30, Math.floor(toxic / 10) * tp.per_10_points);
     }
+    if (Array.isArray(s.persistent_curses) && s.persistent_curses.length) v *= 0.85;
     for (const buff of s.buffs) {
       if (buff.mult && buff.ts_end > now) v *= buff.mult;
     }
@@ -397,11 +398,11 @@
 
   function pillCat(id) { return ((BAL().pills || {}).pills || []).find(p => p.id === id) || null; }
   const FALLBACK_QUALITY = {
-    keys: ['凡', '灵', '珍', '仙'],
-    effect_mult: { 凡: 1.0, 灵: 1.5, 珍: 2.0, 仙: 2.5 },
-    toxic_by_quality: { 凡: 6, 灵: 3, 珍: 1, 仙: 0 },
+    keys: ['劣', '凡', '灵', '珍', '仙'],
+    effect_mult: { 劣: 1.0, 凡: 1.0, 灵: 1.5, 珍: 2.0, 仙: 2.5 },
+    toxic_by_quality: { 劣: 8, 凡: 6, 灵: 3, 珍: 1, 仙: 0 },
     toxic_decay_per_minute: 1,
-    toxic_penalty: { per_10_points: 0.05, cap: 0.30, poisoning_threshold: 60, poisoning_mult: 0.75, poisoning_duration_s: 300 }
+    toxic_penalty: { per_10_points: 0.03, cap: 0.30, poisoning_threshold: 60, poisoning_mult: 0.75, poisoning_duration_s: 300 }
   };
   function pillQualityCfg() { return (BAL().pills || {}).quality || FALLBACK_QUALITY; }
   function pillStockKey(id, q) { return id + '_' + q; }
@@ -451,10 +452,18 @@
     s.pill_stock[key] -= 1;
     if (s.pill_stock[key] <= 0) delete s.pill_stock[key];
     const q = pillQualityCfg() || { effect_mult: { 灵: 1 }, toxic_by_quality: { 灵: 3 } };
-    const em = q.effect_mult[quality] || 1;
+    let em = q.effect_mult[quality] || 1;
     const now = Date.now();
     const bal = BAL();
     let msg = quality + '品' + cat.name + '入腹';
+    // 丹毒 ≥50：体质已差，所有丹的增益效果减半
+    const toxicDamped = (s.pill_toxic || 0) >= 50;
+    if (toxicDamped && em > 1) {
+      em *= 0.5;
+      msg += '（丹毒缠身，药效减半）';
+    }
+    // 丹种自带丹毒（劣品丹的 toxic_add 覆盖品质默认）
+    const toxicGain = cat.toxic_add != null ? cat.toxic_add : ((q.toxic_by_quality || {})[quality] || 0);
 
     switch (cat.category) {
       case 'prod': {
@@ -528,18 +537,42 @@
         msg += '，灵气 +' + g.LS.util.fmt(qi) + '，灵石 +' + g.LS.util.fmt(ls);
         break;
       }
+      case 'lingshi': {
+        // 浊元丹：一笔灵石进项，附带浊气 debuff
+        const span = cat.effect.lingshi_seconds_max - cat.effect.lingshi_seconds_min;
+        const ls = Math.max(50, computePerSecond('lingshi') * (cat.effect.lingshi_seconds_min + Math.random() * span) * em);
+        s.resources.lingshi += ls;
+        msg += '，灵石 +' + g.LS.util.fmt(ls);
+        if (cat.curse_debuff) {
+          g.LS.state.addBuff({ id: 'zhuoyuan_debuff', mult: cat.curse_debuff.mult, ts_end: now + cat.curse_debuff.duration_s * 1000 });
+        }
+        break;
+      }
       case 'rescue': {
-        s.bt.guaranteed = true;
-        msg += '，下次冲关必成';
+        // 天元/渡厄丹：index≤8 必成；渡劫→飞升（index9）天道考验，改大幅 +30%
+        if (next.index <= (cat.effect.guarantee_max_index || 8)) {
+          s.bt.guaranteed = true;
+          msg += '，下次冲关必成';
+        } else {
+          s.bt.breakthrough_bonus = (s.bt.breakthrough_bonus || 0) + (cat.effect.rate_add_high || 0.30);
+          msg += '，天道面前丹力有穷——下次冲关大幅 +30%';
+        }
+        // 丹瘾种因：转生也不清，须来世以身证道（碑林记一世渡劫以上）化解
+        if (cat.effect.danyin_curse) {
+          if (!Array.isArray(s.persistent_curses)) s.persistent_curses = [];
+          if (s.persistent_curses.indexOf('danyin') === -1) {
+            s.persistent_curses.push('danyin');
+            msg += '；然药力逆天，丹瘾已种——转世亦随行，唯以身证道可解';
+          }
+        }
         break;
       }
       default:
         msg += '。';
     }
 
-    // 丹毒：按品质累积，可能丹毒攻心
-    const toxic = (q.toxic_by_quality || {})[quality] || 0;
-    if (toxic) addToxic(toxic);
+    // 丹毒：丹种覆盖值优先（劣品丹），否则按品质累积，可能丹毒攻心
+    if (toxicGain) addToxic(toxicGain);
     return { ok: true, msg };
   }
 

@@ -8,7 +8,7 @@
   const KEY = 'lingshan_save_v1';
   const KEY_BACKUP = 'lingshan_save_backup';
   const KEY_TMP = 'lingshan_save_tmp';
-  const SAVE_VERSION = 6;
+  const SAVE_VERSION = 8;
 
   const MIGRATIONS = {
     // v1 → v2：补 突破失败体系（bt）/ 停滞彩蛋（stagnation）/ 事件队列（queue）
@@ -58,6 +58,21 @@
         s.resources.danyao = Math.min(99, Math.floor(legacy));
       }
       s.v = 6;
+      return s;
+    },
+    // v6 → v7：心魔种因（persistent_curses）/ 概念提示（seen_hints）
+    6: (s) => {
+      if (!Array.isArray(s.persistent_curses)) s.persistent_curses = [];
+      if (!s.seen_hints || typeof s.seen_hints !== 'object') s.seen_hints = {};
+      s.v = 7;
+      return s;
+    },
+    // v7 → v8：仙途指要（help_seen）/ 建筑首购建议（first_afford_seen）/ 天气（weather_state）
+    7: (s) => {
+      if (!s.help_seen || typeof s.help_seen !== 'object') s.help_seen = {};
+      if (!s.first_afford_seen || typeof s.first_afford_seen !== 'object') s.first_afford_seen = {};
+      if (!s.weather_state) s.weather_state = { kind: 'clear', seed_day: -1 };
+      s.v = 8;
       return s;
     }
   };

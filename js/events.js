@@ -172,15 +172,26 @@
     }
   }
 
-    // 效果槽预掷：避尘丹护体（pill_shield buff）期间或练气/筑基，B/F 槽重掷为 A/C
-    function hasShield() {
-      return S().buffs.some(b => b.id === 'pill_shield' && b.ts_end > Date.now());
+    // 效果槽预掷：练气/筑基、避尘丹护体期间，B/F 槽重掷为 A/C；
+    // 护山阵每级 −2% 负面权重（B/F 槽按概率被净化为增益槽，下限 50% 保留）
+    function negativeSuppression() {
+      const s = S();
+      let p = 0;
+      if (s.realm.index <= 1) p = 1;                                  // 低境零负面
+      if (s.buffs.some(b => b.id === 'pill_shield' && b.ts_end > Date.now())) p = 1; // 避尘丹护体
+      const hushan = (BAL().buildings.find(x => x.id === 'hushanzhen').effects || {}).neg_weight_per_level || 0.02;
+      p = Math.max(p, Math.min(0.9, g.LS.economy.bLevel('hushanzhen') * Math.abs(hushan))); // 每级 +2% 净化率
+      return p;
     }
     function rollSlots(ev) {
-      const protectedNow = S().realm.index <= 1 || hasShield();
+      const suppress = negativeSuppression();
       return ev.options.map(opt => {
         let fits = (opt.fits || ['A']).slice();
-        if (protectedNow) fits = fits.map(t => (t === 'B' || t === 'F') ? (Math.random() < 0.5 ? 'A' : 'C') : t);
+        if (suppress > 0) {
+          fits = fits.map(t => (t === 'B' || t === 'F')
+            ? (Math.random() < suppress ? (Math.random() < 0.5 ? 'A' : 'C') : t)
+            : t);
+        }
         const type = fits[U().randInt(0, fits.length - 1)];
         return materializeSlot(type, ev.rarity, ev.id);
       });

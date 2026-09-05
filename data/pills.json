@@ -2,18 +2,21 @@
   "version": 1,
   "quality": {
     "keys": [
+      "劣",
       "凡",
       "灵",
       "珍",
       "仙"
     ],
     "effect_mult": {
+      "劣": 1,
       "凡": 1,
       "灵": 1.5,
       "珍": 2,
       "仙": 2.5
     },
     "toxic_by_quality": {
+      "劣": 8,
       "凡": 6,
       "灵": 3,
       "珍": 1,
@@ -21,7 +24,7 @@
     },
     "toxic_decay_per_minute": 1,
     "toxic_penalty": {
-      "per_10_points": 0.05,
+      "per_10_points": 0.03,
       "cap": 0.3,
       "poisoning_threshold": 60,
       "poisoning_mult": 0.75,
@@ -72,7 +75,7 @@
       "rarity_default": "灵",
       "desc": "药性清冽，涤荡丹毒心魔，神台复明。",
       "effect": {
-        "toxic_reduce": 15,
+        "toxic_reduce": 10,
         "clear_curse": true
       }
     },
@@ -83,7 +86,8 @@
       "rarity_default": "珍",
       "desc": "脱胎换骨，根基自此稳固一分。",
       "effect": {
-        "perm_all_pct": 0.03
+        "perm_all_pct": 0.03,
+        "toxic_clear": true
       }
     },
     {
@@ -155,8 +159,50 @@
       "rarity_default": "仙",
       "desc": "传说中逆天改命的丹药，可解一时之厄。",
       "effect": {
-        "breakthrough_guarantee": true
+        "breakthrough_guarantee": true,
+        "guarantee_max_index": 8,
+        "rate_add_high": 0.3,
+        "danyin_curse": true
       }
+    },
+    {
+      "id": "xiuling",
+      "name": "锈灵丹",
+      "category": "prod",
+      "rarity_default": "劣",
+      "desc": "来路不明的劣丹，药力粗糙躁烈，服之勉强有用。",
+      "effect": {
+        "mult": 1.3,
+        "duration_s": 60
+      },
+      "toxic_add": 8
+    },
+    {
+      "id": "zhuoyuan",
+      "name": "浊元丹",
+      "category": "lingshi",
+      "rarity_default": "劣",
+      "desc": "浊气凝成的石丹，来路不明，食之确有进项。",
+      "effect": {
+        "lingshi_seconds_min": 400,
+        "lingshi_seconds_max": 800
+      },
+      "toxic_add": 15,
+      "curse_debuff": {
+        "mult": 0.8,
+        "duration_s": 60
+      }
+    },
+    {
+      "id": "jia_pozhang",
+      "name": "假破障丹",
+      "category": "breakthrough",
+      "rarity_default": "劣",
+      "desc": "货郎信誓旦旦的突破神丹，包装倒是体面。",
+      "effect": {
+        "rate_add": -0.05
+      },
+      "toxic_add": 2
     }
   ],
   "output_weights": {
@@ -169,6 +215,9 @@
     "huanling": 4,
     "bidust": 3,
     "hugu": 2,
-    "yuanhang": 2
+    "yuanhang": 2,
+    "xiuling": 2,
+    "zhuoyuan": 1,
+    "jia_pozhang": 1
   }
 }

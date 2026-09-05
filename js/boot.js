@@ -30,6 +30,10 @@
             const r4 = await fetch('./data/pills.json');
             if (r4.ok) balance.pills = (await r4.json());
           } catch (e) {}
+          try {
+            const r5 = await fetch('./data/help.json');
+            if (r5.ok) balance.help = (await r5.json());
+          } catch (e) {}
           return { balance, events, chains };
         }
       }
@@ -39,6 +43,7 @@
       const r = await (await fetch('http://127.0.0.1:8787/api/balance')).json();
       if (r && r.ok && r.balance && Array.isArray(r.balance.buildings)) {
         r.balance.pills = r.pills || {};
+        r.balance.help = r.help || {};
         return { balance: r.balance, events: r.events, chains: r.chains || [] };
       }
     } catch (e) {}
@@ -73,6 +78,7 @@
     g.LS.llm.checkHealth();
     setInterval(() => g.LS.llm.checkHealth(), 60000);
     g.LS.dev.initDev();
+    if (g.LS.ambient) g.LS.ambient.init(); // 环境动画层（云雾/墨鹤/天气）
     if (g.LS.S.settings.music && g.LS.ui.setBgm) g.LS.ui.setBgm(true);
 
     // 首次引导（仅首次，存档 flags 后不再弹）

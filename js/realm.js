@@ -128,6 +128,11 @@
         cooldown: Math.ceil((bt.fail_cooldown_s || 30))
       };
       if (g.LS.ui && g.LS.ui.showFailOverlay) g.LS.ui.showFailOverlay(title, text, isQihuo, details);
+      // 修炼迟滞（轻档 debuff，可用修为磨净或清心丹）：普通失败三成概率落下病根
+      if (!isQihuo && Math.random() < 0.30) {
+        g.LS.state.addBuff({ id: 'chidun_debuff', mult: 0.8, cure: 'xp|pill', ts_end: now + 300 * 1000 });
+        if (g.LS.ui && g.LS.ui.toast) g.LS.ui.toast('落下了病根：修炼迟滞（产量−20%）。可用修为温养冲刷，或服清心丹。');
+      }
       if (g.LS.ui && g.LS.ui.pushLog) {
         g.LS.ui.pushLog({ title, choice: '冲关' + next.name + '失利', gainText: isQihuo ? '真气逆行，产量受挫' : '修为保留过半，稍作调息' });
       }
@@ -160,7 +165,7 @@
       const bt2 = (bal.realm_break_text || []).find(x => x.index === next.index);
       const gain = Math.floor(next.reward_lingshi * rewardMult);
       const gainText = gain ? '灵石 +' + g.LS.util.fmt(gain) : '';
-      g.LS.ui.showBreakthroughOverlay(bt2 ? bt2.text : next.name, gainText);
+      g.LS.ui.showBreakthroughOverlay(bt2 ? bt2.text : next.name, gainText, next.index);
     }
     if (g.LS.ui && g.LS.ui.pushLog) {
       const gain2 = Math.floor(next.reward_lingshi * rewardMult);
@@ -233,6 +238,18 @@
     // 山志刻碑：本世大事凝成碑文（跨转生保留）
     if (g.LS.events) g.LS.events.carveStele();
     g.LS.events && g.LS.events.chronicle && g.LS.events.chronicle('rebirth', {});
+    // 前尘心障（丹瘾种因）转生结转；但若此世以身证道（渡劫以上且道心至善），来世得解
+    if (Array.isArray(s.persistent_curses) && s.persistent_curses.length) {
+      const redeemed = s.prestige.lifetime_best_realm >= 8 && s.dao_heart >= 50;
+      if (redeemed) {
+        const idx = s.persistent_curses.indexOf('danyin');
+        if (idx !== -1) s.persistent_curses.splice(idx, 1);
+        if (g.LS.ui && g.LS.ui.toast) g.LS.ui.toast('前尘心障，随这一世的证道烟消云散。');
+      } else {
+        fresh.persistent_curses = s.persistent_curses.slice(); // 记忆与技能跟着你，转生也带过去
+        if (g.LS.ui && g.LS.ui.toast) g.LS.ui.toast('心障随记忆一同转世——来世需以身证道方解。');
+      }
+    }
 
     // 重置范围：资源/建筑/境界/Buff 清零；保留：传承点、已兑换、tags 与图鉴（前世记忆）、道心
     const keepPrestige = s.prestige;

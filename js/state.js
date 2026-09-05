@@ -39,6 +39,8 @@
       bt: { fail_streak: 0, fail_cooldown_until: 0, visitor_effect: '', breakthrough_bonus: 0, guaranteed: false },
       pill_stock: {},
       pill_toxic: 0,
+      persistent_curses: [],
+      seen_hints: {},
       game_days: 0,
       rebirth_at: Date.now(),
       collection: {},
