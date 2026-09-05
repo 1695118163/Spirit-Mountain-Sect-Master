@@ -64,7 +64,36 @@
       "debuff_duration_s_max": 300
     },
     "pity_success": 3,
-    "fail_cooldown_s": 30
+    "fail_cooldown_s": 30,
+    "tactics": {
+      "steady": {
+        "key": "steady",
+        "name": "稳扎稳打",
+        "desc": "成功率加成，突破奖励灵石折损",
+        "rate_add": 0.1,
+        "reward_mult": 0.6
+      },
+      "normal": {
+        "key": "normal",
+        "name": "常规冲关",
+        "desc": "按当前境界正常成功率",
+        "rate_add": 0,
+        "reward_mult": 1
+      },
+      "bold": {
+        "key": "bold",
+        "name": "兵行险着",
+        "desc": "成功率折损，突破奖励灵石翻倍",
+        "rate_add": -0.1,
+        "reward_mult": 2
+      }
+    },
+    "pill_guard": {
+      "name": "服丹护法",
+      "pills": 3,
+      "rate_add": 0.05,
+      "desc": "突破前吞丹护住气海，成功率小幅提升"
+    }
   },
   "buildings": [
     {
@@ -612,7 +641,29 @@
   },
   "daoxin": {
     "min": -100,
-    "max": 100
+    "max": 100,
+    "tiers": [
+      {
+        "min": 50,
+        "name": "至善"
+      },
+      {
+        "min": 10,
+        "name": "仁心"
+      },
+      {
+        "min": -10,
+        "name": "中正"
+      },
+      {
+        "min": -50,
+        "name": "戾气"
+      },
+      {
+        "min": -101,
+        "name": "魔念"
+      }
+    ]
   },
   "offline": {
     "min_seconds": 60,
@@ -866,5 +917,31 @@
     "months_per_year": 12,
     "days_per_month": 30,
     "day_per_second": 1
+  },
+  "active_abilities": {
+    "liandanlu": {
+      "key": "kailu",
+      "name": "开炉",
+      "desc": "猛火催丹，立得丹药",
+      "cooldown_s": 600,
+      "pills": 5
+    },
+    "fangshi": {
+      "key": "ganji",
+      "name": "赶集",
+      "desc": "差人下山张罗，奇遇提前上门",
+      "cooldown_s": 600,
+      "next_event_in_s": 30
+    }
+  },
+  "codex": {
+    "tag_names": {
+      "qigai": "雪中老乞",
+      "shanzei": "山道贼首",
+      "huolang": "夜行货郎",
+      "gujian": "剑冢故剑",
+      "huyao": "报恩白狐",
+      "qinshi": "月下琴师"
+    }
   }
 }

@@ -309,11 +309,60 @@
     if (!isFinite(s.pill.progress_s)) s.pill.progress_s = 0;
   }
 
+  /* ── 建筑主动技能（开炉/赶集） ── */
+
+  function abilityDef(bId) {
+    const bal = BAL();
+    return (bal.active_abilities && bal.active_abilities[bId]) || null;
+  }
+
+  function abilityCooldownLeft(bId) {
+    const def = abilityDef(bId);
+    const s = S();
+    if (!def) return Infinity;
+    const until = (s.ability_cd && s.ability_cd[def.key]) || 0;
+    return Math.max(0, until - Date.now());
+  }
+
+  /** 使用建筑主动技能：开炉=立得丹药（耗灵气）；赶集=奇遇提前上门 */
+  function useAbility(bId) {
+    const def = abilityDef(bId);
+    const s = S();
+    if (!def) return { ok: false, reason: '无此技能' };
+    if (s.realm.index < (BAL().buildings.find(x => x.id === bId) || {}).unlock_realm) return { ok: false, reason: '未解锁' };
+    if ((s.buildings[bId] || 0) < 1) return { ok: false, reason: '尚未建造' };
+    if (abilityCooldownLeft(bId) > 0) return { ok: false, reason: '冷却中' };
+    const bal = BAL();
+    if (def.key === 'kailu') {
+      // 猛火催丹：按炉数立即产丹，每颗照常耗灵气，灵气不足部分炼不成
+      const furnaces = bLevel('liandanlu');
+      let made = 0;
+      const want = (def.pills || 5) + Math.floor(furnaces / 2);
+      for (let i = 0; i < want; i++) {
+        if (s.resources.lingqi < bal.pill.cost_lingqi_per_pill) break;
+        if (s.resources.danyao >= bal.pill.stock_cap) break;
+        s.resources.lingqi -= bal.pill.cost_lingqi_per_pill;
+        s.resources.danyao += 1;
+        made++;
+      }
+      if (!made) return { ok: false, reason: '灵气不足' };
+      s.ability_cd[def.key] = Date.now() + def.cooldown_s * 1000;
+      return { ok: true, msg: '丹炉轰然作响，得丹 ' + made + ' 颗' };
+    }
+    if (def.key === 'ganji') {
+      s.event_state.next_event_at = Date.now() + (def.next_event_in_s || 30) * 1000;
+      s.ability_cd[def.key] = Date.now() + def.cooldown_s * 1000;
+      return { ok: true, msg: '弟子下山张罗，奇遇将至' };
+    }
+    return { ok: false, reason: '未知技能' };
+  }
+
   g.LS.economy = {
     computePerSecond, xiuMult, prestigeMult, realmMultSafe,
     clickMult, clickQiGain, clickXpGain, breath,
     buildingCost, bulkCost, canAfford, pay, grant, costText, buyBuilding,
     pillInterval, pillTick, servePill, autoPillTick,
-    upgradeState, buyUpgrade, hasPrestige, bLevel, clampAll
+    upgradeState, buyUpgrade, hasPrestige, bLevel, clampAll,
+    abilityDef, abilityCooldownLeft, useAbility
   };
 })(typeof window !== 'undefined' ? window : globalThis);

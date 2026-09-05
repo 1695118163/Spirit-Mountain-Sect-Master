@@ -33,10 +33,22 @@
   }
 
   /**
-   * 突破执行。opts.forceSuccess=true 时必成（balance_check 模拟 / dev 调试用）。
-   * 成功率按目标境界配置；失败保留部分修为并可能走火入魔（产量减益 + 修为重挫）；
-   * 连败 pity_success 次后必成（防挫败）；道心影响成功率。
+   * 突破执行。opts：{ forceSuccess }（模拟/调试）、{ tactic: 'steady'|'normal'|'bold' }、{ usePill: bool }。
+   * 成功率按目标境界配置；道心影响成功率；策略改变成功率与奖励倍率；服丹护法再+5%（耗 3 丹）；
+   * 失败保留部分修为并可能走火入魔（产量减益 + 修为重挫）；连败 pity_success 次后必成（防挫败）。
    */
+  function breakthroughRate(next) {
+    const s = S();
+    const bt = BAL().breakthrough || {};
+    let rate = (bt.success_rate_by_realm && bt.success_rate_by_realm[next.index] != null)
+      ? bt.success_rate_by_realm[next.index] : 1;
+    if (rate < 1 && bt.dao_heart_bonus) {
+      if (s.dao_heart > bt.dao_heart_bonus.high) rate += bt.dao_heart_bonus.pct;
+      else if (s.dao_heart < bt.dao_heart_bonus.low) rate -= bt.dao_heart_bonus.pct;
+    }
+    return Math.max(0.1, Math.min(1, rate));
+  }
+
   function doBreakthrough(opts) {
     const next = nextRealm();
     if (!next || next.need_xp == null) return false;
@@ -47,14 +59,19 @@
     const now = Date.now();
     if (s.bt && s.bt.fail_cooldown_until > now) return false;
 
-    // ── 成功率判定 ──
-    let rate = (bt.success_rate_by_realm && bt.success_rate_by_realm[next.index] != null)
-      ? bt.success_rate_by_realm[next.index] : 1;
-    if (rate < 1 && bt.dao_heart_bonus) {
-      if (s.dao_heart > bt.dao_heart_bonus.high) rate += bt.dao_heart_bonus.pct;
-      else if (s.dao_heart < bt.dao_heart_bonus.low) rate -= bt.dao_heart_bonus.pct;
-      rate = Math.max(0.1, Math.min(1, rate));
+    // ── 成功率判定：基础 × 道心 + 策略 + 服丹护法 ──
+    let rate = breakthroughRate(next);
+    let rewardMult = 1;
+    if (opts && opts.tactic && bt.tactics && bt.tactics[opts.tactic]) {
+      rate += bt.tactics[opts.tactic].rate_add;
+      rewardMult = bt.tactics[opts.tactic].reward_mult;
     }
+    if (opts && opts.usePill && bt.pill_guard) {
+      if (s.resources.danyao < bt.pill_guard.pills) return false;
+      s.resources.danyao -= bt.pill_guard.pills;
+      rate += bt.pill_guard.rate_add;
+    }
+    rate = Math.max(0.05, Math.min(1, rate));
     const pity = bt.pity_success || 3;
     const streak = (s.bt && s.bt.fail_streak) || 0;
     const success = (opts && opts.forceSuccess) || streak >= pity - 1 || Math.random() < rate;
@@ -99,17 +116,19 @@
     s.prestige.lifetime_best_realm = Math.max(s.prestige.lifetime_best_realm, next.index);
     if (s.bt) s.bt.fail_streak = 0;
     if (s.stagnation) { s.stagnation.since = now; s.stagnation.fired_for_realm = -1; } // 停滞计时重置
-    if (next.reward_lingshi) s.resources.lingshi += next.reward_lingshi;
+    if (next.reward_lingshi) s.resources.lingshi += Math.floor(next.reward_lingshi * rewardMult);
     s.stats.breakthroughs += 1;
     // 新解锁建筑标记（卡片"新"角标置顶 30 秒）
     if (g.LS.ui && g.LS.ui.markNewBuildings) g.LS.ui.markNewBuildings(next.unlock_buildings || []);
     if (g.LS.ui && g.LS.ui.showBreakthroughOverlay) {
       const bt2 = (bal.realm_break_text || []).find(x => x.index === next.index);
-      const gainText = next.reward_lingshi ? '灵石 +' + g.LS.util.fmt(next.reward_lingshi) : '';
+      const gain = Math.floor(next.reward_lingshi * rewardMult);
+      const gainText = gain ? '灵石 +' + g.LS.util.fmt(gain) : '';
       g.LS.ui.showBreakthroughOverlay(bt2 ? bt2.text : next.name, gainText);
     }
     if (g.LS.ui && g.LS.ui.pushLog) {
-      g.LS.ui.pushLog({ title: '破境 · ' + next.name, choice: '境界精进', gainText: next.reward_lingshi ? '灵石 +' + g.LS.util.fmt(next.reward_lingshi) : '' });
+      const gain2 = Math.floor(next.reward_lingshi * rewardMult);
+      g.LS.ui.pushLog({ title: '破境 · ' + next.name, choice: '境界精进', gainText: gain2 ? '灵石 +' + g.LS.util.fmt(gain2) : '' });
     }
     // 飞升结算：强烈引导转生（不强制）
     if ((next.traits || []).indexOf('ascension') !== -1 && g.LS.ui && g.LS.ui.toast) {
@@ -188,6 +207,8 @@
     fresh.tags = keepTags;
     fresh.dao_heart = keepDao;
     fresh.settings = keepSettings;
+    fresh.collection = s.collection || {};   // 图鉴跨转生保留
+    fresh.chain_seen = s.chain_seen || {};
     fresh.prestige.lifetime_best_realm = 0;
     fresh.prestige.first_event_after_rebirth = fresh.prestige.bought.indexOf('qianshijiyuan') !== -1;
     fresh.prestige.points += gain;
@@ -207,7 +228,7 @@
   }
 
   g.LS.realm = {
-    realmInfo, realmMult, canBreakthrough, doBreakthrough,
+    realmInfo, realmMult, canBreakthrough, doBreakthrough, breakthroughRate,
     unlockedBuildingIds, unlockedEventPools,
     canRebirth, rebirthGain, doRebirth
   };

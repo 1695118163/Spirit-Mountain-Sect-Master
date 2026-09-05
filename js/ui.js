@@ -55,6 +55,7 @@
     });
     refs.buildingList = $id('building-list');
     refs.realmName = $id('realm-name');
+    refs.daoHeart = $id('dao-heart');
     refs.gameDate = $id('game-date');
     refs.realTime = $id('real-time');
     refs.xpFill = $id('xp-fill');
@@ -63,6 +64,7 @@
     refs.btnBreak = $id('btn-break');
     refs.btnPill = $id('btn-pill');
     refs.btnSettings = $id('btn-settings');
+    refs.btnCodex = $id('btn-codex');
     refs.btnRebirth = $id('btn-rebirth');
     refs.logList = $id('log-list');
     refs.permList = $id('perm-list');
@@ -90,13 +92,22 @@
     ['pointerup', 'pointerleave', 'pointercancel'].forEach(ev =>
       refs.btnBreath.addEventListener(ev, () => clearInterval(holdTimer)));
 
-    refs.btnBreak.addEventListener('click', () => g.LS.realm.doBreakthrough());
+    refs.btnBreak.addEventListener('click', () => {
+      const next = g.LS.BAL.realms[g.LS.S.realm.index + 1];
+      if (!next || !next.need_xp || g.LS.S.resources.xiufu < next.need_xp) return;
+      if (g.LS.S.bt && g.LS.S.bt.fail_cooldown_until > Date.now()) {
+        toast('调息之中，稍候再试（' + Math.ceil((g.LS.S.bt.fail_cooldown_until - Date.now()) / 1000) + ' 秒）');
+        return;
+      }
+      showBreakthroughPanel(next);
+    });
     refs.btnPill.addEventListener('click', () => {
       if (g.LS.economy.servePill()) { sfx('guqin'); toast('丹药入腹，灵机鼓荡（60 秒 ×2）'); }
       else toast('暂时无法服丹（无丹药或冷却中）');
       renderAll();
     });
     refs.btnSettings.addEventListener('click', showSettings);
+    if (refs.btnCodex) refs.btnCodex.addEventListener('click', showCodex);
     refs.btnRebirth.addEventListener('click', () => {
       if (!g.LS.realm.canRebirth()) { toast('修至化神，方见轮回之门。'); return; }
       showRebirthPanel();
@@ -177,11 +188,13 @@
             const rn = bal.resources.find(x => x.id === res);
             return '+' + b.effects.rate[res] + ' ' + (rn ? rn.name : res) + '/秒/级';
           }).join('，') : (b.effects.pill_per_level ? '每级每 60 秒产 1 颗丹（耗 50 灵气/颗）' : specialEffectText(b));
+          const ab = bal.active_abilities && bal.active_abilities[b.id];
           card.innerHTML =
             '<div class="b-head"><span class="b-name">' + b.name + '</span><span class="b-lv">Lv.' + (s.buildings[b.id] || 0) + '</span></div>' +
             '<div class="b-desc" data-tip="' + b.desc + '\n当前：' + rateTxt + '">' + b.desc + '</div>' +
             '<div class="b-rate">' + rateTxt + '</div>' +
-            '<button class="b-buy"></button>';
+            '<button class="b-buy"></button>' +
+            (ab && (s.buildings[b.id] || 0) > 0 ? '<button class="b-ability" data-ab="' + b.id + '"></button>' : '');
           if (newBuildingUntil[b.id] > Date.now()) {
             const badge = document.createElement('span');
             badge.className = 'new-badge';
@@ -192,6 +205,13 @@
           btn.addEventListener('click', () => {
             if (g.LS.economy.buyBuilding(b.id)) sfx('click');
             renderBuildings(); renderResources();
+          });
+          const abBtn = card.querySelector('.b-ability');
+          if (abBtn) abBtn.addEventListener('click', () => {
+            const r = g.LS.economy.useAbility(b.id);
+            if (r.ok) { sfx('guqin'); toast(r.msg); }
+            else toast(r.reason || '暂不可用');
+            renderBuildings();
           });
         } else {
           const realmName = bal.realms[b.unlock_realm] ? bal.realms[b.unlock_realm].name : '';
@@ -217,6 +237,15 @@
       btn.disabled = !ok;
       const txt = (lv === 0 ? '建造' : '升级') + ' · ' + eco.costText(cost);
       if (lastStr.bbtn[b.id] !== txt) { btn.textContent = txt; lastStr.bbtn[b.id] = txt; }
+      // 建筑主动技能：冷却倒计时与可用态
+      const abBtn = card.querySelector('.b-ability');
+      if (abBtn) {
+        const def = eco.abilityDef(b.id);
+        const left = eco.abilityCooldownLeft(b.id);
+        const abTxt = def.name + (left > 0 ? '（' + Math.ceil(left / 1000) + 's）' : '！');
+        if (lastStr['ab_' + b.id] !== abTxt) { abBtn.textContent = abTxt; lastStr['ab_' + b.id] = abTxt; }
+        abBtn.disabled = left > 0;
+      }
       // "新"角标 30 秒到期清理
       if (newBuildingUntil[b.id] && newBuildingUntil[b.id] < now) {
         delete newBuildingUntil[b.id];
@@ -261,6 +290,13 @@
     const realm = bal.realms[s.realm.index];
     const nameStr = realm.name;
     if (lastStr.realm !== nameStr) { refs.realmName.textContent = nameStr; lastStr.realm = nameStr; }
+    // 道心值 + 分档（影响奇遇池、AI 基调、突破成功率）
+    if (refs.daoHeart) {
+      const tiers = bal.daoxin.tiers || [];
+      const tier = tiers.find(t => s.dao_heart >= t.min);
+      const dStr = '道心 ' + (s.dao_heart > 0 ? '+' : '') + s.dao_heart + (tier ? ' · ' + tier.name : '');
+      if (lastStr.dao !== dStr) { refs.daoHeart.textContent = dStr; lastStr.dao = dStr; }
+    }
     const next = bal.realms[s.realm.index + 1];
     if (next && next.need_xp) {
       const pct = Math.min(100, (s.resources.xiufu / next.need_xp) * 100);
@@ -359,7 +395,17 @@
     for (const opt of ev.options) {
       const btn = document.createElement('button');
       btn.className = 'ev-option' + (opt.key === 'C' ? ' ev-leave' : '');
-      btn.textContent = opt.text + (opt.key === 'C' ? '' : '（' + (opt.key === 'A' ? '其一' : '其二') + '）');
+      // 效果方向徽章（不给数值，只给方向感）
+      let badge = '';
+      if (opt.slot) {
+        const T = { A: ['益', 'ev-badeg-good'], B: ['耗', 'ev-badge-bad'], C: ['势', 'ev-badge-buff'], D: ['恒', 'ev-badge-perm'], E: ['缘', 'ev-badge-chain'], F: ['异', 'ev-badge-bad'] };
+        const t = T[opt.slot.type];
+        if (t) badge = '<span class="ev-badge ' + t[1] + '">' + t[0] + '</span>';
+        if (opt.daoxin > 0) badge += '<span class="ev-badge ev-badge-good">仁</span>';
+        else if (opt.daoxin < 0) badge += '<span class="ev-badge ev-badge-bad">贪</span>';
+      }
+      const tail = opt.key === 'C' ? '' : '（' + (opt.key === 'A' ? '其一' : '其二') + '）';
+      btn.innerHTML = badge + ' ' + escapeHtml(opt.text) + tail;
       btn.addEventListener('click', () => g.LS.events.chooseOption(opt.key));
       card.appendChild(btn);
     }
@@ -496,6 +542,91 @@
     const close = () => { ov.remove(); renderAll(); };
     ov.addEventListener('click', close);
     setTimeout(() => { if (ov.parentNode) close(); }, (g.LS.BAL.breakthrough && g.LS.BAL.breakthrough.anim_ms) || 1500);
+  }
+
+  /* ── 突破策略面板：稳扎稳打 / 常规 / 兵行险着 + 服丹护法 ── */
+  function showBreakthroughPanel(next) {
+    removeModals();
+    const { card } = makeModal();
+    const bal = g.LS.BAL;
+    const bt = bal.breakthrough || {};
+    const render = (selTactic, usePill) => {
+      const base = g.LS.realm.breakthroughRate(next);
+      const tactics = bt.tactics || {};
+      const pill = bt.pill_guard || {};
+      let rows = '';
+      ['steady', 'normal', 'bold'].forEach(k => {
+        const t = tactics[k];
+        if (!t) return;
+        let r = Math.max(0.05, Math.min(1, base + t.rate_add + (usePill && pill.rate_add ? pill.rate_add : 0)));
+        const sel = selTactic === k;
+        rows += '<button class="ev-option tactic-row' + (sel ? ' tactic-sel' : '') + '" data-t="' + k + '">' +
+          '<span class="ev-badge ' + (t.rate_add > 0 ? 'ev-badge-good' : (t.rate_add < 0 ? 'ev-badge-bad' : 'ev-badge-buff')) + '">' + Math.round(r * 100) + '%</span> ' +
+          '<b>' + escapeHtml(t.name) + '</b>　' + escapeHtml(t.desc) +
+          (t.reward_mult !== 1 ? '　<span class="log-gain">灵石 ×' + t.reward_mult + '</span>' : '') + '</button>';
+      });
+      const canPill = g.LS.S.resources.danyao >= (pill.pills || 3);
+      card.innerHTML =
+        '<div class="modal-title">冲关 · ' + escapeHtml(next.name) + '</div>' +
+        '<div class="modal-desc">基础成功率 <b>' + Math.round(base * 100) + '%</b>' +
+        (g.LS.S.dao_heart > (bt.dao_heart_bonus || {}).high ? '（道心加持）' : (g.LS.S.dao_heart < (bt.dao_heart_bonus || {}).low ? '（道心拖累）' : '')) +
+        '　连败保底：' + (bt.pity_success || 3) + ' 次</div>' +
+        rows +
+        '<div class="set-row"><label>服丹护法（' + (pill.pills || 3) + ' 颗，成功率 +' + Math.round((pill.rate_add || 0) * 100) + '%）— 现有 ' + g.LS.S.resources.danyao + '</label>' +
+        '<input type="checkbox" id="bt-use-pill" ' + (usePill ? 'checked' : '') + (canPill ? '' : ' disabled') + '></div>' +
+        '<div style="text-align:center;margin-top:10px"><button class="btn-primary" id="bt-go" style="padding:10px 34px;font-size:16px">出 关</button> ' +
+        '<button class="icon-btn" id="bt-cancel">再想想</button></div>';
+      card.querySelectorAll('[data-t]').forEach(b => {
+        b.addEventListener('click', () => render(b.dataset.t, card.querySelector('#bt-use-pill').checked));
+      });
+      card.querySelector('#bt-use-pill').addEventListener('change', (e) => render(selTactic, e.target.checked));
+      card.querySelector('#bt-cancel').addEventListener('click', removeModals);
+      card.querySelector('#bt-go').addEventListener('click', () => {
+        removeModals();
+        g.LS.realm.doBreakthrough({ tactic: selTactic || 'normal', usePill: !!card.querySelector('#bt-use-pill') && card.querySelector('#bt-use-pill').checked });
+      });
+    };
+    render('normal', false);
+  }
+
+  /* ── 图鉴面板：奇遇收集 / 剧情链 / 因果故人（跨转生保留） ── */
+  function showCodex() {
+    removeModals();
+    const { card } = makeModal();
+    const s = g.LS.S;
+    const bal = g.LS.BAL;
+    let evRows = '';
+    let got = 0;
+    for (const ev of g.LS.EVT) {
+      const n = s.collection[ev.id] || 0;
+      if (n) got++;
+      evRows += '<div class="codex-cell' + (n ? ' seen rarity-' + ev.rarity : '') + '" data-tip="' + (n ? escapeHtml(ev.title) + '（遇过 ' + n + ' 次）' : '尚未遇见') + '">' +
+        (n ? escapeHtml(ev.title) : '？') + '</div>';
+    }
+    let chainRows = '';
+    for (const c of (g.LS.CHAINS || [])) {
+      const seenN = s.chain_seen[c.id] || 0;
+      chainRows += '<div class="codex-chain">' +
+        '<b>' + (seenN ? escapeHtml(c.stages[0].title) : '？？') + '</b>　' +
+        '<span class="log-choice">剧情链 ' + seenN + '/' + c.stages.length + ' 幕</span></div>';
+    }
+    let tagRows = '';
+    const tagNames = (bal.codex && bal.codex.tag_names) || {};
+    for (const k in s.tags) {
+      const t = s.tags[k];
+      tagRows += '<div class="codex-chain"><b>' + escapeHtml(tagNames[k] || k) + '</b>　' +
+        '<span class="' + (t.recycled ? 'log-choice' : 'log-gain') + '">' +
+        (t.stance || '') + '·' + (t.recycled ? '已了结' : '未了') + '（' + (t.weight || 1) + '）</span></div>';
+    }
+    if (!tagRows) tagRows = '<div class="codex-chain">此世尚无因果纠缠</div>';
+    card.innerHTML =
+      '<div class="modal-title">见 闻 录</div>' +
+      '<div class="modal-desc">奇遇集齐 ' + got + ' / ' + g.LS.EVT.length + '　·　图鉴与因果跨转生保留</div>' +
+      '<h3 class="panel-title">奇遇图鉴</h3><div class="codex-grid">' + evRows + '</div>' +
+      '<h3 class="panel-title">剧情链</h3>' + chainRows +
+      '<h3 class="panel-title">因果故人</h3>' + tagRows +
+      '<div style="text-align:center;margin-top:12px"><button class="icon-btn" id="codex-close">合上</button></div>';
+    card.querySelector('#codex-close').addEventListener('click', removeModals);
   }
 
   /* ── 设置面板 ── */

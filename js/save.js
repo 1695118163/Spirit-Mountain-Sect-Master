@@ -8,7 +8,7 @@
   const KEY = 'lingshan_save_v1';
   const KEY_BACKUP = 'lingshan_save_backup';
   const KEY_TMP = 'lingshan_save_tmp';
-  const SAVE_VERSION = 3;
+  const SAVE_VERSION = 4;
 
   const MIGRATIONS = {
     // v1 → v2：补 突破失败体系（bt）/ 停滞彩蛋（stagnation）/ 事件队列（queue）
@@ -25,6 +25,14 @@
       if (typeof s.game_days !== 'number' || !isFinite(s.game_days)) s.game_days = 0;
       if (!s.rebirth_at) s.rebirth_at = s.created_at || Date.now();
       s.v = 3;
+      return s;
+    },
+    // v3 → v4：补 图鉴（collection/chain_seen）/ 建筑技能冷却（ability_cd）
+    3: (s) => {
+      if (!s.collection || typeof s.collection !== 'object') s.collection = {};
+      if (!s.chain_seen || typeof s.chain_seen !== 'object') s.chain_seen = {};
+      if (!s.ability_cd || typeof s.ability_cd !== 'object') s.ability_cd = {};
+      s.v = 4;
       return s;
     }
   };

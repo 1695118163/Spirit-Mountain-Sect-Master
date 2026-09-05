@@ -450,6 +450,14 @@
     s.event_state.recent_ids.unshift({ id: ev.id, ts: Date.now() });
     if (s.event_state.recent_ids.length > BAL().events.rarity.recent_ids_max) s.event_state.recent_ids.pop();
 
+    // 图鉴收录（跨转生保留）：内置事件按 id 计数；剧情链记看过的最高幕
+    if (typeof ev.id === 'string' && /^[A-J][0-9]{2}$/.test(ev.id)) {
+      s.collection[ev.id] = (s.collection[ev.id] || 0) + 1;
+    } else if (typeof ev.id === 'string' && ev.id.indexOf('chain:') === 0) {
+      const parts = ev.id.split(':');
+      s.chain_seen[parts[1]] = Math.max(s.chain_seen[parts[1]] || 0, parseInt(parts[2], 10) + 1);
+    }
+
     s.event_state.log.unshift({ time: Date.now(), title: ev.title, choice: key === 'C' ? '离去' : (ev.options.find(o => o.key === key) || {}).text || '' });
     if (s.event_state.log.length > 5) s.event_state.log.pop();
 

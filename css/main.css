@@ -111,7 +111,44 @@ button:not(:disabled):active { transform: translateY(1px); }
 
 #game-date { font-size: 15px; letter-spacing: 3px; color: var(--cyan); }
 #real-time { font-size: 11px; color: var(--ink-soft); letter-spacing: 1px; }
+#dao-heart { font-size: 12px; color: var(--cinnabar); letter-spacing: 2px; }
 #realm-name { font-size: 34px; letter-spacing: 12px; }
+
+/* ── 奇遇选项效果徽章（只给方向不给数值） ── */
+.ev-badge {
+  display: inline-block; min-width: 18px; padding: 0 4px; margin-right: 4px;
+  border: 1px solid currentColor; border-radius: 3px; font-size: 11px; line-height: 16px;
+  vertical-align: middle; opacity: .85;
+}
+.ev-badge-good { color: #3a7d44; }   /* 益 / 仁 */
+.ev-badge-bad { color: var(--cinnabar); } /* 耗 / 贪 / 异 */
+.ev-badge-buff { color: var(--cyan); }    /* 势 */
+.ev-badge-perm { color: var(--gold); }    /* 恒 */
+.ev-badge-chain { color: #7a5ba6; }       /* 缘 */
+
+/* ── 突破策略行 ── */
+.tactic-row { text-align: left; }
+.tactic-sel { border-color: var(--cinnabar) !important; color: var(--cinnabar); background: rgba(168, 50, 50, .06); }
+
+/* ── 图鉴 ── */
+.codex-grid { display: grid; grid-template-columns: repeat(6, 1fr); gap: 5px; margin-bottom: 10px; }
+.codex-cell {
+  border: 1px dashed var(--ink-soft); border-radius: 3px; text-align: center;
+  font-size: 11px; padding: 4px 2px; color: var(--ink-soft); overflow: hidden;
+  white-space: nowrap; text-overflow: ellipsis;
+}
+.codex-cell.seen { border-style: solid; color: var(--ink); background: rgba(255, 255, 255, .45); }
+.codex-cell.seen.rarity-仙 { box-shadow: 0 0 6px rgba(168, 50, 50, .4); }
+.codex-cell.seen.rarity-珍 { box-shadow: 0 0 6px rgba(184, 134, 11, .35); }
+.codex-chain { font-size: 13px; padding: 3px 0; border-bottom: 1px dashed rgba(43, 43, 43, .15); }
+
+/* ── 建筑主动技能按钮 ── */
+.b-ability {
+  margin-top: 4px; width: 100%; padding: 4px; cursor: pointer;
+  background: none; border: 1px solid var(--cyan); color: var(--cyan);
+  border-radius: 3px; font-size: 12px; font-family: inherit;
+}
+.b-ability:disabled { border-color: #b8b8b0; color: #9a9a92; cursor: not-allowed; }
 
 #xp-bar {
   width: 60%; height: 18px; border: 1px solid var(--ink-soft); border-radius: 9px;
