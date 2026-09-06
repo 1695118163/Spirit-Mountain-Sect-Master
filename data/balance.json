@@ -1525,5 +1525,28 @@
         "name": "仙品"
       }
     ]
+  },
+  "difficulty": {
+    "easy": {
+      "label": "简单",
+      "xp_mult": 3.5,
+      "fail_rate_add": 0.1,
+      "qihuo_add": -0.05,
+      "desc": "修为获取大幅提升，冲关更稳——适合休闲看剧情"
+    },
+    "normal": {
+      "label": "正常",
+      "xp_mult": 2,
+      "fail_rate_add": 0,
+      "qihuo_add": 0,
+      "desc": "标准节奏：熟练操作约 40 分钟一世"
+    },
+    "hard": {
+      "label": "困难",
+      "xp_mult": 1,
+      "fail_rate_add": -0.1,
+      "qihuo_add": 0.1,
+      "desc": "修为获取减半，失败率更高——硬核渡劫"
+    }
   }
 }
