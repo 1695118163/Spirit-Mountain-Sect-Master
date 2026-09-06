@@ -1163,7 +1163,7 @@
         '<div class="modal-desc">添加好友（粘贴对方名片）：</div>' +
         '<textarea class="set-textarea" id="fr-paste" placeholder="粘贴对方名片码"></textarea>' +
         '<div class="set-row"><button class="btn-primary" id="fr-add" style="padding:6px 16px">添加好友</button></div>' +
-        '<h3 class="panel-title">道友录（' + fr.length + '）</h3>' + rows +
+        '<h3 class="panel-title">道友录（' + fr.length + '）</h3><div class="modal-desc">论道积分 ' + (s.honor || 0) + ' · 段位 <b>' + (function(){ const ranks=(g.LS.BAL.battle||{}).ranks||[]; let cur=ranks[0]||{name:'凡品'}; for(const r of ranks){ if((s.honor||0)>=r.min) cur=r; } return cur.name; })() + '</b></div>' + rows +
         '<div style="text-align:center;margin-top:10px"><button class="icon-btn" id="fr-close2">合上</button></div>';
       card.querySelector('#fr-close').addEventListener('click', removeModals);
       card.querySelector('#fr-close2').addEventListener('click', removeModals);

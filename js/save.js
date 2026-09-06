@@ -95,6 +95,8 @@
     for (const k in fresh) {
       if (s[k] === undefined) s[k] = fresh[k];
     }
+    // 旧档灵根补发（null 是合法缺省，须显式补随机）
+    if (!s.spirit_root && g.LS.state && g.LS.state.rollSpiritRoot) s.spirit_root = g.LS.state.rollSpiritRoot();
     for (const r in fresh.resources) if (s.resources[r] === undefined) s.resources[r] = 0;
     s.event_state = Object.assign({}, fresh.event_state, s.event_state || {});
     s.prestige = Object.assign({}, fresh.prestige, s.prestige || {});
