@@ -181,6 +181,7 @@
       if (s.buffs.some(b => b.id === 'pill_shield' && b.ts_end > Date.now())) p = 1; // 避尘丹护体
       const hushan = (BAL().buildings.find(x => x.id === 'hushanzhen').effects || {}).neg_weight_per_level || 0.02;
       p = Math.max(p, Math.min(0.9, g.LS.economy.bLevel('hushanzhen') * Math.abs(hushan))); // 每级 +2% 净化率
+      if (g.LS.economy.hasPrestige && g.LS.economy.hasPrestige('hushenfu')) p = Math.max(p, 0.5); // 护身符：负面奇遇权重 −50%
       return p;
     }
     function rollSlots(ev) {

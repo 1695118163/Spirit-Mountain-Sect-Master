@@ -43,9 +43,11 @@
     let rate = (bt.success_rate_by_realm && bt.success_rate_by_realm[next.index] != null)
       ? bt.success_rate_by_realm[next.index] : 1;
     if (rate < 1 && bt.dao_heart_bonus) {
-      if (s.dao_heart > bt.dao_heart_bonus.high) rate += bt.dao_heart_bonus.pct;
-      else if (s.dao_heart < bt.dao_heart_bonus.low) rate -= bt.dao_heart_bonus.pct;
+      if (S().dao_heart > bt.dao_heart_bonus.high) rate += bt.dao_heart_bonus.pct;
+      else if (S().dao_heart < bt.dao_heart_bonus.low) rate -= bt.dao_heart_bonus.pct;
     }
+    // 难度修正：困难档冲关更凶险，简单档更稳
+    if (rate < 1 && g.LS.economy.difficultyCfg) rate += g.LS.economy.difficultyCfg().fail_rate_add || 0;
     return Math.max(0.1, Math.min(1, rate));
   }
 
@@ -82,6 +84,9 @@
     }
     let guaranteed = !!(s.bt && s.bt.guaranteed);
     if (guaranteed) s.bt.guaranteed = false; // 渡厄丹：下次冲关必成，用后即清
+    // 难度修正：困难档冲关更凶险，简单档更稳
+    const dfc = g.LS.economy.difficultyCfg ? g.LS.economy.difficultyCfg() : { fail_rate_add: 0, qihuo_add: 0 };
+    if (!guaranteed && dfc.fail_rate_add) rate += dfc.fail_rate_add;
     // 故人上门效果：恩人护法+、仇人搅局−（一次性，用后即清）
     if (s.bt && s.bt.visitor_effect && bt.visitors) {
       if (s.bt.visitor_effect === 'boost') rate += bt.visitors.boost_rate_add || 0.10;
@@ -90,7 +95,8 @@
     }
     // 心魔侵扰：元婴起冲关有一线可能被心魔缠上（渡厄丹可免），压一成成功率（天劫重入沿用首判）
     let xinmoHit = false;
-    if (next.index >= 3 && !guaranteed && !(opts && opts.failReplay) && !(opts && opts.skipTribulation) && Math.random() < 0.15) {
+    const xinmoChance = 0.15 + (dfc.qihuo_add || 0);
+    if (next.index >= 3 && !guaranteed && !(opts && opts.failReplay) && !(opts && opts.skipTribulation) && Math.random() < Math.max(0.05, xinmoChance)) {
       xinmoHit = true;
       rate -= 0.15;
       if (g.LS.ui && g.LS.ui.toast) g.LS.ui.toast('冲关在即，一缕心魔悄然缠上识海——这一关，格外凶险。');
@@ -122,7 +128,8 @@
       let isQihuo = false;
       if (bt.qihuo) {
         let q = (bt.qihuo.base_chance || 0.25) + next.index * (bt.qihuo.chance_growth_per_realm || 0.05);
-        q = Math.min(q, bt.qihuo.max_chance || 0.5);
+        if (dfc.qihuo_add) q += dfc.qihuo_add; // 难度修正：困难档更容易走火
+        q = Math.max(0, Math.min(q, bt.qihuo.max_chance || 0.5));
         if (Math.random() < q) {
           isQihuo = true;
           s.resources.xiufu *= (1 - (bt.qihuo.xp_loss_ratio || 0.5));

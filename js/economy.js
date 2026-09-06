@@ -73,7 +73,7 @@
 
     if (resId === 'xiufu') {
       const qiRate = computePerSecond('lingqi', opts);
-      return qiRate * bal.xiuwei_rate_factor * xiuMult();
+      return qiRate * bal.xiuwei_rate_factor * xiuMult() * difficultyCfg().xp_mult;
     }
 
     // 第1步：基础产量
@@ -149,7 +149,7 @@
     now = now || Date.now();
     const lv = bLevel('tunafa');
     if (!lv) return 0;
-    let m = BAL().click.xp_per_tunafa_level * lv;
+    let m = BAL().click.xp_per_tunafa_level * lv * difficultyCfg().xp_mult;
     m *= xiuMult() * (1 + (S().perm_bonus.all || 0) + (S().perm_bonus.xiufu || 0));
     for (const buff of S().buffs) {
       if (buff.ts_end > now && buff.mult) m *= buff.mult;
@@ -397,6 +397,12 @@
   /* ── 丹药细分：库存 / 服用 / 丹毒（数据在 data/pills.json） ── */
 
   function pillCat(id) { return ((BAL().pills || {}).pills || []).find(p => p.id === id) || null; }
+  /** 难度配置（简单/正常/困难）：xp_mult 修为倍率、fail_rate_add 突破成功率修正、qihuo_add 走火概率修正 */
+  function difficultyCfg() {
+    const all = BAL().difficulty || {};
+    return all[(S().settings && S().settings.difficulty) || 'normal'] || all.normal || { xp_mult: 2.0, fail_rate_add: 0, qihuo_add: 0 };
+  }
+
   const FALLBACK_QUALITY = {
     keys: ['劣', '凡', '灵', '珍', '仙'],
     effect_mult: { 劣: 1.0, 凡: 1.0, 灵: 1.5, 珍: 2.0, 仙: 2.5 },
@@ -549,8 +555,9 @@
         break;
       }
       case 'rescue': {
-        // 天元/渡厄丹：index≤8 必成；渡劫→飞升（index9）天道考验，改大幅 +30%
-        if (next.index <= (cat.effect.guarantee_max_index || 8)) {
+        // 天元/渡厄丹：当前境界 index≤8 时下次冲关必成；渡劫（index8）冲飞升（index9）天道考验，改大幅 +30%
+        const curIdx = S().realm.index;
+        if (curIdx <= (cat.effect.guarantee_max_index || 8)) {
           s.bt.guaranteed = true;
           msg += '，下次冲关必成';
         } else {
@@ -593,6 +600,6 @@
     pillInterval, pillTick, servePill, autoPillTick,
     upgradeState, buyUpgrade, hasPrestige, bLevel, clampAll,
     abilityDef, abilityCooldownLeft, useAbility,
-    pillCat, pillQualityCfg, pillTotal, pillCount, grantPill, rollPillQuality, rollPillOutput, consumePill, toxicDecay
+    pillCat, pillQualityCfg, pillTotal, pillCount, grantPill, rollPillQuality, rollPillOutput, consumePill, toxicDecay, difficultyCfg
   };
 })(typeof window !== 'undefined' ? window : globalThis);

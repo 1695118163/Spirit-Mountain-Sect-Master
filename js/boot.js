@@ -88,6 +88,10 @@
         localStorage.setItem('lingshan_tutorial_done', '1');
       }
     } catch (e) {}
+    // 新档难度选择：未定过难度且刚开局时弹一次
+    if (!g.LS.S.settings.difficulty && g.LS.S.stats.play_seconds < 5) {
+      setTimeout(() => g.LS.ui.showDifficultyPick(), 800);
+    }
   }
 
   g.LS.boot = { loadData, init };

@@ -57,7 +57,7 @@
     "qihuo": {
       "base_chance": 0.25,
       "chance_growth_per_realm": 0.05,
-      "max_chance": 0.5,
+      "max_chance": 0.65,
       "xp_loss_ratio": 0.5,
       "debuff_mult": 0.5,
       "debuff_duration_s_min": 120,
@@ -824,8 +824,8 @@
         "max": 180
       },
       "t_second_breakthrough_s": {
-        "min": 360,
-        "max": 900
+        "min": 180,
+        "max": 600
       },
       "active1h_min_realm": 2,
       "active1h_stretch_realm": 3,
@@ -893,7 +893,8 @@
       "first_rebirth_ready": "化神已至：右栏「转生」点亮。兵解转世——修为换传承点，买永久加成，下一世快得多。",
       "first_fail": "突破失败别慌：连败 3 次必定成功，修为保留一半，稳扎稳打更稳。",
       "first_insight": "顿悟：卡关太久山灵自会点拨——白得的修为，继续。",
-      "first_xinmo": "心魔：产量暂时受损，会自己散去；道心高的人少遇心魔。"
+      "first_xinmo": "心魔：产量暂时受损，会自己散去；道心高的人少遇心魔。",
+      "difficulty_pick": "选个难度：随时可在设置里更改，只影响节奏不影响内容。"
     }
   },
   "stagnation": {
@@ -1435,5 +1436,28 @@
         "rgba(85,110,135,.18)"
       ]
     }
-  ]
+  ],
+  "difficulty": {
+    "easy": {
+      "label": "简单",
+      "xp_mult": 3.5,
+      "fail_rate_add": 0.1,
+      "qihuo_add": -0.05,
+      "desc": "修为获取大幅提升，冲关更稳——适合休闲看剧情"
+    },
+    "normal": {
+      "label": "正常",
+      "xp_mult": 2,
+      "fail_rate_add": 0,
+      "qihuo_add": 0,
+      "desc": "标准节奏：熟练操作约 40 分钟一世"
+    },
+    "hard": {
+      "label": "困难",
+      "xp_mult": 1,
+      "fail_rate_add": -0.1,
+      "qihuo_add": 0.1,
+      "desc": "修为获取减半，失败率更高——硬核渡劫"
+    }
+  }
 }

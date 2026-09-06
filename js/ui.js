@@ -882,6 +882,30 @@
     render('normal', false);
   }
 
+  /* ── 难度选择：新档首入弹窗 + 设置页随时可换 ── */
+  function showDifficultyPick(onDone) {
+    removeModals();
+    const { card, mask } = makeModal(onDone === 'settings' ? removeModals : null);
+    const bal = g.LS.BAL;
+    const desc = (k) => (bal.difficulty && bal.difficulty[k] && bal.difficulty[k].desc) || '';
+    const label = (k) => (bal.difficulty && bal.difficulty[k] && bal.difficulty[k].label) || k;
+    card.innerHTML =
+      '<div class="modal-title">选 择 道 途</div>' +
+      '<div class="modal-desc">三种修行难度，随时可在「设置」里更改——只影响节奏，不影响任何内容。</div>' +
+      ['easy', 'normal', 'hard'].map(k =>
+        '<button class="ev-option tactic-row" data-diff="' + k + '"><b>' + escapeHtml(label(k)) + '</b>　' + escapeHtml(desc(k)) + '</button>'
+      ).join('');
+    card.querySelectorAll('[data-diff]').forEach(btn => {
+      btn.addEventListener('click', () => {
+        g.LS.S.settings.difficulty = btn.dataset.diff;
+        g.LS.save.save();
+        removeModals();
+        toast('道途已定：' + label(btn.dataset.diff) + (onDone === 'settings' ? '' : '。点「吐纳」开始修行'), 3600);
+        if (typeof onDone === 'function') onDone();
+      });
+    });
+  }
+
   /* ── B1 仙途指要：分节帮助面板（文案在 help.json help_topics） ── */
   function showHelpPanel() {
     removeModals();
@@ -1075,10 +1099,26 @@
   /* ── 设置面板 ── */
   function showSettings() {
     removeModals();
-    const { mask, card } = makeModal(removeModals);
+    const { card, mask } = makeModal(removeModals);
     const s = g.LS.S;
+    const label = (k) => (g.LS.BAL.difficulty && g.LS.BAL.difficulty[k] && g.LS.BAL.difficulty[k].label) || k;
+    const bindDiff = () => {
+      card.querySelectorAll('[data-setdiff]').forEach(btn => {
+        btn.addEventListener('click', () => {
+          s.settings.difficulty = btn.dataset.setdiff;
+          g.LS.save.save();
+          toast('难度已切换：' + label(btn.dataset.setdiff));
+          showSettings(); // 重绘高亮
+        });
+      });
+    };
+    bindDiff();
     card.innerHTML =
       '<div class="modal-title">设 置<button class="icon-btn" id="set-close" style="float:right;font-size:12px;padding:3px 12px">合上</button></div>' +
+      '<div class="set-row"><label>难度</label><span id="set-diff">' +
+      ['easy', 'normal', 'hard'].map(k =>
+        '<button class="icon-btn" data-setdiff="' + k + '" style="' + (s.settings.difficulty === k ? 'border-color:var(--cinnabar);color:var(--cinnabar)' : '') + '">' + escapeHtml(label(k)) + '</button>'
+      ).join(' ') + '</span></div>' +
       '<div class="set-row"><label>音效</label><input type="checkbox" id="set-sound" ' + (s.settings.sound ? 'checked' : '') + '></div>' +
       '<div class="set-row"><label>古琴（环境曲，留白即曲）</label><input type="checkbox" id="set-music" ' + (s.settings.music ? 'checked' : '') + '></div>' +
       '<div class="set-row"><label>LLM 动态奇遇</label><input type="checkbox" id="set-llm" ' + (s.settings.llm_enabled ? 'checked' : '') + '></div>' +
@@ -1090,6 +1130,7 @@
       '<div class="set-row"><label>导入存档</label><button class="icon-btn" id="set-import">读取文本</button></div>' +
       '<div class="danger-zone set-row"><label>重置游戏（长按 3 秒）</label><button id="btn-reset"><span class="hold-fill"></span>长按重置</button></div>';
 
+    bindDiff(); // 难度三选按钮事件（需在 innerHTML 渲染后绑定）
     card.querySelector('#set-sound').addEventListener('change', (e) => { s.settings.sound = e.target.checked; g.LS.save.save(); });
     card.querySelector('#set-music').addEventListener('change', (e) => {
       s.settings.music = e.target.checked;

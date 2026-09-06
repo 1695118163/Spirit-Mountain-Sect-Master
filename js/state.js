@@ -51,7 +51,7 @@
       steles: [],
       prestige: { count: 0, points: 0, total_points: 0, spent: 0, bought: [], lifetime_best_realm: 0, first_event_after_rebirth: false },
       stats: { play_seconds: 0, clicks: 0, events_total: 0, events_llm: 0, events_fallback: 0, breakthroughs: 0, prestige_count: 0, offline_claimed: 0, negative_settled: 0, total_settled: 0 },
-      settings: { sound: true, llm_enabled: true, music: false }
+      settings: { sound: true, llm_enabled: true, music: false, difficulty: 'normal' }
     };
   }
 
