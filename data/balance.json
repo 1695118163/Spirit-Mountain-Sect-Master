@@ -278,7 +278,11 @@
         "lingquan"
       ],
       "unlock_pool": "A",
-      "traits": []
+      "traits": [],
+      "bar": [
+        "#9fb3c8",
+        "#5f7388"
+      ]
     },
     {
       "index": 1,
@@ -291,7 +295,11 @@
         "fangshi"
       ],
       "unlock_pool": "B",
-      "traits": []
+      "traits": [],
+      "bar": [
+        "#6b9bd1",
+        "#3a6ba1"
+      ]
     },
     {
       "index": 2,
@@ -306,6 +314,10 @@
       "unlock_pool": "C",
       "traits": [
         "interval_mult_0.9"
+      ],
+      "bar": [
+        "#e8c96a",
+        "#b8922e"
       ]
     },
     {
@@ -321,6 +333,10 @@
       "unlock_pool": "D",
       "traits": [
         "auto_pill"
+      ],
+      "bar": [
+        "#b39ddb",
+        "#7e57c2"
       ]
     },
     {
@@ -335,6 +351,10 @@
       "unlock_pool": "E",
       "traits": [
         "unlock_rebirth"
+      ],
+      "bar": [
+        "#f0906a",
+        "#c25a38"
       ]
     },
     {
@@ -347,7 +367,11 @@
         "dongfu"
       ],
       "unlock_pool": "F",
-      "traits": []
+      "traits": [],
+      "bar": [
+        "#63d8d8",
+        "#2ea3a3"
+      ]
     },
     {
       "index": 6,
@@ -359,7 +383,11 @@
         "zhuxianjianzhen"
       ],
       "unlock_pool": "G",
-      "traits": []
+      "traits": [],
+      "bar": [
+        "#e07ba8",
+        "#b84a78"
+      ]
     },
     {
       "index": 7,
@@ -371,6 +399,10 @@
       "unlock_pool": "H",
       "traits": [
         "rarity_high"
+      ],
+      "bar": [
+        "#ffd700",
+        "#c9a400"
       ]
     },
     {
@@ -383,6 +415,10 @@
       "unlock_pool": "I",
       "traits": [
         "prestige_gain_mult_1.2"
+      ],
+      "bar": [
+        "#ff6b6b",
+        "#c0392b"
       ]
     },
     {
@@ -395,6 +431,10 @@
       "unlock_pool": "J",
       "traits": [
         "ascension"
+      ],
+      "bar": [
+        "#fff2cc",
+        "#d4b86a"
       ]
     }
   ],

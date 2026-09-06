@@ -6,6 +6,7 @@
   g.LS = g.LS || {};
 
   const refs = {};
+  const uiState = { holdingBreath: false }; // 按住吐纳状态（进度条流转加速用）
   const lastStr = {};
   let evTimer = null;
   const newBuildingUntil = {};
@@ -116,12 +117,13 @@
     };
     refs.btnBreath.addEventListener('pointerdown', (e) => {
       e.preventDefault();
+      uiState.holdingBreath = true;
       doBreath();
       clearInterval(holdTimer);
       holdTimer = setInterval(doBreath, 150);
     });
     ['pointerup', 'pointerleave', 'pointercancel'].forEach(ev =>
-      refs.btnBreath.addEventListener(ev, () => clearInterval(holdTimer)));
+      refs.btnBreath.addEventListener(ev, () => { clearInterval(holdTimer); uiState.holdingBreath = false; }));
 
     refs.btnBreak.addEventListener('click', () => {
       const next = g.LS.BAL.realms[g.LS.S.realm.index + 1];
@@ -435,6 +437,13 @@
       const pct = Math.min(100, (s.resources.xiufu / next.need_xp) * 100);
       const fillStr = pct.toFixed(1);
       if (lastStr.xpFill !== fillStr) { refs.xpFill.style.width = fillStr + '%'; lastStr.xpFill = fillStr; }
+      // 进度条境界色：当前境界的双色渐变，高对比可辨（十境递进）
+      const curRealm = bal.realms[s.realm.index];
+      const bar = curRealm.bar || ['#6b9bd1', '#3a6ba1'];
+      const bgStr = 'linear-gradient(90deg, ' + bar[0] + ', ' + bar[1] + ')';
+      if (lastStr.barBg !== bgStr) { refs.xpFill.style.background = bgStr; lastStr.barBg = bgStr; }
+      // A4 流转加速：按住吐纳时灵气流转加倍
+      if (refs.xpFill) refs.xpFill.classList.toggle('fast', !!uiState.holdingBreath);
       // Q 版太极小人：站在进度条最前端，随进度右移（每 tick 同步，防境界/需求切换时脱节）
       if (refs.taichiMonk) refs.taichiMonk.style.left = `calc(${fillStr}% )`;
       const full = s.resources.xiufu >= next.need_xp;
@@ -646,6 +655,17 @@
       sp.style.top = (10 + Math.random() * 70) + '%';
       sp.style.animationDelay = (i * 0.12) + 's';
       ov.appendChild(sp);
+    }
+    // 突破雷光：金丹起每次破境天有异象——两道横向雷光扫过（渡劫以上更烈）
+    if (realmIdx >= 2) {
+      for (let i = 0; i < (realmIdx >= 8 ? 3 : 2); i++) {
+        const lt = document.createElement('div');
+        lt.className = 'bt-lightning';
+        lt.style.top = (12 + i * 22 + Math.random() * 8) + '%';
+        lt.style.animationDelay = (i * 0.18) + 's';
+        if (realmIdx >= 8) lt.style.height = '3px';
+        ov.appendChild(lt);
+      }
     }
     // A5 一笔通玄：凌空大字横笔写出（clip-path 揭示模拟笔势），末了朱印落款
     const charRow = document.createElement('div');

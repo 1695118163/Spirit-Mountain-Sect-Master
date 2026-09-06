@@ -212,14 +212,16 @@ button:not(:disabled):active { transform: translateY(1px); }
   transition: width .25s;
   position: relative; overflow: hidden;
 }
-/* A4 流光（加强版：亮带更宽更亮，肉眼可见） */
+/* ── A4 进度条：境界色填充 + 内部灵气流转（按住吐纳加速） ── */
 #xp-fill::after {
   content: ""; position: absolute; inset: 0;
-  background: linear-gradient(100deg, rgba(245,240,230,0) 25%, rgba(245,240,230,.65) 50%, rgba(245,240,230,0) 75%);
-  background-size: 200% 100%;
-  animation: xpSheen 1.8s linear infinite;
+  background: repeating-linear-gradient(115deg,
+    rgba(245,240,230,0) 0 8px, rgba(245,240,230,.45) 12px 16px, rgba(245,240,230,0) 20px 30px);
+  background-size: 60px 100%;
+  animation: qiFlow 2.4s linear infinite;
 }
-@keyframes xpSheen { from { background-position: 130% 0; } to { background-position: -130% 0; } }
+#xp-fill.fast::after { animation-duration: .7s; }
+@keyframes qiFlow { from { background-position: 0 0; } to { background-position: 60px 0; } }
 
 /* ── Q 版太极小人：站在进度条最前端，随进度右移 ── */
 #taichi-monk {
@@ -235,10 +237,12 @@ button:not(:disabled):active { transform: translateY(1px); }
 }
 .monk-svg .seal { fill: var(--cinnabar); stroke: none; }
 @keyframes monkFloat { from { transform: translateY(0); } to { transform: translateY(-3px); } }
-.taichi-arm { transform-origin: 24px 26px; animation: armSwing 2.4s ease-in-out infinite alternate; }
-.taichi-arm-b { animation-name: armSwingB; }
-@keyframes armSwing { from { transform: rotate(-5deg); } to { transform: rotate(6deg); } }
-@keyframes armSwingB { from { transform: rotate(5deg); } to { transform: rotate(-6deg); } }
+/* 云手：双臂交替大幅揉球（肉眼可见的太极动作） */
+.taichi-arm { transform-box: view-box; transform-origin: 50% 46%; animation: armTop 2.2s ease-in-out infinite alternate; }
+.taichi-arm-top { transform-origin: 50% 40%; }
+.taichi-arm-low { animation-name: armLow; }
+@keyframes armTop { from { transform: rotate(-16deg); } to { transform: rotate(12deg); } }
+@keyframes armLow { from { transform: rotate(14deg); } to { transform: rotate(-12deg); } }
 /* 修为满：小人收势金光 */
 #xp-bar.full #xp-fill { background: linear-gradient(90deg, var(--gold), rgba(184,134,11,.7)); }
 #xp-bar.full .monk-svg { stroke: var(--gold); filter: drop-shadow(0 0 6px rgba(184,134,11,.55)); }
@@ -541,6 +545,17 @@ button:not(:disabled):active { transform: translateY(1px); }
 /* ── A5 一笔通玄：凌空大字与朱印 ── */
 .br-char { font-size: 96px; color: var(--paper); }
 .br-char.cinnabar { color: #e8b9b0; }
+/* 突破雷光：横向亮线扫过（金丹起） */
+.bt-lightning {
+  position: absolute; left: 0; right: 0; height: 2px; pointer-events: none;
+  background: linear-gradient(90deg, transparent, rgba(220,235,255,.95), transparent);
+  box-shadow: 0 0 18px rgba(200,225,255,.8);
+  animation: btSweep .45s ease-out forwards;
+}
+@keyframes btSweep { from { transform: translateX(-100%); opacity: 0; } 30% { opacity: 1; } to { transform: translateX(100%); opacity: 0; } }
+/* 大字笔势揭示 */
+.br-write { display: inline-block; clip-path: inset(0 100% 0 0); animation: charWrite .6s steps(10) forwards; }
+@keyframes charWrite { to { clip-path: inset(0 0 0 0); } }
 .br-seal {
   display: inline-block; margin-left: 14px; padding: 4px 8px;
   border: 3px solid rgba(168,50,50,.9); color: rgba(168,50,50,.95);
