@@ -77,7 +77,7 @@
   }
 
   function spiritRootMult() {
-    const s = S();
+    const s = g.LS.S;
     if (!s.spirit_root) return 1;
     const cfg = (g.LS.BAL && g.LS.BAL.spirit_root) || {};
     const t = (cfg.types || []).find(x => x.key === s.spirit_root.key);
