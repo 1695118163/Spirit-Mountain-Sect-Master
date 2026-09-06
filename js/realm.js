@@ -108,8 +108,8 @@
     const success = (opts && opts.failReplay) ? false
       : ((opts && opts.forceSuccess) || guaranteed || streak >= pity - 1 || Math.random() < rate);
 
-    // 渡劫→飞升：先播天劫动画（闪电劈小人），动画毕再出升级/失败结果
-    if (next.index === 9 && g.LS.ui && g.LS.ui.playTribulation && !(opts && opts.skipTribulation)) {
+    // 升境界天劫：金丹起每次冲关都被雷劈（与失败率体系同起点），练气/筑基保持温和水墨
+    if (next.index >= 2 && g.LS.ui && g.LS.ui.playTribulation && !(opts && opts.skipTribulation)) {
       const replay = Object.assign({}, opts, { skipTribulation: true });
       if (!success) s.bt.fail_cooldown_until = now + (bt.fail_cooldown_s || 30) * 1000; // 动画期间拦重复点击
       g.LS.ui.playTribulation(success, () => {
