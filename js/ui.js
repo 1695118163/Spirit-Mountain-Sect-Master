@@ -94,6 +94,17 @@
     refs.btnHelp = $id('btn-help');
     refs.btnPillHouse = $id('btn-pillhouse');
     refs.btnRebirth = $id('btn-rebirth');
+    // 面板按钮统一事件委托（document 级）：元素被任何方式重建/替换都不会丢绑定
+    document.addEventListener('click', (e) => {
+      const t = e.target.closest('#btn-market, #btn-friends, #btn-help, #btn-codex, #btn-pillhouse, #btn-settings');
+      if (!t) return;
+      if (t.id === 'btn-market') showMarket();
+      else if (t.id === 'btn-friends') showFriends();
+      else if (t.id === 'btn-help') showHelpPanel();
+      else if (t.id === 'btn-codex') showCodex();
+      else if (t.id === 'btn-pillhouse') showPillHouse();
+      else if (t.id === 'btn-settings') showSettings();
+    });
     refs.logList = $id('log-list');
     refs.permList = $id('perm-list');
     refs.buffBar = $id('buff-bar');
@@ -147,10 +158,7 @@
       else toast('暂时无法服丹（无丹药或冷却中）');
       renderAll();
     });
-    refs.btnSettings.addEventListener('click', showSettings);
-    if (refs.btnCodex) refs.btnCodex.addEventListener('click', showCodex);
-    if (refs.btnHelp) refs.btnHelp.addEventListener('click', showHelpPanel);
-    if (refs.btnPillHouse) refs.btnPillHouse.addEventListener('click', showPillHouse);
+    // 面板按钮已统一走 document 事件委托（见上方），此处不再单绑以免双触发
     refs.btnRebirth.addEventListener('click', () => {
       if (!g.LS.realm.canRebirth()) { toast('修至化神，方见轮回之门。'); return; }
       showRebirthPanel();
@@ -1292,14 +1300,66 @@
         '<button class="icon-btn stele-copy" style="font-size:11px;padding:2px 8px;min-height:0">复制</button></div>';
     }
     if (!steleRows) steleRows = '<div class="codex-chain">碑林尚空——飞升或兵解时，此世山志将刻为碑文。</div>';
+    // 图鉴三册：丹药 / 兵器 / 功法（数据源 pills.json 与 cultivation.json）
+    const pills = (bal.pills && bal.pills.pills) || [];
+    const cul = bal.cultivation || {};
+    const weapons = cul.weapons || [];
+    const techniques = cul.techniques || [];
+    let pillRows = '';
+    for (const p of pills) {
+      const ownedN = Object.keys(s.pill_stock || {}).filter(k => k.indexOf(p.id + '_') === 0)
+        .reduce((a, k) => a + s.pill_stock[k], 0);
+      pillRows += '<div class="rebirth-item"><div><b>' + escapeHtml(p.name) + '</b>' +
+        '<span class="ev-badge ev-badge-buff">' + escapeHtml(p.rarity_default || '灵') + '</span>' +
+        '<div style="font-size:11px;color:var(--ink-soft)">' + escapeHtml(p.desc) +
+        (ownedN ? '<br><span class="log-choice">持有 ' + ownedN + ' 颗</span>' : '') + '</div></div></div>';
+    }
+    let weaponRows = '';
+    for (const w of weapons) {
+      const owned = (s.weapons_owned || []).indexOf(w.id) !== -1;
+      weaponRows += '<div class="rebirth-item"><div><b>' + escapeHtml(w.name) + '</b>' +
+        '<span class="ev-badge ev-badge-buff">' + escapeHtml(w.grade) + '·' + escapeHtml(w.element) + '</span>' +
+        '<div style="font-size:11px;color:var(--ink-soft)">' + escapeHtml(w.desc) + '　锋锐 ' + w.sharp +
+        (owned ? '<br><span class="log-choice">已入手' + (s.equip.weapon === w.id ? '（装备中）' : '') + '</span>' : '<br><span style="opacity:.6">坊市 ' + g.LS.util.fmt(w.price) + ' 灵石</span>') + '</div></div></div>';
+    }
+    let techRows = '';
+    for (const t of techniques) {
+      const owned = (s.techniques_owned || []).indexOf(t.id) !== -1;
+      techRows += '<div class="rebirth-item"><div><b>' + escapeHtml(t.name) + '</b>' +
+        '<span class="ev-badge ev-badge-buff">' + escapeHtml(t.grade) + '·' + escapeHtml(t.element) + '</span>' +
+        '<div style="font-size:11px;color:var(--ink-soft)">' + escapeHtml(t.desc) +
+        (owned ? '<br><span class="log-choice">已参悟' + (s.equip.technique === t.id ? '（主修中）' : '') + '</span>' : '<br><span style="opacity:.6">坊市 ' + g.LS.util.fmt(t.price) + ' 灵石</span>') + '</div></div></div>';
+    }
+    // 页签切换（六页：奇遇/丹药/兵器/功法/因果/碑林）
     card.innerHTML =
       '<div class="modal-title">见 闻 录</div>' +
       '<div class="modal-desc">奇遇集齐 ' + got + ' / ' + g.LS.EVT.length + '　·　图鉴、因果与碑林跨转生保留</div>' +
-      '<h3 class="panel-title">奇遇图鉴</h3><div class="codex-grid">' + evRows + '</div>' +
-      '<h3 class="panel-title">剧情链</h3>' + chainRows +
-      '<h3 class="panel-title">因果故人</h3>' + tagRows +
-      '<h3 class="panel-title">碑林（山志）</h3>' + steleRows +
+      '<div class="set-row" style="justify-content:center;flex-wrap:wrap;gap:4px">' +
+      [['ev', '奇遇'], ['pill', '丹药'], ['weapon', '兵器'], ['tech', '功法'], ['tag', '因果'], ['stele', '碑林']].map(p2 =>
+        '<button class="icon-btn codex-tab" data-codex-tab="' + p2[0] + '">' + p2[1] + '</button>').join('') + '</div>' +
+      '<div id="codex-body"></div>' +
       '<div style="text-align:center;margin-top:12px"><button class="icon-btn" id="codex-close">合上</button></div>';
+    const renderTab = (tab2) => {
+      const body = card.querySelector('#codex-body');
+      if (tab2 === 'ev') body.innerHTML = '<h3 class="panel-title">奇遇图鉴</h3><div class="codex-grid">' + evRows + '</div>' +
+        '<h3 class="panel-title">剧情链</h3>' + chainRows;
+      else if (tab2 === 'pill') body.innerHTML = '<h3 class="panel-title">丹药图谱</h3>' + pillRows;
+      else if (tab2 === 'weapon') body.innerHTML = '<h3 class="panel-title">兵器谱</h3>' + weaponRows;
+      else if (tab2 === 'tech') body.innerHTML = '<h3 class="panel-title">功法谱</h3>' + techRows;
+      else if (tab2 === 'tag') body.innerHTML = '<h3 class="panel-title">因果故人</h3>' + tagRows;
+      else if (tab2 === 'stele') body.innerHTML = '<h3 class="panel-title">碑林（山志）</h3>' + steleRows;
+    };
+    card.querySelectorAll('.codex-tab').forEach(b => {
+      b.addEventListener('click', () => {
+        card.querySelectorAll('.codex-tab').forEach(x => { x.style.borderColor = ''; x.style.color = ''; });
+        b.style.borderColor = 'var(--cinnabar)';
+        b.style.color = 'var(--cinnabar)';
+        renderTab(b.dataset.codexTab);
+      });
+    });
+    // 默认开奇遇页
+    const firstTab = card.querySelector('.codex-tab');
+    if (firstTab) { firstTab.style.borderColor = 'var(--cinnabar)'; firstTab.style.color = 'var(--cinnabar)'; renderTab('ev'); }
     card.querySelector('#codex-close').addEventListener('click', removeModals);
     card.querySelectorAll('.stele-copy').forEach((btn, idx) => {
       btn.addEventListener('click', () => {
