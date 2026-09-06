@@ -212,16 +212,24 @@ button:not(:disabled):active { transform: translateY(1px); }
   transition: width .25s;
   position: relative; overflow: hidden;
 }
-/* ── A4 进度条：境界色填充 + 内部灵气流转（按住吐纳加速） ── */
-#xp-fill::after {
-  content: ""; position: absolute; inset: 0;
-  background: repeating-linear-gradient(115deg,
-    rgba(245,240,230,0) 0 8px, rgba(245,240,230,.45) 12px 16px, rgba(245,240,230,0) 20px 30px);
-  background-size: 60px 100%;
-  animation: qiFlow 2.4s linear infinite;
+/* ── A4 进度条：境界色填充 + 莫比乌斯环式流转（双向柔和光带循环往复；按住吐纳加速） ── */
+#xp-fill::before, #xp-fill::after {
+  content: ""; position: absolute; inset: 0; pointer-events: none;
 }
-#xp-fill.fast::after { animation-duration: .7s; }
-@keyframes qiFlow { from { background-position: 0 0; } to { background-position: 60px 0; } }
+#xp-fill::before {
+  background: linear-gradient(90deg, transparent 5%, rgba(245,240,230,.42) 32%, rgba(245,240,230,.06) 55%, transparent 85%);
+  background-size: 200% 100%;
+  animation: mobiusA 3.6s linear infinite;
+}
+#xp-fill::after {
+  background: linear-gradient(90deg, transparent 10%, rgba(220,235,255,.26) 45%, transparent 80%);
+  background-size: 260% 100%;
+  animation: mobiusB 5.4s linear infinite;
+}
+#xp-fill.fast::before { animation-duration: 1.2s; }
+#xp-fill.fast::after { animation-duration: 1.8s; }
+@keyframes mobiusA { from { background-position: 200% 0; } to { background-position: -200% 0; } }
+@keyframes mobiusB { from { background-position: -200% 0; } to { background-position: 200% 0; } }
 
 /* ── Q 版太极小人：站在进度条最前端，随进度右移 ── */
 #taichi-monk {
@@ -509,13 +517,10 @@ button:not(:disabled):active { transform: translateY(1px); }
   100% { transform: translate(-50%, -46px) scale(.96); opacity: 0; }
 }
 
-/* ── A4 进度条流光 ── */
-#xp-fill {
-  background-image: linear-gradient(100deg, rgba(245,240,230,0) 30%, rgba(245,240,230,.35) 50%, rgba(245,240,230,0) 70%);
-  background-size: 200% 100%;
-  animation: xpSheen 2.6s linear infinite;
+/* ── A4 进度条流光：已由莫比乌斯流转（#xp-fill::before/::after）取代，此处仅保留降级 ── */
+@media (prefers-reduced-motion: reduce) {
+  #xp-fill::before, #xp-fill::after { animation: none !important; opacity: .5; }
 }
-@keyframes xpSheen { from { background-position: 120% 0; } to { background-position: -80% 0; } }
 
 /* ── A4 数字弹跳 ── */
 .num-pop { animation: numPop .2s ease; }
