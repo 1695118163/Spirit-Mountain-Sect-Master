@@ -941,133 +941,80 @@
     });
   }
 
-  /* ── 斗法 UI：拔河条 / QTE / 结算（引擎在 battle.js） ── */
-  let qteCleanup = null;
-
-  function showBattleArena(info) {
+  /* ── 斗法 UI：对阵牌 / 战斗视图 / 战报（引擎在 battle.js v2 回合制） ── */
+  function showBattleArena(info, onStart) {
     removeModals();
-    const { card, mask } = makeModal(() => { if (g.LS.battle.active) { g.LS.battle.abort(); removeModals(); } });
-    mask.classList.add('battle-mask');
+    const { card, mask } = makeModal(() => { g.LS.battle.abort(); removeModals(); });
     card.innerHTML =
       '<div class="modal-title">斗 法 · 论 道</div>' +
-      '<div class="battle-names"><span class="bn-my">' + escapeHtml(info.my.dao) + '</span>' +
-      '<span class="bn-vs">论</span>' +
-      '<span class="bn-op">' + escapeHtml(info.op.dao) + '</span></div>' +
-      '<div class="tug-bar"><div class="tug-mid"></div><div class="tug-fill" id="tug-fill"></div><div class="tug-pin" id="tug-pin"></div></div>' +
-      '<div class="battle-pulls"><span>我方拉力 ' + info.my.pull + '</span><span>对方拉力 ' + info.op.pull + '</span></div>' +
-      '<div id="qte-zone" class="qte-zone"></div>' +
+      '<div class="battle-card-row"><div class="bc-side">' +
+        '<div class="bc-dao"><b>' + escapeHtml(info.my.dao) + '</b></div>' +
+        '<div class="bc-line">' + escapeHtml(info.my.realm) + '境 · ' + escapeHtml(info.my.weapon) + '</div>' +
+        '<div class="bc-line">' + escapeHtml(info.my.tech) + '</div>' +
+        '<div class="bc-line">灵根 ' + escapeHtml(info.my.el) + ' · 道基 ' + info.my.hp + '</div>' +
+        '<div class="bc-line">攻 ' + info.my.atk + '</div>' +
+      '</div><div class="bc-vs">对</div><div class="bc-side">' +
+        '<div class="bc-dao"><b>' + escapeHtml(info.op.dao) + '</b></div>' +
+        '<div class="bc-line">' + escapeHtml(info.op.realm) + '境 · ' + escapeHtml(info.op.weapon || '未知') + '</div>' +
+        '<div class="bc-line">' + escapeHtml(info.op.tech || '未知') + '</div>' +
+        '<div class="bc-line">灵根 ' + escapeHtml(info.op.el) + ' · 道基 ' + info.op.hp + '</div>' +
+        '<div class="bc-line">攻 ' + info.op.atk + '</div>' +
+      '</div></div>' +
+      (info.elRel ? '<div class="modal-desc" style="text-align:center;color:var(--cinnabar)">' + escapeHtml(info.elRel) + '</div>' : '') +
+      '<div class="modal-desc" style="text-align:center">' + escapeHtml(info.weather) + '</div>' +
+      '<div class="modal-desc" style="font-size:11px;color:var(--ink-soft)">战前可去「丹房」服丹调整状态——灵力丹增拉力，清心丹防心魔。</div>' +
+      '<div style="text-align:center;margin-top:10px"><button class="btn-primary" id="battle-start" style="padding:10px 34px;font-size:16px">开 战</button> ' +
+      '<button class="icon-btn" id="battle-cancel">改日再战</button></div>';
+    card.querySelector('#battle-start').addEventListener('click', () => { onStart(); });
+    card.querySelector('#battle-cancel').addEventListener('click', () => { g.LS.battle.abort(); removeModals(); });
+  }
+
+  function showBattleScreen(my, op) {
+    const mask = document.querySelector('.battle-mask');
+    if (!mask) return;
+    const card = mask.querySelector('.modal-card');
+    card.innerHTML =
+      '<div class="battle-hp-row"><div class="bh-side"><b>' + escapeHtml(my.dao) + '</b>' +
+        '<div class="bh-hp"><div class="bh-fill" id="bh-my" style="width:100%"></div></div>' +
+        '<div class="bc-line">气血 ' + Math.ceil(my.hp) + ' / ' + my.hpMax + '</div></div>' +
+      '<div class="bh-vs">战</div>' +
+      '<div class="bh-side" style="text-align:right"><b>' + escapeHtml(op.dao) + '</b>' +
+        '<div class="bh-hp"><div class="bh-fill op" id="bh-op" style="width:100%"></div></div>' +
+        '<div class="bc-line">气血 ' + Math.ceil(op.hp) + ' / ' + op.hpMax + '</div></div></div>' +
       '<div id="battle-log" class="battle-log"></div>' +
-      '<div class="set-row" style="justify-content:center"><button class="icon-btn" id="battle-run">遁走（认输）</button></div>';
-    card.querySelector('#battle-run').addEventListener('click', () => {
-      g.LS.battle.abort();
-      removeModals();
-      toast('你化虹遁走，此战不计。');
-    });
-    updateBattleBar(0, 0, '斗法开始——灵机涌动，各凭手段！');
+      '<div style="text-align:center"><button class="icon-btn" id="battle-skip">跳 过</button></div>';
+    card.querySelector('#battle-skip').addEventListener('click', () => { g.LS.battle.skip(); });
   }
 
-  function updateBattleBar(pointer, round, logText) {
-    const fill = document.getElementById('tug-fill');
-    const pin = document.getElementById('tug-pin');
-    if (fill) fill.style.left = Math.round((pointer + 100) / 2) + '%';
-    if (pin) pin.style.left = Math.round((pointer + 100) / 2) + '%';
+  function battleLog(text) {
     const log = document.getElementById('battle-log');
-    if (log && logText) log.insertBefore(Object.assign(document.createElement('div'), { className: 'codex-chain', textContent: '【第' + round + '轮】' + logText }), log.firstChild);
+    if (!log) return;
+    log.insertBefore(Object.assign(document.createElement('div'), { className: 'codex-chain battle-line', textContent: text }), log.firstChild);
+  }
+  function battleAppend(lines) {
+    for (let i = lines.length - 1; i >= 0; i--) battleLog(lines[i]);
+  }
+  function updateBattleHP(myHp, myMax, opHp, opMax) {
+    const m = document.getElementById('bh-my');
+    const o = document.getElementById('bh-op');
+    if (m) m.style.width = Math.max(0, Math.min(100, myHp / myMax * 100)) + '%';
+    if (o) o.style.width = Math.max(0, Math.min(100, opHp / opMax * 100)) + '%';
+  }
+  function showBattleResult(win, info) {
+    removeModals();
+    const { card } = makeModal(removeModals);
+    card.innerHTML =
+      '<div class="modal-title">' + (win ? '斗 法 得 胜' : '斗 法 惜 败') + '</div>' +
+      '<div class="modal-desc">' + (win
+        ? '灵机如虹，压至对方端点——' + (info.diff >= 2 ? '以下克上，一战成名！' : '旗鼓相当，技高一筹。') +
+          '<br>论道积分 +' + info.honor
+        : '灵机不敌，胜败乃修士常事，道心不坠即可。') + '</div>' +
+      '<div style="text-align:center;margin-top:10px"><button class="btn-primary" id="br-close">归 位</button></div>';
+    card.querySelector('#br-close').addEventListener('click', removeModals);
   }
 
-  function showQTE(type, round, rounds, onDone) {
-    const zone = document.getElementById('qte-zone');
-    if (!zone) { onDone(50); return; }
-    zone.innerHTML = '<div class="qte-title">第 ' + round + ' / ' + rounds + ' 轮</div>';
-    const cfg = (g.LS.BAL.cultivation || {}).battle || {};
-    const q = cfg.qte || {};
-    const scale = g.LS.battle.qteWindowScale();
 
-    if (type === 'click') {
-      const secs = Math.round((q.click.seconds || 3) * scale * 10) / 10;
-      let clicks = 0;
-      zone.insertAdjacentHTML('beforeend', '<div class="qte-task">' + escapeHtml('连点吐纳符！' + secs + ' 秒') + '</div><button class="qte-big" id="qte-big">点！</button><div class="qte-count" id="qte-count">0</div>');
-      const btn = zone.querySelector('#qte-big');
-      btn.addEventListener('pointerdown', () => { clicks++; zone.querySelector('#qte-count').textContent = String(clicks); });
-      const target = (q.click.great || 20) / Math.max(0.5, scale);
-      setTimeout(() => {
-        const perf = Math.min(100, Math.round(clicks / target * 100));
-        onDone(perf);
-      }, secs * 1000);
-    } else if (type === 'ring') {
-      const shrink = (q.ring.shrink_s || 1.6) * scale;
-      zone.insertAdjacentHTML('beforeend', '<div class="qte-task">' + escapeHtml('圆环重合瞬间点击！凡品三连') + '</div><div class="ring-wrap"><div class="ring-target"></div><div class="ring-move" id="ring-move"></div></div><div class="qte-count" id="qte-count">0 / 3</div>');
-      let hits = 0, tries = 0;
-      const moveEl = zone.querySelector('#ring-move');
-      let raf = 0, t0 = performance.now();
-      const loop = (ts) => {
-        const p = ((ts - t0) / (shrink * 1000)) % 1;
-        moveEl.style.transform = 'scale(' + (1.9 - p * 1.55) + ')';
-        moveEl.dataset.p = p.toFixed(3);
-        raf = requestAnimationFrame(loop);
-      };
-      raf = requestAnimationFrame(loop);
-      const onClick = () => {
-        const p = parseFloat(moveEl.dataset.p || '0');
-        const err = Math.abs(p - 0.62); // 目标：缩到 62% 处
-        tries++;
-        if (err < (q.ring.tolerance || 0.12)) { hits++; zone.querySelector('#qte-count').textContent = hits + ' / 3 准！'; }
-        else zone.querySelector('#qte-count').textContent = hits + ' / 3';
-        if (tries >= 3) {
-          cancelAnimationFrame(raf);
-          zone.removeEventListener('pointerdown', onClick);
-          onDone(Math.min(100, Math.round(hits / 3 * 100)));
-        }
-      };
-      zone.addEventListener('pointerdown', onClick);
-    } else if (type === 'hold') {
-      const sweep = (q.hold.sweep_s || 2.2) * Math.max(0.7, scale);
-      zone.insertAdjacentHTML('beforeend', '<div class="qte-task">' + escapeHtml('按住蓄力，金线区间内松手！') + '</div><div class="hold-bar"><div class="hold-zone"></div><div class="hold-cursor" id="hold-cur"></div></div>');
-      const cur = zone.querySelector('#hold-cur');
-      const h0 = performance.now();
-      let raf = 0, released = false, peak = 0;
-      const loop = (ts) => {
-        const p = ((ts - h0) / (sweep * 1000)) % 2;
-        const v = p < 1 ? p : 2 - p; // 往返
-        cur.style.left = (v * 100) + '%';
-        cur.dataset.v = v.toFixed(3);
-        if (!released) raf = requestAnimationFrame(loop);
-      };
-      raf = requestAnimationFrame(loop);
-      const stop = () => {
-        if (released) return;
-        released = true;
-        cancelAnimationFrame(raf);
-        const v = parseFloat(cur.dataset.v || '0');
-        const lo = q.hold.gold_lo || 0.62, hi = q.hold.gold_hi || 0.8;
-        let perf;
-        if (v >= lo && v <= hi) perf = 100; // 金线区间
-        else perf = Math.max(0, Math.round(100 - Math.abs(v - (lo + hi) / 2) * 220));
-        onDone(perf);
-      };
-      zone.addEventListener('pointerup', stop, { once: true });
-      setTimeout(stop, sweep * 1000 + 200); // 超时未松手按当前值结算
-    } else if (type === 'rune') {
-      const wx = (g.LS.BAL.cultivation || {}).wuxing || { names: ['金', '木', '土', '水', '火'] };
-      const seq = [];
-      for (let i = 0; i < (q.rune.count || 5); i++) seq.push(wx.names[Math.floor(Math.random() * wx.names.length)]);
-      zone.insertAdjacentHTML('beforeend', '<div class="qte-task">' + escapeHtml('依序点亮五行符文！') + '</div><div class="rune-seq" id="rune-seq">' + seq.map(s2 => '<span>' + s2 + '</span>').join('') + '</div><div class="rune-grid" id="rune-grid"></div>');
-      const grid = zone.querySelector('#rune-grid');
-      grid.innerHTML = wx.names.map(n => '<button class="rune-btn" data-n="' + n + '">' + n + '</button>').join('');
-      let idx = 0, okCount = 0;
-      grid.querySelectorAll('.rune-btn').forEach(b => {
-        b.addEventListener('click', () => {
-          if (b.dataset.n === seq[idx]) { okCount++; b.classList.add('hit'); }
-          else { b.classList.add('miss'); }
-          idx++;
-          if (idx >= seq.length) {
-            grid.style.pointerEvents = 'none';
-            onDone(Math.round(okCount / seq.length * 100));
-          }
-        });
-      });
-    }
-  }
+  let qteCleanup = null;
 
   function showBattleResult(win, info) {
     removeModals();
@@ -1163,6 +1110,8 @@
         '<div class="modal-desc">添加好友（粘贴对方名片）：</div>' +
         '<textarea class="set-textarea" id="fr-paste" placeholder="粘贴对方名片码"></textarea>' +
         '<div class="set-row"><button class="btn-primary" id="fr-add" style="padding:6px 16px">添加好友</button></div>' +
+        '<div class="set-row" style="justify-content:center;gap:8px"><button class="btn-primary" id="fr-duel-create" style="padding:6px 16px">创建约战房间</button><button class="icon-btn" id="fr-duel-join" style="padding:6px 12px">加入约战</button></div>' +
+        '<div class="set-row" id="fr-join-row" style="display:none"><input class="set-input" id="fr-room-code" placeholder="输入房间码" style="flex:1"></div>' +
         '<h3 class="panel-title">道友录（' + fr.length + '）</h3><div class="modal-desc">论道积分 ' + (s.honor || 0) + ' · 段位 <b>' + (function(){ const ranks=(g.LS.BAL.battle||{}).ranks||[]; let cur=ranks[0]||{name:'凡品'}; for(const r of ranks){ if((s.honor||0)>=r.min) cur=r; } return cur.name; })() + '</b></div>' + rows +
         '<div style="text-align:center;margin-top:10px"><button class="icon-btn" id="fr-close2">合上</button></div>';
       card.querySelector('#fr-close').addEventListener('click', removeModals);
@@ -1195,6 +1144,16 @@
           const f = (s.friends || [])[Number(btn.dataset.fight)];
           if (f) { removeModals(); g.LS.battle.startBattle(f); }
         });
+      });
+      // 在线约战：创建房间 / 输码加入
+      card.querySelector('#fr-duel-create').addEventListener('click', () => { g.LS.battle.createDuelRoom(); });
+      card.querySelector('#fr-duel-join').addEventListener('click', () => {
+        const row = card.querySelector('#fr-join-row');
+        row.style.display = row.style.display === 'none' ? '' : 'none';
+        card.querySelector('#fr-room-code').focus();
+      });
+      card.querySelector('#fr-room-code').addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') { g.LS.battle.joinDuelRoom(e.target.value); }
       });
     };
     render();
@@ -1665,7 +1624,7 @@
     renderChronicle, renderPermList, pushLog, markNewBuildings, isModalOpen, hintOnce,
     showEventModal, closeEventModal, showOfflinePopup, showBreakthroughOverlay, showFailOverlay,
     showSettings, showRebirthPanel, showTutorial, showPillHouse, showHelpPanel, showMarket, showFriends,
-    showBattleArena, updateBattleBar, showQTE, showBattleResult,
+    showBattleArena, updateBattleHP, battleLog, battleAppend, showBattleResult,
     toast, tweenNumber, setBgm,
     setLLMStatus, setForewarn, updateBuffBar, drawBg, sfx, playTribulation,
   };
