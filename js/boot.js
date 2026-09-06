@@ -34,6 +34,10 @@
             const r5 = await fetch('./data/help.json');
             if (r5.ok) balance.help = (await r5.json());
           } catch (e) {}
+          try {
+            const r6 = await fetch('./data/cultivation.json');
+            if (r6.ok) balance.cultivation = (await r6.json());
+          } catch (e) {}
           return { balance, events, chains };
         }
       }
@@ -43,7 +47,7 @@
       const r = await (await fetch('http://127.0.0.1:8787/api/balance')).json();
       if (r && r.ok && r.balance && Array.isArray(r.balance.buildings)) {
         r.balance.pills = r.pills || {};
-        r.balance.help = r.help || {};
+        r.balance.help = r.help || {}; r.balance.cultivation = r.cultivation || {};
         return { balance: r.balance, events: r.events, chains: r.chains || [] };
       }
     } catch (e) {}

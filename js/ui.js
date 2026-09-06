@@ -626,7 +626,8 @@
         if (el) tweenNumber(el, 0, result.gains[k] || 0);
       }
       setTimeout(() => {
-        removeModals();
+        // 只移除离线卷轴自己的弹窗（保留玩家可能打开的其他面板，如斗法/设置）
+        mask.remove();
         if (g.LS.save) g.LS.save.save();
         // 离线归来：故人候在山门外 / 弟子梦中来报——塞入事件队列随后弹出
         const visitor = g.LS.events.maybeVisitor('offline');
@@ -924,6 +925,265 @@
         if (typeof onDone === 'function') onDone();
       });
     });
+  }
+
+  /* ── 斗法 UI：拔河条 / QTE / 结算（引擎在 battle.js） ── */
+  let qteCleanup = null;
+
+  function showBattleArena(info) {
+    removeModals();
+    const { card, mask } = makeModal(() => { if (g.LS.battle.active) { g.LS.battle.abort(); removeModals(); } });
+    mask.classList.add('battle-mask');
+    card.innerHTML =
+      '<div class="modal-title">斗 法 · 论 道</div>' +
+      '<div class="battle-names"><span class="bn-my">' + escapeHtml(info.my.dao) + '</span>' +
+      '<span class="bn-vs">论</span>' +
+      '<span class="bn-op">' + escapeHtml(info.op.dao) + '</span></div>' +
+      '<div class="tug-bar"><div class="tug-mid"></div><div class="tug-fill" id="tug-fill"></div><div class="tug-pin" id="tug-pin"></div></div>' +
+      '<div class="battle-pulls"><span>我方拉力 ' + info.my.pull + '</span><span>对方拉力 ' + info.op.pull + '</span></div>' +
+      '<div id="qte-zone" class="qte-zone"></div>' +
+      '<div id="battle-log" class="battle-log"></div>' +
+      '<div class="set-row" style="justify-content:center"><button class="icon-btn" id="battle-run">遁走（认输）</button></div>';
+    card.querySelector('#battle-run').addEventListener('click', () => {
+      g.LS.battle.abort();
+      removeModals();
+      toast('你化虹遁走，此战不计。');
+    });
+    updateBattleBar(0, 0, '斗法开始——灵机涌动，各凭手段！');
+  }
+
+  function updateBattleBar(pointer, round, logText) {
+    const fill = document.getElementById('tug-fill');
+    const pin = document.getElementById('tug-pin');
+    if (fill) fill.style.left = Math.round((pointer + 100) / 2) + '%';
+    if (pin) pin.style.left = Math.round((pointer + 100) / 2) + '%';
+    const log = document.getElementById('battle-log');
+    if (log && logText) log.insertBefore(Object.assign(document.createElement('div'), { className: 'codex-chain', textContent: '【第' + round + '轮】' + logText }), log.firstChild);
+  }
+
+  function showQTE(type, round, rounds, onDone) {
+    const zone = document.getElementById('qte-zone');
+    if (!zone) { onDone(50); return; }
+    zone.innerHTML = '<div class="qte-title">第 ' + round + ' / ' + rounds + ' 轮</div>';
+    const cfg = (g.LS.BAL.cultivation || {}).battle || {};
+    const q = cfg.qte || {};
+    const scale = g.LS.battle.qteWindowScale();
+
+    if (type === 'click') {
+      const secs = Math.round((q.click.seconds || 3) * scale * 10) / 10;
+      let clicks = 0;
+      zone.insertAdjacentHTML('beforeend', '<div class="qte-task">' + escapeHtml('连点吐纳符！' + secs + ' 秒') + '</div><button class="qte-big" id="qte-big">点！</button><div class="qte-count" id="qte-count">0</div>');
+      const btn = zone.querySelector('#qte-big');
+      btn.addEventListener('pointerdown', () => { clicks++; zone.querySelector('#qte-count').textContent = String(clicks); });
+      const target = (q.click.great || 20) / Math.max(0.5, scale);
+      setTimeout(() => {
+        const perf = Math.min(100, Math.round(clicks / target * 100));
+        onDone(perf);
+      }, secs * 1000);
+    } else if (type === 'ring') {
+      const shrink = (q.ring.shrink_s || 1.6) * scale;
+      zone.insertAdjacentHTML('beforeend', '<div class="qte-task">' + escapeHtml('圆环重合瞬间点击！凡品三连') + '</div><div class="ring-wrap"><div class="ring-target"></div><div class="ring-move" id="ring-move"></div></div><div class="qte-count" id="qte-count">0 / 3</div>');
+      let hits = 0, tries = 0;
+      const moveEl = zone.querySelector('#ring-move');
+      let raf = 0, t0 = performance.now();
+      const loop = (ts) => {
+        const p = ((ts - t0) / (shrink * 1000)) % 1;
+        moveEl.style.transform = 'scale(' + (1.9 - p * 1.55) + ')';
+        moveEl.dataset.p = p.toFixed(3);
+        raf = requestAnimationFrame(loop);
+      };
+      raf = requestAnimationFrame(loop);
+      const onClick = () => {
+        const p = parseFloat(moveEl.dataset.p || '0');
+        const err = Math.abs(p - 0.62); // 目标：缩到 62% 处
+        tries++;
+        if (err < (q.ring.tolerance || 0.12)) { hits++; zone.querySelector('#qte-count').textContent = hits + ' / 3 准！'; }
+        else zone.querySelector('#qte-count').textContent = hits + ' / 3';
+        if (tries >= 3) {
+          cancelAnimationFrame(raf);
+          zone.removeEventListener('pointerdown', onClick);
+          onDone(Math.min(100, Math.round(hits / 3 * 100)));
+        }
+      };
+      zone.addEventListener('pointerdown', onClick);
+    } else if (type === 'hold') {
+      const sweep = (q.hold.sweep_s || 2.2) * Math.max(0.7, scale);
+      zone.insertAdjacentHTML('beforeend', '<div class="qte-task">' + escapeHtml('按住蓄力，金线区间内松手！') + '</div><div class="hold-bar"><div class="hold-zone"></div><div class="hold-cursor" id="hold-cur"></div></div>');
+      const cur = zone.querySelector('#hold-cur');
+      const h0 = performance.now();
+      let raf = 0, released = false, peak = 0;
+      const loop = (ts) => {
+        const p = ((ts - h0) / (sweep * 1000)) % 2;
+        const v = p < 1 ? p : 2 - p; // 往返
+        cur.style.left = (v * 100) + '%';
+        cur.dataset.v = v.toFixed(3);
+        if (!released) raf = requestAnimationFrame(loop);
+      };
+      raf = requestAnimationFrame(loop);
+      const stop = () => {
+        if (released) return;
+        released = true;
+        cancelAnimationFrame(raf);
+        const v = parseFloat(cur.dataset.v || '0');
+        const lo = q.hold.gold_lo || 0.62, hi = q.hold.gold_hi || 0.8;
+        let perf;
+        if (v >= lo && v <= hi) perf = 100; // 金线区间
+        else perf = Math.max(0, Math.round(100 - Math.abs(v - (lo + hi) / 2) * 220));
+        onDone(perf);
+      };
+      zone.addEventListener('pointerup', stop, { once: true });
+      setTimeout(stop, sweep * 1000 + 200); // 超时未松手按当前值结算
+    } else if (type === 'rune') {
+      const wx = (g.LS.BAL.cultivation || {}).wuxing || { names: ['金', '木', '土', '水', '火'] };
+      const seq = [];
+      for (let i = 0; i < (q.rune.count || 5); i++) seq.push(wx.names[Math.floor(Math.random() * wx.names.length)]);
+      zone.insertAdjacentHTML('beforeend', '<div class="qte-task">' + escapeHtml('依序点亮五行符文！') + '</div><div class="rune-seq" id="rune-seq">' + seq.map(s2 => '<span>' + s2 + '</span>').join('') + '</div><div class="rune-grid" id="rune-grid"></div>');
+      const grid = zone.querySelector('#rune-grid');
+      grid.innerHTML = wx.names.map(n => '<button class="rune-btn" data-n="' + n + '">' + n + '</button>').join('');
+      let idx = 0, okCount = 0;
+      grid.querySelectorAll('.rune-btn').forEach(b => {
+        b.addEventListener('click', () => {
+          if (b.dataset.n === seq[idx]) { okCount++; b.classList.add('hit'); }
+          else { b.classList.add('miss'); }
+          idx++;
+          if (idx >= seq.length) {
+            grid.style.pointerEvents = 'none';
+            onDone(Math.round(okCount / seq.length * 100));
+          }
+        });
+      });
+    }
+  }
+
+  function showBattleResult(win, info) {
+    removeModals();
+    const { card, mask } = makeModal(removeModals);
+    card.innerHTML =
+      '<div class="modal-title">' + (win ? '斗 法 得 胜' : '斗 法 惜 败') + '</div>' +
+      '<div class="modal-desc">' + (win
+        ? '灵机如虹，指针压至对方端点——' + (info.diff >= 2 ? '以下克上，一战成名！' : '旗鼓相当，技高一筹。') +
+          '<br>论道积分 +' + info.honor
+        : '灵机不敌，指针被压回己方半场——胜败乃修士常事，道心不坠即可。') + '</div>' +
+      '<div style="text-align:center;margin-top:10px"><button class="btn-primary" id="br-close">归 位</button></div>';
+    card.querySelector('#br-close').addEventListener('click', removeModals);
+  }
+
+  /* ── 坊市：武器/功法购买与装备（坊市炼器为主获取） ── */
+  function showMarket() {
+    removeModals();
+    const { card } = makeModal(removeModals);
+    const s = g.LS.S;
+    const cul = g.LS.BAL.cultivation || {};
+    const wx = cul.wuxing || { names: [] };
+    const render = (tabName) => {
+      const list = tabName === 'tech' ? (cul.techniques || []) : (cul.weapons || []);
+      const ownedArr = tabName === 'tech' ? (s.techniques_owned || []) : (s.weapons_owned || []);
+      const equipped = tabName === 'tech' ? s.equip.technique : s.equip.weapon;
+      let rows = '';
+      for (const it of list) {
+        const owned = ownedArr.indexOf(it.id) !== -1;
+        const equippedNow = equipped === it.id;
+        const canBuy = !owned && s.resources.lingshi >= (it.price || 0);
+        rows += '<div class="rebirth-item"><div><b>' + escapeHtml(it.name) + '</b>' +
+          '<span class="ev-badge ev-badge-buff">' + escapeHtml(it.grade) + '·' + escapeHtml(it.element) + '</span>' +
+          (it.rare_only ? '<span class="ev-badge ev-badge-chain">珍稀</span>' : '') +
+          '<div style="font-size:11px;color:var(--ink-soft)">' + escapeHtml(it.desc) +
+          (it.sharp ? '<br>锋锐 ' + it.sharp : '') + '</div></div>' +
+          '<div>' + (owned
+            ? (equippedNow ? '<span class="stamp">装 备 中</span>' : '<button class="icon-btn" data-equip="' + it.id + '" data-kind="' + tabName + '">装备</button>')
+            : '<button class="icon-btn" data-buy="' + it.id + '" data-kind="' + tabName + '" ' + (canBuy ? '' : 'disabled') + '>' + g.LS.util.fmt(it.price) + ' 灵石</button>') + '</div></div>';
+      }
+      card.innerHTML =
+        '<div class="modal-title">坊 市<button class="icon-btn" id="mk-close" style="float:right;font-size:12px;padding:3px 12px">离 开</button></div>' +
+        '<div class="modal-desc">灵石 <b>' + g.LS.util.fmt(s.resources.lingshi) + '</b>　·　斗法用的武器与功法在此置办——五行相克，未必越贵越好。</div>' +
+        '<div class="set-row" style="justify-content:center">' +
+        '<button class="icon-btn" data-tab="weapon" style="' + (tabName === 'weapon' ? 'border-color:var(--cinnabar);color:var(--cinnabar)' : '') + '">兵 器</button>' +
+        '<button class="icon-btn" data-tab="tech" style="' + (tabName === 'tech' ? 'border-color:var(--cinnabar);color:var(--cinnabar)' : '') + '">功 法</button></div>' +
+        rows;
+      card.querySelector('#mk-close').addEventListener('click', removeModals);
+      card.querySelectorAll('[data-tab]').forEach(b => b.addEventListener('click', () => render(b.dataset.tab)));
+      card.querySelectorAll('[data-buy]').forEach(btn => btn.addEventListener('click', () => {
+        const list2 = btn.dataset.kind === 'tech' ? (cul.techniques || []) : (cul.weapons || []);
+        const it = list2.find(x => x.id === btn.dataset.buy);
+        if (!it) return;
+        if (s.resources.lingshi < (it.price || 0)) { toast('灵石不够'); return; }
+        s.resources.lingshi -= it.price;
+        if (btn.dataset.kind === 'tech') { s.techniques_owned.push(it.id); s.equip.technique = it.id; }
+        else { s.weapons_owned.push(it.id); s.equip.weapon = it.id; }
+        sfx('guqin');
+        toast('已购入「' + it.name + '」并装备');
+        render(btn.dataset.kind);
+        g.LS.save.save();
+      }));
+      card.querySelectorAll('[data-equip]').forEach(btn => btn.addEventListener('click', () => {
+        if (btn.dataset.kind === 'tech') s.equip.technique = btn.dataset.equip;
+        else s.equip.weapon = btn.dataset.equip;
+        sfx('click');
+        toast('已装备');
+        render(btn.dataset.kind);
+        g.LS.save.save();
+      }));
+    };
+    render('weapon');
+  }
+
+  /* ── 好友面板：名片 / 添加 / 列表挑战 ── */
+  function showFriends() {
+    removeModals();
+    const { card } = makeModal(removeModals);
+    const s = g.LS.S;
+    const myCard = g.LS.battle.makeCard();
+    const cardStr = btoa(unescape(encodeURIComponent(JSON.stringify(myCard))));
+    const render = () => {
+      const fr = s.friends || [];
+      let rows = fr.length ? fr.map((f, i) =>
+        '<div class="rebirth-item"><div><b>' + escapeHtml(f.dao || '无名道友') + '</b>' +
+        '<div style="font-size:11px;color:var(--ink-soft)">境界 ' + escapeHtml(f.realmName || '?') + ' · 战绩 ' + (f.myWin || 0) + '胜' + (f.myLose || 0) + '负</div></div>' +
+        '<button class="btn-primary" data-fight="' + i + '" style="padding:4px 12px">斗 法</button></div>').join('')
+        : '<div class="codex-chain">尚无好友——复制你的名片发给道友，或让他们把名片发你。</div>';
+      card.innerHTML =
+        '<div class="modal-title">道 友 录<button class="icon-btn" id="fr-close" style="float:right;font-size:12px;padding:3px 12px">合上</button></div>' +
+        '<div class="modal-desc">我的名片（复制发给道友，对方粘贴即可被你挑战）：</div>' +
+        '<textarea class="set-textarea" id="fr-mycard" readonly>' + escapeHtml(cardStr) + '</textarea>' +
+        '<div class="set-row"><button class="icon-btn" id="fr-copy">复制名片</button><button class="icon-btn" id="fr-copy-close">复制并合上</button></div>' +
+        '<div class="modal-desc">添加好友（粘贴对方名片）：</div>' +
+        '<textarea class="set-textarea" id="fr-paste" placeholder="粘贴对方名片码"></textarea>' +
+        '<div class="set-row"><button class="btn-primary" id="fr-add" style="padding:6px 16px">添加好友</button></div>' +
+        '<h3 class="panel-title">道友录（' + fr.length + '）</h3>' + rows +
+        '<div style="text-align:center;margin-top:10px"><button class="icon-btn" id="fr-close2">合上</button></div>';
+      card.querySelector('#fr-close').addEventListener('click', removeModals);
+      card.querySelector('#fr-close2').addEventListener('click', removeModals);
+      const copyAll = () => {
+        const ta = card.querySelector('#fr-mycard');
+        ta.select();
+        try { document.execCommand('copy'); } catch (e) {}
+        try { navigator.clipboard.writeText(ta.value); } catch (e) {}
+        toast('名片已复制，发给道友吧');
+      };
+      card.querySelector('#fr-copy').addEventListener('click', copyAll);
+      card.querySelector('#fr-copy-close').addEventListener('click', () => { copyAll(); removeModals(); });
+      card.querySelector('#fr-add').addEventListener('click', () => {
+        const raw = (card.querySelector('#fr-paste').value || '').trim();
+        if (!raw) { toast('请先粘贴名片'); return; }
+        try {
+          const obj = JSON.parse(decodeURIComponent(escape(atob(raw))));
+          if (!obj || obj.v !== 1 || typeof obj.realm !== 'number') throw new Error('格式不对');
+          s.friends = s.friends || [];
+          if (s.friends.some(f => f.dao === obj.dao && f.ts === obj.ts)) { toast('这位道友已在录中'); return; }
+          s.friends.push({ dao: obj.dao, card: obj, realmName: (g.LS.BAL.realms[obj.realm] || {}).name || '?', myWin: 0, myLose: 0 });
+          g.LS.save.save();
+          toast('道友「' + (obj.dao || '无名') + '」已入录，可随时斗法');
+          render();
+        } catch (e) { toast('名片无法辨识'); }
+      });
+      card.querySelectorAll('[data-fight]').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const f = (s.friends || [])[Number(btn.dataset.fight)];
+          if (f) { removeModals(); g.LS.battle.startBattle(f); }
+        });
+      });
+    };
+    render();
   }
 
   /* ── B1 仙途指要：分节帮助面板（文案在 help.json help_topics） ── */
@@ -1338,7 +1598,9 @@
     initRefs, renderAll, renderResources, renderBuildings, renderCenter,
     renderChronicle, renderPermList, pushLog, markNewBuildings, isModalOpen, hintOnce,
     showEventModal, closeEventModal, showOfflinePopup, showBreakthroughOverlay, showFailOverlay,
-    showSettings, showRebirthPanel, showTutorial, showPillHouse, showHelpPanel, toast, tweenNumber, setBgm,
+    showSettings, showRebirthPanel, showTutorial, showPillHouse, showHelpPanel, showMarket, showFriends,
+    showBattleArena, updateBattleBar, showQTE, showBattleResult,
+    toast, tweenNumber, setBgm,
     setLLMStatus, setForewarn, updateBuffBar, drawBg, sfx, playTribulation,
   };
 })(typeof window !== 'undefined' ? window : globalThis);

@@ -8,7 +8,7 @@
   const KEY = 'lingshan_save_v1';
   const KEY_BACKUP = 'lingshan_save_backup';
   const KEY_TMP = 'lingshan_save_tmp';
-  const SAVE_VERSION = 8;
+  const SAVE_VERSION = 9;
 
   const MIGRATIONS = {
     // v1 → v2：补 突破失败体系（bt）/ 停滞彩蛋（stagnation）/ 事件队列（queue）
@@ -73,6 +73,17 @@
       if (!s.first_afford_seen || typeof s.first_afford_seen !== 'object') s.first_afford_seen = {};
       if (!s.weather_state) s.weather_state = { kind: 'clear', seed_day: -1 };
       s.v = 8;
+      return s;
+    },
+    // v8 → v9：斗法体系（武器/功法/装备/好友/积分/战绩）
+    8: (s) => {
+      if (!Array.isArray(s.weapons_owned)) s.weapons_owned = [];
+      if (!Array.isArray(s.techniques_owned)) s.techniques_owned = [];
+      if (!s.equip || typeof s.equip !== 'object') s.equip = { weapon: null, technique: null };
+      if (!Array.isArray(s.friends)) s.friends = [];
+      if (typeof s.honor !== 'number' || !isFinite(s.honor)) s.honor = 0;
+      if (!s.record || typeof s.record !== 'object') s.record = { win: 0, lose: 0 };
+      s.v = 9;
       return s;
     }
   };
