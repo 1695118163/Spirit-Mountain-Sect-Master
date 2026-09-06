@@ -139,6 +139,20 @@ button:not(:disabled):active { transform: translateY(1px); }
   0%, 100% { box-shadow: 0 4px 24px rgba(43,43,43,.18), inset 0 0 30px rgba(61,90,108,.08); }
   50% { box-shadow: 0 6px 34px rgba(61,90,108,.32), inset 0 0 44px rgba(61,90,108,.16); }
 }
+/* 灵气双星：绕吐纳钮缓慢环绕 */
+#breath-wrap::before, #breath-wrap::after {
+  content: ""; position: absolute; left: 50%; top: 50%;
+  width: 7px; height: 7px; border-radius: 50%; margin: -3.5px;
+  background: radial-gradient(circle, rgba(184,134,11,.9), rgba(184,134,11,0) 70%);
+  animation: orbitA 9s linear infinite;
+}
+#breath-wrap::after { width: 5px; height: 5px; margin: -2.5px; animation: orbitB 14s linear infinite reverse; }
+@keyframes orbitA { from { transform: rotate(0) translateX(112px); } to { transform: rotate(360deg) translateX(112px); } }
+@keyframes orbitB { from { transform: rotate(180deg) translateX(128px); } to { transform: rotate(540deg) translateX(128px); } }
+
+/* 炼丹炉烟：图标内青烟上升 */
+.smoke { animation: smokeRise 2.8s ease-in-out infinite; }
+@keyframes smokeRise { 0% { transform: translateY(0); opacity: .55; } 70% { opacity: .25; } 100% { transform: translateY(-4px); opacity: 0; } }
 
 #btn-break {
   background: var(--gold); color: #fff; border: none; border-radius: 6px;
@@ -189,11 +203,45 @@ button:not(:disabled):active { transform: translateY(1px); }
 .b-ability:disabled { border-color: #b8b8b0; color: #9a9a92; cursor: not-allowed; }
 
 #xp-bar {
-  width: 60%; height: 18px; border: 1px solid var(--ink-soft); border-radius: 9px;
-  position: relative; background: var(--paper-dim); overflow: hidden;
+  width: 60%; height: 22px; border: 1px solid var(--ink-soft); border-radius: 11px;
+  position: relative; background: var(--paper-dim); overflow: visible;
 }
-#xp-fill { height: 100%; width: 0%; background: linear-gradient(90deg, var(--cyan), rgba(61, 90, 108, .6)); transition: width .25s; }
-#xp-text { position: absolute; inset: 0; text-align: center; font-size: 12px; line-height: 18px; color: var(--ink); }
+#xp-fill {
+  height: 100%; width: 0%; border-radius: 10px;
+  background: linear-gradient(90deg, var(--cyan), rgba(61, 90, 108, .6));
+  transition: width .25s;
+  position: relative; overflow: hidden;
+}
+/* A4 流光（加强版：亮带更宽更亮，肉眼可见） */
+#xp-fill::after {
+  content: ""; position: absolute; inset: 0;
+  background: linear-gradient(100deg, rgba(245,240,230,0) 25%, rgba(245,240,230,.65) 50%, rgba(245,240,230,0) 75%);
+  background-size: 200% 100%;
+  animation: xpSheen 1.8s linear infinite;
+}
+@keyframes xpSheen { from { background-position: 130% 0; } to { background-position: -130% 0; } }
+
+/* ── Q 版太极小人：站在进度条最前端，随进度右移 ── */
+#taichi-monk {
+  position: absolute; top: -26px; left: 0; width: 34px; height: 38px;
+  margin-left: -17px; pointer-events: none; z-index: 3;
+  transition: left .25s ease;
+}
+.monk-svg {
+  width: 100%; height: 100%;
+  stroke: var(--ink); fill: none; stroke-width: 2.6; stroke-linecap: round; stroke-linejoin: round;
+  animation: monkFloat 2.4s ease-in-out infinite alternate;
+  filter: drop-shadow(0 2px 3px rgba(43,43,43,.3));
+}
+.monk-svg .seal { fill: var(--cinnabar); stroke: none; }
+@keyframes monkFloat { from { transform: translateY(0); } to { transform: translateY(-3px); } }
+.taichi-arm { transform-origin: 24px 26px; animation: armSwing 2.4s ease-in-out infinite alternate; }
+.taichi-arm-b { animation-name: armSwingB; }
+@keyframes armSwing { from { transform: rotate(-5deg); } to { transform: rotate(6deg); } }
+@keyframes armSwingB { from { transform: rotate(5deg); } to { transform: rotate(-6deg); } }
+/* 修为满：小人收势金光 */
+#xp-bar.full #xp-fill { background: linear-gradient(90deg, var(--gold), rgba(184,134,11,.7)); }
+#xp-bar.full .monk-svg { stroke: var(--gold); filter: drop-shadow(0 0 6px rgba(184,134,11,.55)); }
 
 #forewarn { color: var(--cinnabar); font-size: 13px; letter-spacing: 2px; animation: pulse 2s infinite; }
 .hidden { display: none !important; }

@@ -126,12 +126,13 @@
       }
     }
 
-    // 加料：夜间萤火（晴朗夜，微光缓游，明灭呼吸）
+    // 加料：灵光微尘——夜里萤火（青绿缓游）、白天金尘（暖金细点），全时段都有生命感
     const nightNow = document.body.classList.contains('night');
-    if (nightNow && weather.kind === 'clear') {
-      if (fireflies.length < 18 && Math.random() < 0.05) {
+    if (weather.kind === 'clear') {
+      const want = nightNow ? 18 : 12;
+      if (fireflies.length < want && Math.random() < 0.05) {
         fireflies.push({
-          x: Math.random() * w, y: h * (0.35 + Math.random() * 0.5),
+          x: Math.random() * w, y: h * (0.25 + Math.random() * 0.6),
           a: Math.random() * Math.PI * 2, sp: 0.15 + Math.random() * 0.25,
           ph: Math.random() * Math.PI * 2, r: 1.2 + Math.random() * 1.4
         });
@@ -142,17 +143,24 @@
         f.x += Math.cos(f.a) * f.sp;
         f.y += Math.sin(f.a) * f.sp * 0.6;
         f.ph += 0.04;
-        const glow = (Math.sin(f.ph) + 1) / 2; // 明灭呼吸
-        if (f.x < -20 || f.x > w + 20 || f.y < h * 0.2 || glow < 0.02 && Math.random() < 0.01) {
+        const glow = (Math.sin(f.ph) + 1) / 2;
+        if (f.x < -20 || f.x > w + 20 || f.y < h * 0.12 || f.y > h * 0.95 || (glow < 0.02 && Math.random() < 0.01)) {
           fireflies.splice(i, 1); continue;
         }
-        ctx.fillStyle = 'rgba(190,220,160,' + (0.14 + glow * 0.5).toFixed(3) + ')';
-        ctx.beginPath();
-        ctx.arc(f.x, f.y, f.r * (0.7 + glow * 0.6), 0, Math.PI * 2);
-        ctx.fill();
+        if (nightNow) {
+          ctx.fillStyle = 'rgba(190,220,160,' + (0.14 + glow * 0.5).toFixed(3) + ')';
+          ctx.beginPath();
+          ctx.arc(f.x, f.y, f.r * (0.7 + glow * 0.6), 0, Math.PI * 2);
+          ctx.fill();
+        } else {
+          ctx.fillStyle = 'rgba(184,134,11,' + (0.08 + glow * 0.22).toFixed(3) + ')';
+          ctx.beginPath();
+          ctx.arc(f.x, f.y, f.r * 0.55, 0, Math.PI * 2);
+          ctx.fill();
+        }
       }
     } else if (fireflies.length) {
-      fireflies = []; // 白天/雨雪天萤火隐去
+      fireflies = []; // 雨雪天微尘隐去
     }
 
     // 加料：流星（夜间偶发，一道细光斜划 0.7s）

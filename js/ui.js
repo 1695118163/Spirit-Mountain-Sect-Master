@@ -67,6 +67,8 @@
     refs.realTime = $id('real-time');
     refs.xpFill = $id('xp-fill');
     refs.xpText = $id('xp-text');
+    refs.xpBar = $id('xp-bar');
+    refs.taichiMonk = $id('taichi-monk');
     refs.btnBreath = $id('btn-breath');
     refs.btnBreak = $id('btn-break');
     refs.btnPill = $id('btn-pill');
@@ -406,15 +408,24 @@
     if (next && next.need_xp) {
       const pct = Math.min(100, (s.resources.xiufu / next.need_xp) * 100);
       const fillStr = pct.toFixed(1);
-      if (lastStr.xpFill !== fillStr) { refs.xpFill.style.width = fillStr + '%'; lastStr.xpFill = fillStr; }
+      if (lastStr.xpFill !== fillStr) {
+        refs.xpFill.style.width = fillStr + '%';
+        lastStr.xpFill = fillStr;
+        // Q 版太极小人：站在进度条最前端，随进度右移
+        if (refs.taichiMonk) refs.taichiMonk.style.left = `calc(${fillStr}% )`;
+      }
+      const full = s.resources.xiufu >= next.need_xp;
+      if (refs.xpBar) refs.xpBar.classList.toggle('full', full);
       const txt = '修为 ' + fmtSafe(s.resources.xiufu) + ' / ' + fmtSafe(next.need_xp);
       if (lastStr.xpText !== txt) { refs.xpText.textContent = txt; lastStr.xpText = txt; }
-      const can = s.resources.xiufu >= next.need_xp;
+      const can = full && !(s.bt && s.bt.fail_cooldown_until > Date.now());
       refs.btnBreak.classList.toggle('hidden', !can);
     } else {
       refs.xpFill.style.width = '100%';
       refs.xpText.textContent = '已至飞升之境';
       refs.btnBreak.classList.add('hidden');
+      if (refs.taichiMonk) refs.taichiMonk.style.left = '100%'; // 满境小人也走到最前端
+      if (refs.xpBar) refs.xpBar.classList.add('full');
     }
   }
 
