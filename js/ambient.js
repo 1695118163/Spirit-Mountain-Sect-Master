@@ -17,6 +17,9 @@
   let crane = null;                        // A2 墨鹤 {x,y,dir,frame,t0}
   let cranePaths = null;                   // 6 帧翅姿 Path2D
   let weather = { kind: 'clear', parts: [], until: 0 }; // A3 天气粒子
+  let fireflies = [];                      // 加料：夜间萤火（灵光微点）
+  let meteor = null;                       // 加料：流星 {x,y,vx,vy,t0}
+  let nextMeteorAt = 0;
   let started = false;
 
   function seedRand(seed) {
@@ -120,6 +123,63 @@
           ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
           ctx.fill();
         }
+      }
+    }
+
+    // 加料：夜间萤火（晴朗夜，微光缓游，明灭呼吸）
+    const nightNow = document.body.classList.contains('night');
+    if (nightNow && weather.kind === 'clear') {
+      if (fireflies.length < 18 && Math.random() < 0.05) {
+        fireflies.push({
+          x: Math.random() * w, y: h * (0.35 + Math.random() * 0.5),
+          a: Math.random() * Math.PI * 2, sp: 0.15 + Math.random() * 0.25,
+          ph: Math.random() * Math.PI * 2, r: 1.2 + Math.random() * 1.4
+        });
+      }
+      for (let i = fireflies.length - 1; i >= 0; i--) {
+        const f = fireflies[i];
+        f.a += (Math.random() - 0.5) * 0.6;
+        f.x += Math.cos(f.a) * f.sp;
+        f.y += Math.sin(f.a) * f.sp * 0.6;
+        f.ph += 0.04;
+        const glow = (Math.sin(f.ph) + 1) / 2; // 明灭呼吸
+        if (f.x < -20 || f.x > w + 20 || f.y < h * 0.2 || glow < 0.02 && Math.random() < 0.01) {
+          fireflies.splice(i, 1); continue;
+        }
+        ctx.fillStyle = 'rgba(190,220,160,' + (0.14 + glow * 0.5).toFixed(3) + ')';
+        ctx.beginPath();
+        ctx.arc(f.x, f.y, f.r * (0.7 + glow * 0.6), 0, Math.PI * 2);
+        ctx.fill();
+      }
+    } else if (fireflies.length) {
+      fireflies = []; // 白天/雨雪天萤火隐去
+    }
+
+    // 加料：流星（夜间偶发，一道细光斜划 0.7s）
+    if (nightNow && !meteor) {
+      const nowMs = Date.now();
+      if (!nextMeteorAt) nextMeteorAt = nowMs + 30000 + Math.random() * 90000;
+      if (nowMs >= nextMeteorAt) {
+        const dir = Math.random() < 0.5 ? 1 : -1;
+        meteor = { x: w * (0.2 + Math.random() * 0.6), y: h * (0.05 + Math.random() * 0.18), vx: 9 * dir, vy: 4.5, t0: nowMs };
+        nextMeteorAt = nowMs + 45000 + Math.random() * 120000;
+      }
+    }
+    if (meteor) {
+      const t = (Date.now() - meteor.t0) / 1000;
+      if (t > 0.7) meteor = null;
+      else {
+        meteor.x += meteor.vx; meteor.y += meteor.vy;
+        const fade = 1 - t / 0.7;
+        const grad = ctx.createLinearGradient(meteor.x, meteor.y, meteor.x - meteor.vx * 14, meteor.y - meteor.vy * 14);
+        grad.addColorStop(0, 'rgba(245,240,230,' + (0.85 * fade).toFixed(3) + ')');
+        grad.addColorStop(1, 'rgba(245,240,230,0)');
+        ctx.strokeStyle = grad;
+        ctx.lineWidth = 1.6;
+        ctx.beginPath();
+        ctx.moveTo(meteor.x, meteor.y);
+        ctx.lineTo(meteor.x - meteor.vx * 14, meteor.y - meteor.vy * 14);
+        ctx.stroke();
       }
     }
   }

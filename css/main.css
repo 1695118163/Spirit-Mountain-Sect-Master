@@ -124,13 +124,21 @@ button:not(:disabled):active { transform: translateY(1px); }
   transition: box-shadow .2s;
 }
 #btn-breath:hover { box-shadow: 0 6px 30px rgba(168, 50, 50, .25), inset 0 0 30px rgba(61, 90, 108, .12); }
-#breath-wrap { position: relative; }
+#breath-wrap { position: relative; margin-top: 26px; }
 .ripple {
   position: absolute; left: 50%; top: 50%; width: 180px; height: 180px; margin: -90px 0 0 -90px;
   border: 2px solid var(--ink-soft); border-radius: 50%; pointer-events: none;
   animation: ripple .7s ease-out forwards;
 }
 @keyframes ripple { from { transform: scale(1); opacity: .7; } to { transform: scale(1.55); opacity: 0; } }
+
+/* ── 吐纳钮呼吸光晕：待机时缓缓明灭，按住时收紧 ── */
+#btn-breath { animation: breathGlow 4.5s ease-in-out infinite; }
+#btn-breath:active { animation-play-state: paused; box-shadow: 0 2px 12px rgba(168,50,50,.3), inset 0 0 24px rgba(61,90,108,.2); }
+@keyframes breathGlow {
+  0%, 100% { box-shadow: 0 4px 24px rgba(43,43,43,.18), inset 0 0 30px rgba(61,90,108,.08); }
+  50% { box-shadow: 0 6px 34px rgba(61,90,108,.32), inset 0 0 44px rgba(61,90,108,.16); }
+}
 
 #btn-break {
   background: var(--gold); color: #fff; border: none; border-radius: 6px;
@@ -207,6 +215,8 @@ button:not(:disabled):active { transform: translateY(1px); }
   background: var(--cyan); color: var(--paper); border: none; border-radius: 3px; font-size: 13px;
 }
 .b-buy:disabled { background: #b8b8b0; cursor: not-allowed; }
+.b-card:hover { transform: translateY(-2px); box-shadow: 0 4px 16px rgba(43,43,43,.16); transition: transform .15s, box-shadow .15s; }
+.b-card:hover .b-icon { opacity: 1; filter: drop-shadow(0 0 4px rgba(61,90,108,.4)); }
 .b-card .new-badge {
   position: absolute; top: -6px; right: -6px; background: var(--cinnabar); color: var(--paper);
   font-size: 11px; padding: 1px 6px; border-radius: 3px;
@@ -342,16 +352,31 @@ button:not(:disabled):active { transform: translateY(1px); }
 ::-webkit-scrollbar-track { background: transparent; }
 
 /* 窄窗降级单列 */
-/* ── A1 云雾流动：预渲染条带 CSS 平移循环（合成器线程，零 rAF） ── */
+/* ── A1 云雾：静态墨团 + 透明度呼吸（不做左右位移） ── */
 .cloud-band {
   position: fixed; left: 0; z-index: 0; pointer-events: none;
   width: 200vw; height: 300px;
-  will-change: transform;
-  animation: cloudDrift linear infinite;
+  animation: cloudBreath 26s ease-in-out infinite alternate;
 }
-.cloud-far { top: 18%; opacity: .25; animation-duration: 150s; }
-.cloud-near { top: 38%; opacity: .35; animation-duration: 90s; }
-@keyframes cloudDrift { from { transform: translateX(0); } to { transform: translateX(-50%); } }
+.cloud-far { top: 18%; opacity: .22; }
+.cloud-near { top: 38%; opacity: .32; animation-duration: 34s; }
+@keyframes cloudBreath { from { opacity: .16; } to { opacity: .38; } }
+
+/* ── A4 飘字：圈正上方生成、上浮 46px、缓慢淡出消散 ── */
+.float-num {
+  position: absolute; left: 50%; top: -6px;
+  transform: translateX(-50%);
+  font-size: 14px; color: var(--cyan); text-shadow: 0 0 6px rgba(61,90,108,.35);
+  pointer-events: none; white-space: nowrap; z-index: 5;
+  animation: floatFade 1.1s ease-out forwards;
+}
+.float-num.gold { color: var(--gold); text-shadow: 0 0 6px rgba(184,134,11,.35); }
+@keyframes floatFade {
+  0%   { transform: translate(-50%, 0) scale(.9); opacity: 0; }
+  15%  { transform: translate(-50%, -10px) scale(1.05); opacity: .95; }
+  70%  { opacity: .8; }
+  100% { transform: translate(-50%, -46px) scale(.96); opacity: 0; }
+}
 
 /* ── A4 进度条流光 ── */
 #xp-fill {
@@ -399,10 +424,12 @@ button:not(:disabled):active { transform: translateY(1px); }
 
 /* ── reduced-motion：全部环境动画降级为静止 ── */
 @media (prefers-reduced-motion: reduce) {
-  .cloud-band { animation: none; }
+  .cloud-band { animation: none; opacity: .26; }
   #xp-fill { animation: none !important; background-image: none !important; }
   #btn-break { animation: none !important; box-shadow: 0 0 10px var(--gold); }
+  #btn-breath { animation: none !important; }
   .ripple, .ink-splash { display: none !important; }
+  .float-num { animation: none !important; opacity: .9; }
   .modal-mask.scroll-open .modal-card { animation: fadeIn .2s ease-out; }
   .br-seal { animation: none; }
 }

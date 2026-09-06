@@ -93,7 +93,8 @@
       const r = g.LS.economy.breath();
       sfx('click');
       spawnRipple();
-      spawnFloatText('+' + fmtSafe(r.qi) + ' 灵气');
+      spawnFloatText('+' + fmtSafe(r.qi) + ' 灵气', 'cyan');
+      if (r.xp > 0) spawnFloatText('+' + fmtSafe(r.xp) + ' 修为', 'gold');
     };
     refs.btnBreath.addEventListener('pointerdown', (e) => {
       e.preventDefault();
@@ -144,14 +145,17 @@
     setTimeout(() => el.remove(), 720);
   }
 
-  /** A4：吐纳飘字（+X 灵气，上浮淡出 600ms） */
-  function spawnFloatText(text) {
-    if (!refs.btnBreath || g.LS.ambient && g.LS.ambient.isReduced && g.LS.ambient.isReduced()) return;
+  /** A4 飘字：圈正上方生成、随机水平散开、上浮缓慢淡出（灵气青 / 修为金） */
+  function spawnFloatText(text, kind) {
+    if (!refs.btnBreath) return;
+    if (g.LS.ambient && g.LS.ambient.isReduced && g.LS.ambient.isReduced()) return;
     const el = document.createElement('span');
-    el.className = 'float-num';
+    el.className = 'float-num' + (kind === 'gold' ? ' gold' : '');
     el.textContent = text;
+    // 随机水平散开 ±70px，多个并发不叠字
+    el.style.marginLeft = (Math.random() * 140 - 70) + 'px';
     refs.btnBreath.parentElement.appendChild(el);
-    setTimeout(() => el.remove(), 620);
+    setTimeout(() => el.remove(), 1150);
   }
 
   /** A4：资源值跨整千/整万时弹跳一次 */
