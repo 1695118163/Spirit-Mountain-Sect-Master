@@ -57,11 +57,32 @@
       steles: [],
       prestige: { count: 0, points: 0, total_points: 0, spent: 0, bought: [], lifetime_best_realm: 0, first_event_after_rebirth: false },
       stats: { play_seconds: 0, clicks: 0, events_total: 0, events_llm: 0, events_fallback: 0, breakthroughs: 0, prestige_count: 0, offline_claimed: 0, negative_settled: 0, total_settled: 0 },
-      settings: { sound: true, llm_enabled: true, music: false, difficulty: 'normal' }
+      settings: { sound: true, llm_enabled: true, music: false, difficulty: 'normal' },
+      spirit_root: null // 开局随机：{key, element}——伪/真/异/天
     };
   }
 
   function getS() { return g.LS.S; }
+
+  /** 开局随机灵根（凡人设定：伪40/真30/异20/天10），灵根偏向五行之一 */
+  function rollSpiritRoot() {
+    const cfg = (g.LS.BAL && g.LS.BAL.spirit_root) || {};
+    const types = cfg.types || [
+      { key: '伪', weight: 40, xp_mult: 0.85 }, { key: '真', weight: 30, xp_mult: 1.0 },
+      { key: '异', weight: 20, xp_mult: 1.15 }, { key: '天', weight: 10, xp_mult: 1.35 }
+    ];
+    const els = ['金', '木', '水', '火', '土'];
+    const pick = g.LS.util.weightedPick(types, t => t.weight);
+    return { key: pick.key, element: els[Math.floor(Math.random() * els.length)] };
+  }
+
+  function spiritRootMult() {
+    const s = S();
+    if (!s.spirit_root) return 1;
+    const cfg = (g.LS.BAL && g.LS.BAL.spirit_root) || {};
+    const t = (cfg.types || []).find(x => x.key === s.spirit_root.key);
+    return t ? (t.xp_mult || 1) : 1;
+  }
 
   /**
    * A–F 效果唯一入口。slot 为 events.js 预掷并具体化后的对象：
@@ -158,5 +179,5 @@
 
   function markFlag(id, weight) { addTag(id, '缘', weight); }
 
-  g.LS.state = { NEW_STATE, getS, applyEffect, addBuff, tickBuffs, addTag, changeDaoHeart, markFlag };
+  g.LS.state = { NEW_STATE, getS, applyEffect, addBuff, tickBuffs, addTag, changeDaoHeart, markFlag, rollSpiritRoot, spiritRootMult };
 })(typeof window !== 'undefined' ? window : globalThis);

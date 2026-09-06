@@ -433,11 +433,17 @@
         b.id === 'pill_toxic_debuff' || b.id === 'chidun_debuff' || b.id === 'zhuoyuan_debuff');
       refs.taichiMonk.classList.toggle('cursed', cursed);
     }
-    // 道心值 + 分档（影响奇遇池、AI 基调、突破成功率）
+    // 境界小层（初期/中期/后期/大圆满）+ 灵根 + 道心：三行小字
     if (refs.daoHeart) {
       const tiers = bal.daoxin.tiers || [];
       const tier = tiers.find(t => s.dao_heart >= t.min);
-      const dStr = '道心 ' + (s.dao_heart > 0 ? '+' : '') + s.dao_heart + (tier ? ' · ' + tier.name : '');
+      const nextR0 = bal.realms[s.realm.index + 1];
+      const need0 = nextR0 && nextR0.need_xp ? nextR0.need_xp : 1;
+      const frac0 = Math.min(0.999, (s.resources.xiufu || 0) / need0);
+      const stageNames = ['初期', '中期', '后期', '大圆满'];
+      const stage = stageNames[Math.floor(frac0 * 4)];
+      const rootTxt = s.spirit_root ? '　灵根·' + s.spirit_root.key + s.spirit_root.element : '';
+      const dStr = stage + rootTxt + '　道心 ' + (s.dao_heart > 0 ? '+' : '') + s.dao_heart + (tier ? ' · ' + tier.name : '');
       if (lastStr.dao !== dStr) { refs.daoHeart.textContent = dStr; lastStr.dao = dStr; }
     }
     const next = bal.realms[s.realm.index + 1];

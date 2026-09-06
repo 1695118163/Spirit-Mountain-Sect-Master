@@ -73,7 +73,8 @@
 
     if (resId === 'xiufu') {
       const qiRate = computePerSecond('lingqi', opts);
-      return qiRate * bal.xiuwei_rate_factor * xiuMult() * difficultyCfg().xp_mult;
+      const sr = (S().spirit_root && g.LS.state.spiritRootMult) ? g.LS.state.spiritRootMult() : 1;
+      return qiRate * bal.xiuwei_rate_factor * xiuMult() * difficultyCfg().xp_mult * sr;
     }
 
     // 第1步：基础产量
@@ -149,7 +150,8 @@
     now = now || Date.now();
     const lv = bLevel('tunafa');
     if (!lv) return 0;
-    let m = BAL().click.xp_per_tunafa_level * lv * difficultyCfg().xp_mult;
+    const sr = (S().spirit_root && g.LS.state.spiritRootMult) ? g.LS.state.spiritRootMult() : 1;
+    let m = BAL().click.xp_per_tunafa_level * lv * difficultyCfg().xp_mult * sr;
     m *= xiuMult() * (1 + (S().perm_bonus.all || 0) + (S().perm_bonus.xiufu || 0));
     for (const buff of S().buffs) {
       if (buff.ts_end > now && buff.mult) m *= buff.mult;
@@ -462,6 +464,14 @@
     const now = Date.now();
     const bal = BAL();
     let msg = quality + '品' + cat.name + '入腹';
+    // 境界匹配（凡人设定：境界不符药性有隐患）——低于建议境界段：药效打折丹毒加重
+    const fit = (q.fit_realms || {})[quality];
+    let mismatch = false;
+    if (fit && (s.realm.index < fit[0] || s.realm.index > fit[1])) {
+      mismatch = true;
+      em *= ((q.mismatch || {}).effect_mult) || 0.6;
+      msg += '（境界不符，药力十存六七）';
+    }
     // 丹毒 ≥50：体质已差，所有丹的增益效果减半
     const toxicDamped = (s.pill_toxic || 0) >= 50;
     if (toxicDamped && em > 1) {
@@ -469,7 +479,7 @@
       msg += '（丹毒缠身，药效减半）';
     }
     // 丹种自带丹毒（劣品丹的 toxic_add 覆盖品质默认）
-    const toxicGain = cat.toxic_add != null ? cat.toxic_add : ((q.toxic_by_quality || {})[quality] || 0);
+    const toxicGain = (cat.toxic_add != null ? cat.toxic_add : ((q.toxic_by_quality || {})[quality] || 0)) * (mismatch ? ((q.mismatch || {}).toxic_mult) || 1.5 : 1);
 
     switch (cat.category) {
       case 'prod': {
