@@ -561,6 +561,37 @@ button:not(:disabled):active { transform: translateY(1px); }
   .br-seal { animation: none; }
 }
 
+/* ── 渡劫天劫：闪电劈小人（成功升级 / 失败跪地吐血后爬起） ── */
+.tribulation {
+  position: fixed; inset: 0; z-index: 60; pointer-events: none;
+  background: rgba(10, 10, 18, .55);
+  transition: background .2s;
+}
+.tribulation .bolt {
+  position: absolute; transform-origin: top center;
+  filter: drop-shadow(0 0 12px rgba(200,225,255,.9));
+}
+.tribulation.flash { background: rgba(235,242,255,.92); }
+.tribulation.flash .bolt { opacity: 1; }
+@keyframes boltFlicker { 0%,100% { opacity: .2; } 8%,14%,30% { opacity: 1; } 11%,22% { opacity: .35; } }
+.tribulation .bolt { animation: boltFlicker 1s steps(1) 1.4; }
+.monk-svg .blood { stroke: #a83232; fill: #a83232; stroke-width: 2; }
+#taichi-monk.kneel .monk-svg use { href: url(#taichi-monk-kneel); }
+#taichi-monk.kneel { animation: kneelShake .5s ease-out; }
+@keyframes kneelShake { 0% { transform: translateY(0); } 30% { transform: translateY(4px); } 60% { transform: translateY(1px); } 100% { transform: translateY(0); } }
+.blood-drop {
+  position: absolute; width: 5px; height: 5px; border-radius: 50%;
+  background: radial-gradient(circle, #a83232, rgba(168,50,50,.3) 75%);
+  pointer-events: none; animation: bloodDrop .8s ease-in forwards;
+}
+@keyframes bloodDrop { from { transform: translateY(0) scale(1); opacity: .95; } to { transform: translateY(26px) scale(.6); opacity: 0; } }
+
+@media (prefers-reduced-motion: reduce) {
+  .tribulation .bolt { animation: none; opacity: 1; }
+  #taichi-monk.kneel { animation: none; }
+  .blood-drop { animation: none; opacity: .8; }
+}
+
 @media (max-width: 1100px) {
   body { overflow: auto; }
   #app {

@@ -44,6 +44,22 @@
         gn.gain.setValueAtTime(.3, t);
         gn.gain.exponentialRampToValueAtTime(.001, t + .4);
         o.start(t); o.stop(t + .45);
+      } else if (type === 'thunder') {
+        // 天劫雷声：噪声爆裂 + 低频轰鸣
+        const nb = ctx.createBufferSource();
+        const buf = ctx.createBuffer(1, Math.floor(ctx.sampleRate * .5), ctx.sampleRate);
+        const dd = buf.getChannelData(0);
+        for (let i = 0; i < dd.length; i++) dd[i] = (Math.random() * 2 - 1) * Math.exp(-i / (dd.length / 4));
+        nb.buffer = buf;
+        const nf = ctx.createBiquadFilter(); nf.type = 'lowpass'; nf.frequency.value = 900;
+        const ng = ctx.createGain(); ng.gain.setValueAtTime(.4, t); ng.gain.exponentialRampToValueAtTime(.001, t + .5);
+        nb.connect(nf); nf.connect(ng); ng.connect(ctx.destination);
+        nb.start(t);
+        const o2 = ctx.createOscillator(); o2.type = 'sine';
+        o2.frequency.setValueAtTime(90, t); o2.frequency.exponentialRampToValueAtTime(38, t + .5);
+        const g2 = ctx.createGain(); g2.gain.setValueAtTime(.28, t); g2.gain.exponentialRampToValueAtTime(.001, t + .55);
+        o2.connect(g2); g2.connect(ctx.destination);
+        o2.start(t); o2.stop(t + .6);
       } else if (type === 'guqin') {
         o.frequency.setValueAtTime(440, t);
         o.frequency.linearRampToValueAtTime(660, t + .25);
@@ -702,6 +718,69 @@
     return chars[String(idx)] || chars.default || '破';
   }
 
+  /* ── 渡劫天劫：闪电劈小人 → 成功金光升级 / 失败跪地吐血后爬起 ── */
+  function playTribulation(success, done) {
+    if (!refs.taichiMonk) { done(); return; }
+    if (g.LS.ambient && g.LS.ambient.isReduced && g.LS.ambient.isReduced()) { done(); return; } // 降级直接出结果
+    const rect = refs.taichiMonk.getBoundingClientRect();
+    const cx = rect.left + rect.width / 2;
+    const layer = document.createElement('div');
+    layer.className = 'tribulation';
+    // 锯齿闪电：从天顶劈到小人位置
+    const segs = 6;
+    let d = 'M' + (cx + 30) + ' 0';
+    let y = 0, x = cx + 30;
+    for (let i = 1; i <= segs; i++) {
+      y = (rect.top + rect.height / 2) * (i / segs);
+      x = cx + (Math.random() * 60 - 30) * (1 - i / segs);
+      d += ' L' + Math.round(x) + ' ' + Math.round(y);
+    }
+    d += ' L' + Math.round(cx) + ' ' + Math.round(rect.top + rect.height / 2);
+    layer.innerHTML =
+      '<svg class="bolt" style="left:0;top:0" width="' + window.innerWidth + '" height="' + window.innerHeight + '">' +
+      '<path d="' + d + '" fill="none" stroke="rgba(160,200,255,.5)" stroke-width="7" stroke-linejoin="round"/>' +
+      '<path d="' + d + '" fill="none" stroke="#eef4ff" stroke-width="2.4" stroke-linejoin="round"/></svg>';
+    document.body.appendChild(layer);
+    sfx('thunder');
+    // 两记白闪 + 闪电明灭
+    const flash = (times, cb) => {
+      if (times <= 0) { layer.classList.remove('flash'); cb(); return; }
+      layer.classList.add('flash');
+      setTimeout(() => { layer.classList.remove('flash'); setTimeout(() => flash(times - 1, cb), 110); }, 90);
+    };
+    flash(2, () => {
+      if (success) {
+        // 成功：小人金光爆盛，接飞升升级过场
+        refs.taichiMonk.classList.add('cursed');
+        setTimeout(() => {
+          layer.remove();
+          refs.taichiMonk.classList.remove('cursed');
+          done();
+        }, 500);
+      } else {
+        // 失败：小人跪地吐血，血墨溅地，片刻后站起继续
+        refs.taichiMonk.classList.add('kneel');
+        const useEl = refs.taichiMonk.querySelector('.monk-svg use');
+        if (useEl) useEl.setAttribute('href', '#taichi-monk-kneel');
+        const wrap = refs.taichiMonk.parentElement;
+        for (let i = 0; i < 3; i++) {
+          const bd = document.createElement('span');
+          bd.className = 'blood-drop';
+          bd.style.left = (rect.left + rect.width / 2 + (i - 1) * 10 + Math.random() * 8) + 'px';
+          bd.style.top = (rect.top + 8) + 'px';
+          wrap.appendChild(bd);
+          setTimeout(((el) => () => el.remove())(bd), 850);
+        }
+        setTimeout(() => {
+          if (useEl) useEl.setAttribute('href', '#taichi-monk');
+          refs.taichiMonk.classList.remove('kneel');
+          layer.remove();
+          done();
+        }, 1400);
+      }
+    });
+  }
+
   /* ── 突破失败 / 走火入魔过场（暗色水墨，数值代价显式呈现） ── */
   function showFailOverlay(title, text, isQihuo, details) {
     sfx('bell');
@@ -1198,7 +1277,7 @@
     initRefs, renderAll, renderResources, renderBuildings, renderCenter,
     renderChronicle, renderPermList, pushLog, markNewBuildings, isModalOpen, hintOnce,
     showEventModal, closeEventModal, showOfflinePopup, showBreakthroughOverlay, showFailOverlay,
-    showSettings, showRebirthPanel, showTutorial, showPillHouse, toast, tweenNumber, setBgm,
-    setLLMStatus, setForewarn, updateBuffBar, drawBg, sfx
+    showSettings, showRebirthPanel, showTutorial, showPillHouse, showHelpPanel, toast, tweenNumber, setBgm,
+    setLLMStatus, setForewarn, updateBuffBar, drawBg, sfx, playTribulation,
   };
 })(typeof window !== 'undefined' ? window : globalThis);

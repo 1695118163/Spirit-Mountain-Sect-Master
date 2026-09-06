@@ -57,7 +57,7 @@
     const bal = BAL();
     const bt = bal.breakthrough || {};
     const now = Date.now();
-    if (s.bt && s.bt.fail_cooldown_until > now) return false;
+    if (s.bt && s.bt.fail_cooldown_until > now && !(opts && opts.failReplay)) return false;
 
     // ── 成功率判定：基础 × 道心 + 策略 + 破障丹 + 故人上门 + 心魔侵扰 ──
     let rate = breakthroughRate(next);
@@ -88,9 +88,9 @@
       else if (s.bt.visitor_effect === 'disturb') rate += bt.visitors.disturb_rate_add || -0.10;
       s.bt.visitor_effect = '';
     }
-    // 心魔侵扰：元婴起冲关有一线可能被心魔缠上（渡厄丹可免），压一成成功率
+    // 心魔侵扰：元婴起冲关有一线可能被心魔缠上（渡厄丹可免），压一成成功率（天劫重入沿用首判）
     let xinmoHit = false;
-    if (next.index >= 3 && !guaranteed && Math.random() < 0.15) {
+    if (next.index >= 3 && !guaranteed && !(opts && opts.failReplay) && !(opts && opts.skipTribulation) && Math.random() < 0.15) {
       xinmoHit = true;
       rate -= 0.15;
       if (g.LS.ui && g.LS.ui.toast) g.LS.ui.toast('冲关在即，一缕心魔悄然缠上识海——这一关，格外凶险。');
@@ -98,7 +98,20 @@
     rate = Math.max(0.05, Math.min(1, rate));
     const pity = bt.pity_success || 3;
     const streak = (s.bt && s.bt.fail_streak) || 0;
-    const success = (opts && opts.forceSuccess) || guaranteed || streak >= pity - 1 || Math.random() < rate;
+    // failReplay：天劫动画重入，沿用首判结果（必败）
+    const success = (opts && opts.failReplay) ? false
+      : ((opts && opts.forceSuccess) || guaranteed || streak >= pity - 1 || Math.random() < rate);
+
+    // 渡劫→飞升：先播天劫动画（闪电劈小人），动画毕再出升级/失败结果
+    if (next.index === 9 && g.LS.ui && g.LS.ui.playTribulation && !(opts && opts.skipTribulation)) {
+      const replay = Object.assign({}, opts, { skipTribulation: true });
+      if (!success) s.bt.fail_cooldown_until = now + (bt.fail_cooldown_s || 30) * 1000; // 动画期间拦重复点击
+      g.LS.ui.playTribulation(success, () => {
+        s.resources.xiufu = Math.max(s.resources.xiufu, next.need_xp); // 重入放行门槛
+        doBreakthrough(Object.assign({}, replay, success ? { forceSuccess: true } : { failReplay: true }));
+      });
+      return success;
+    }
 
     if (!success) {
       // ── 失败分支（数值代价显式呈现给玩家） ──
