@@ -72,7 +72,18 @@
     <div id="real-time"></div>
     <div id="realm-name">练气</div>
     <div id="dao-heart"></div>
-    <div id="xp-bar"><div id="xp-fill"></div><span id="xp-text">修为 0/150</span><div id="taichi-monk" data-realm="0"><div class="fx fx-zen"></div><div class="fx fx-aura"></div><div class="fx fx-curse"></div><span class="fx fx-star s1"></span><span class="fx fx-star s2"></span><span class="fx fx-star s3"></span><span class="fx fx-star s4"></span><div class="fx fx-halo"></div><svg class="monk-svg" viewBox="0 0 48 52"><use href="#taichi-monk"/></svg></div></div>
+    <div id="xp-bar"><div id="xp-fill"></div><span id="xp-text">修为 0/150</span><div id="taichi-monk" data-realm="0"><div class="fx fx-zen"></div><div class="fx fx-aura"></div><div class="fx fx-curse"></div><span class="fx fx-star s1"></span><span class="fx fx-star s2"></span><span class="fx fx-star s3"></span><span class="fx fx-star s4"></span><div class="fx fx-halo"></div><svg class="monk-svg" id="monk-ik" viewBox="0 0 48 52">
+      <circle cx="24" cy="8" r="4.8"/>
+      <g id="monk-eyes"><circle cx="22.4" cy="7.4" r="1.1" fill="var(--ink)" stroke="none"/><circle cx="25.6" cy="7.4" r="1.1" fill="var(--ink)" stroke="none"/></g>
+      <path d="M24 13 V26"/>
+      <path d="M24 26 L15 41 M24 26 L33 41"/>
+      <path d="M11 42 H19 M29 42 H37"/>
+      <polyline id="monk-armN" points="0,0 0,0" fill="none" stroke="var(--ink)" stroke-width="2.4" stroke-linecap="round"/>
+      <polyline id="monk-armF" points="0,0 0,0" fill="none" stroke="var(--ink)" stroke-width="2.4" stroke-linecap="round" opacity=".55"/>
+      <circle id="monk-handN" r="1.9" fill="var(--ink)" stroke="none"/>
+      <circle id="monk-handF" r="1.9" fill="var(--ink)" stroke="none" opacity=".55"/>
+      <circle cx="24" cy="8" r="1.2" class="seal"/>
+    </svg></div></div>
     <div id="breath-wrap">
       <button id="btn-breath"><span class="breath-label">吐 纳</span></button>
     </div>

@@ -74,7 +74,82 @@
     return frames;
   }
 
-  /** 环境渲染帧（15fps）：雾带由 CSS 平移自驱，这里只画鹤与天气粒子 */
+  /* ── 太极小人 v2：IK 反向运动学云手（pelican 手法移植） ──
+   * 双手端点沿胸前两个相交圆轨迹运动（云手），肘部由两连杆 IK 解算；
+   * 呼吸起伏 + 随机眨眼 + 中咒/跪姿时冻结摆臂。 */
+  const monkIK = {
+    init: false,
+    els: {},
+    th: 0,
+    L1: 9.5, L2: 9.5,
+    shoulders: { near: { x: 21.5, y: 19 }, far: { x: 26.5, y: 19.4 } },
+    blinkAt: 0
+  };
+
+  function monkKneeOf(h, p) {
+    const dx = p.x - h.x, dy = p.y - h.y;
+    const d = Math.min(Math.hypot(dx, dy), monkIK.L1 + monkIK.L2 - 0.01);
+    const a = (monkIK.L1 * monkIK.L1 - monkIK.L2 * monkIK.L2 + d * d) / (2 * d);
+    const hgt = Math.sqrt(Math.max(0, monkIK.L1 * monkIK.L1 - a * a));
+    const ux = dx / d, uy = dy / d;
+    const mx = h.x + a * ux, my = h.y + a * uy;
+    const k1 = { x: mx - hgt * uy, y: my + hgt * ux };
+    const k2 = { x: mx + hgt * uy, y: my - hgt * ux };
+    return k1.x < k2.x ? k1 : k2;
+  }
+
+  function monkIKInit() {
+    if (monkIK.init || typeof document === 'undefined') return;
+    const svg = document.getElementById('monk-ik');
+    if (!svg) return;
+    monkIK.init = true;
+    monkIK.els = {
+      armN: document.getElementById('monk-armN'),
+      armF: document.getElementById('monk-armF'),
+      handN: document.getElementById('monk-handN'),
+      handF: document.getElementById('monk-handF'),
+      eyes: document.getElementById('monk-eyes'),
+      body: document.getElementById('taichi-monk')
+    };
+  }
+
+  function monkIKStep(dtSec) {
+    monkIKInit();
+    const E = monkIK.els;
+    if (!E.armN) return;
+    const s = g.LS.S;
+    const now = Date.now();
+    // 中咒或跪地（天劫失败）时收手定格，不摆
+    const frozen = s.buffs.some(b => b.id === 'qihuo_debuff' || b.id === 'xinmo_debuff') ||
+      E.body.classList.contains('kneel');
+    if (!frozen) monkIK.th += dtSec * 1.4; // 云手角速度
+    const th = monkIK.th;
+    const S2 = s2 => ({ x: 24 + 9.5 * Math.cos(s2), y: 25 + 7 * Math.sin(s2) });
+    // 双手沿胸前圆轨迹，相位差 π（云手交替）
+    const pN = S2(th);
+    const pF = S2(th + Math.PI);
+    for (const [arm, hand, shoulder, p] of [
+      [E.armN, E.handN, monkIK.shoulders.near, pN],
+      [E.armF, E.handF, monkIK.shoulders.far, pF]
+    ]) {
+      const k = monkKneeOf(shoulder, p);
+      arm.setAttribute('points', shoulder.x + ',' + shoulder.y + ' ' + k.x.toFixed(1) + ',' + k.y.toFixed(1) + ' ' + p.x.toFixed(1) + ',' + p.y.toFixed(1));
+      hand.setAttribute('cx', p.x.toFixed(1));
+      hand.setAttribute('cy', p.y.toFixed(1));
+    }
+    // 呼吸起伏
+    E.body.querySelector('.monk-svg').style.transform =
+      'translateY(' + (Math.sin(now / 900) * 1.4).toFixed(2) + 'px)';
+    // 随机眨眼
+    if (now > monkIK.blinkAt) {
+      E.eyes.style.transform = 'scaleY(0.12)';
+      E.eyes.style.transformOrigin = '24px 8px';
+      setTimeout(() => { E.eyes.style.transform = 'none'; }, 140);
+      monkIK.blinkAt = now + 2600 + Math.random() * 2800;
+    }
+  }
+
+  /** 环境渲染帧（15fps）：雾带由 CSS 平移自驱，这里画鹤、天气粒子、小人 IK 云手 */
   function frame(ts) {
     if (!running) return;
     rafId = requestAnimationFrame(frame);
@@ -82,6 +157,9 @@
     lastFrame = ts;
     const w = cv.width, h = cv.height;
     ctx.clearRect(0, 0, w, h);
+
+    // 小人 IK 云手（DOM 操作与 Canvas 粒子共用 15fps 节拍）
+    try { monkIKStep(FRAME_MS / 1000); } catch (e) { /* 失败不影响游戏 */ }
 
     // A2 墨鹤
     if (crane) {
