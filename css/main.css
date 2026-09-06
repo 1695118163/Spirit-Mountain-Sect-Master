@@ -243,6 +243,85 @@ button:not(:disabled):active { transform: translateY(1px); }
 #xp-bar.full #xp-fill { background: linear-gradient(90deg, var(--gold), rgba(184,134,11,.7)); }
 #xp-bar.full .monk-svg { stroke: var(--gold); filter: drop-shadow(0 0 6px rgba(184,134,11,.55)); }
 
+/* ── 小人境界排面：境界越高特效越华丽（练气/筑基素体） ── */
+#taichi-monk .fx { position: absolute; pointer-events: none; display: none; }
+/* 金丹+：脚下地光环 */
+#taichi-monk[data-realm="2"] .fx-halo, #taichi-monk[data-realm="3"] .fx-halo,
+#taichi-monk[data-realm="4"] .fx-halo, #taichi-monk[data-realm="5"] .fx-halo,
+#taichi-monk[data-realm="6"] .fx-halo, #taichi-monk[data-realm="7"] .fx-halo,
+#taichi-monk[data-realm="8"] .fx-halo, #taichi-monk[data-realm="9"] .fx-halo {
+  display: block; left: 50%; bottom: -4px; width: 34px; height: 9px; margin-left: -17px;
+  border: 1.5px solid rgba(184,134,11,.45); border-radius: 50%;
+  animation: haloBreath 3s ease-in-out infinite alternate;
+}
+@keyframes haloBreath { from { opacity: .4; } to { opacity: .9; } }
+/* 元婴+：两颗灵星绕身 */
+#taichi-monk[data-realm="3"] .fx-star.s1, #taichi-monk[data-realm="4"] .fx-star.s1,
+#taichi-monk[data-realm="5"] .fx-star.s1, #taichi-monk[data-realm="6"] .fx-star.s1,
+#taichi-monk[data-realm="7"] .fx-star.s1, #taichi-monk[data-realm="8"] .fx-star.s1,
+#taichi-monk[data-realm="9"] .fx-star.s1,
+#taichi-monk[data-realm="3"] .fx-star.s2, #taichi-monk[data-realm="4"] .fx-star.s2,
+#taichi-monk[data-realm="5"] .fx-star.s2, #taichi-monk[data-realm="6"] .fx-star.s2,
+#taichi-monk[data-realm="7"] .fx-star.s2, #taichi-monk[data-realm="8"] .fx-star.s2,
+#taichi-monk[data-realm="9"] .fx-star.s2 {
+  display: block; left: 50%; top: 55%; width: 4px; height: 4px; margin: -2px;
+  border-radius: 50%; background: radial-gradient(circle, rgba(143,173,192,.95), rgba(143,173,192,0) 70%);
+  animation: starOrbit 5s linear infinite;
+}
+#taichi-monk .fx-star.s2 { animation-duration: 8s; animation-direction: reverse; }
+@keyframes starOrbit { from { transform: rotate(0) translateX(22px); } to { transform: rotate(360deg) translateX(22px); } }
+/* 化神+：淡青气旋 */
+#taichi-monk[data-realm="4"] .fx-aura, #taichi-monk[data-realm="5"] .fx-aura,
+#taichi-monk[data-realm="6"] .fx-aura, #taichi-monk[data-realm="7"] .fx-aura,
+#taichi-monk[data-realm="8"] .fx-aura, #taichi-monk[data-realm="9"] .fx-aura {
+  display: block; inset: -6px -8px;
+  background: radial-gradient(ellipse at 50% 60%, rgba(61,90,108,.22), transparent 68%);
+  filter: blur(2px);
+  animation: auraSpin 7s linear infinite;
+}
+@keyframes auraSpin { from { transform: rotate(0); } to { transform: rotate(360deg); } }
+/* 合体+：第三颗灵星 */
+#taichi-monk[data-realm="6"] .fx-star.s3, #taichi-monk[data-realm="7"] .fx-star.s3,
+#taichi-monk[data-realm="8"] .fx-star.s3, #taichi-monk[data-realm="9"] .fx-star.s3 {
+  display: block; left: 50%; top: 55%; width: 3.4px; height: 3.4px; margin: -1.7px;
+  border-radius: 50%; background: radial-gradient(circle, rgba(184,134,11,.9), rgba(184,134,11,0) 70%);
+  animation: starOrbit 6.5s linear infinite;
+}
+/* 大乘+：金身 */
+#taichi-monk[data-realm="7"] .monk-svg, #taichi-monk[data-realm="8"] .monk-svg,
+#taichi-monk[data-realm="9"] .monk-svg {
+  stroke: #8a6d1d;
+  filter: drop-shadow(0 0 5px rgba(184,134,11,.5));
+}
+/* 渡劫+：第四颗灵星（电白） */
+#taichi-monk[data-realm="8"] .fx-star.s4, #taichi-monk[data-realm="9"] .fx-star.s4 {
+  display: block; left: 50%; top: 55%; width: 3px; height: 3px; margin: -1.5px;
+  border-radius: 50%; background: radial-gradient(circle, rgba(245,240,230,.95), rgba(245,240,230,0) 70%);
+  animation: starOrbit 4.2s linear infinite;
+}
+/* 飞升：背后禅光圆相 */
+#taichi-monk[data-realm="9"] .fx-zen {
+  display: block; inset: -10px -14px;
+  border: 1.5px solid rgba(184,134,11,.35); border-radius: 50%;
+  background: radial-gradient(circle, rgba(184,134,11,.10), transparent 70%);
+  animation: haloBreath 4s ease-in-out infinite alternate;
+}
+
+/* ── 中咒邪相：debuff 时小人染邪、黑雾缭绕（盖过灵光） ── */
+#taichi-monk.cursed .monk-svg { stroke: #453a44; filter: drop-shadow(0 0 4px rgba(60,30,50,.65)); }
+#taichi-monk.cursed .fx-halo, #taichi-monk.cursed .fx-star,
+#taichi-monk.cursed .fx-aura, #taichi-monk.cursed .fx-zen { display: none !important; }
+#taichi-monk .fx-curse {
+  display: none; inset: -8px -10px;
+  background:
+    radial-gradient(ellipse at 30% 40%, rgba(45,25,45,.4), transparent 55%),
+    radial-gradient(ellipse at 70% 65%, rgba(45,25,45,.32), transparent 55%);
+  filter: blur(1.5px);
+  animation: curseSwirl 6s ease-in-out infinite alternate;
+}
+#taichi-monk.cursed .fx-curse { display: block; }
+@keyframes curseSwirl { from { transform: rotate(-8deg) scale(1); opacity: .75; } to { transform: rotate(10deg) scale(1.08); opacity: .95; } }
+
 #forewarn { color: var(--cinnabar); font-size: 13px; letter-spacing: 2px; animation: pulse 2s infinite; }
 .hidden { display: none !important; }
 

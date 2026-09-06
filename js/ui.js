@@ -397,6 +397,16 @@
     const realm = bal.realms[s.realm.index];
     const nameStr = realm.name;
     if (lastStr.realm !== nameStr) { refs.realmName.textContent = nameStr; lastStr.realm = nameStr; }
+    // 太极小人：境界排面（data-realm 0~9，特效随境界华丽）+ 中咒邪相（debuff 染黑邪雾）
+    if (refs.taichiMonk) {
+      if (refs.taichiMonk.dataset.realm !== String(s.realm.index)) {
+        refs.taichiMonk.dataset.realm = String(s.realm.index);
+      }
+      const cursed = (s.buffs || []).some(b =>
+        b.id === 'qihuo_debuff' || b.id === 'xinmo_debuff' ||
+        b.id === 'pill_toxic_debuff' || b.id === 'chidun_debuff' || b.id === 'zhuoyuan_debuff');
+      refs.taichiMonk.classList.toggle('cursed', cursed);
+    }
     // 道心值 + 分档（影响奇遇池、AI 基调、突破成功率）
     if (refs.daoHeart) {
       const tiers = bal.daoxin.tiers || [];
@@ -408,12 +418,9 @@
     if (next && next.need_xp) {
       const pct = Math.min(100, (s.resources.xiufu / next.need_xp) * 100);
       const fillStr = pct.toFixed(1);
-      if (lastStr.xpFill !== fillStr) {
-        refs.xpFill.style.width = fillStr + '%';
-        lastStr.xpFill = fillStr;
-        // Q 版太极小人：站在进度条最前端，随进度右移
-        if (refs.taichiMonk) refs.taichiMonk.style.left = `calc(${fillStr}% )`;
-      }
+      if (lastStr.xpFill !== fillStr) { refs.xpFill.style.width = fillStr + '%'; lastStr.xpFill = fillStr; }
+      // Q 版太极小人：站在进度条最前端，随进度右移（每 tick 同步，防境界/需求切换时脱节）
+      if (refs.taichiMonk) refs.taichiMonk.style.left = `calc(${fillStr}% )`;
       const full = s.resources.xiufu >= next.need_xp;
       if (refs.xpBar) refs.xpBar.classList.toggle('full', full);
       const txt = '修为 ' + fmtSafe(s.resources.xiufu) + ' / ' + fmtSafe(next.need_xp);
