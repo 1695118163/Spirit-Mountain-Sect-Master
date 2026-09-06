@@ -4,6 +4,15 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>灵山掌门</title>
+<script>
+  // 防昼夜闪烁：渲染前先按现实时间挂夜色类（FOUC 修正）
+  (function () {
+    try {
+      var h = new Date().getHours();
+      if (h >= 20 || h < 5) document.documentElement.className += ' night';
+    } catch (e) {}
+  })();
+</script>
 <link rel="stylesheet" href="css/main.css">
 </head>
 <body>

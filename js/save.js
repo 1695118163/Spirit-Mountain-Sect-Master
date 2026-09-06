@@ -90,6 +90,9 @@
 
   function ls() { return (typeof localStorage !== 'undefined') ? localStorage : null; }
 
+  // 保存锁：重置游戏后置真，拦截卸载时的自动存档（否则旧档在 reload 时被写回=重置白做）
+  let saveLocked = false;
+
   function fillDefaults(s) {
     const fresh = g.LS.state.NEW_STATE();
     for (const k in fresh) {
@@ -129,6 +132,7 @@
   }
 
   function save() {
+    if (saveLocked) return; // 重置后禁止落盘
     const store = ls();
     const s = g.LS.S;
     if (!store || !s) return;
@@ -190,6 +194,7 @@
   }
 
   function resetAll() {
+    saveLocked = true; // 防止 reload 卸载时自动存档把旧档写回
     const store = ls();
     if (!store) return;
     store.removeItem(KEY);

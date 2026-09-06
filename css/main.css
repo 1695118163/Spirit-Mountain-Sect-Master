@@ -42,8 +42,8 @@ body::before {
   box-shadow: 0 0 46px rgba(245,240,230,.4), 0 0 110px rgba(245,240,230,.18);
 }
 
-/* ── 夜色主题：入夜整页换夜行水墨（body.night 切换 CSS 变量） ── */
-body.night {
+/* ── 夜色主题：入夜整页换夜行水墨（html.night body 切换 CSS 变量） ── */
+html.night body {
   --paper: #343b47;
   --ink: #e8e2d2;
   --paper-dim: #2b313b;
@@ -52,13 +52,13 @@ body.night {
   --cinnabar: #d0685a;
   --gold: #d4a94e;
 }
-body.night .panel { background: #3a4150; }
-body.night .b-card { background: rgba(255, 255, 255, .06); }
-body.night .b-icon { stroke: var(--ink); }
-body.night .ev-option { background: rgba(255, 255, 255, .07); }
-body.night #btn-breath { box-shadow: 0 4px 24px rgba(0,0,0,.4), inset 0 0 30px rgba(143,173,192,.12); }
-body.night #xp-bar { background: var(--paper-dim); }
-body.night .toast { background: #e8e2d2; color: #343b47; }
+html.night body .panel { background: #3a4150; }
+html.night body .b-card { background: rgba(255, 255, 255, .06); }
+html.night body .b-icon { stroke: var(--ink); }
+html.night body .ev-option { background: rgba(255, 255, 255, .07); }
+html.night body #btn-breath { box-shadow: 0 4px 24px rgba(0,0,0,.4), inset 0 0 30px rgba(143,173,192,.12); }
+html.night body #xp-bar { background: var(--paper-dim); }
+html.night body .toast { background: #e8e2d2; color: #343b47; }
 
 #app {
   position: relative; z-index: 1;
@@ -478,7 +478,7 @@ button:not(:disabled):active { transform: translateY(1px); }
   color: var(--ink-soft); opacity: .4;
   pointer-events: none; user-select: none;
 }
-body.night #version-mark { opacity: .3; }
+html.night body #version-mark { opacity: .3; }
 
 #toast-root { position: fixed; top: 90px; left: 50%; transform: translateX(-50%); z-index: 80; display: flex; flex-direction: column; gap: 8px; align-items: center; pointer-events: none; }
 .toast {

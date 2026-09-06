@@ -408,8 +408,8 @@
         // 昼夜：入夜（20 点~次日 5 点）整页切换夜色主题，黄昏一层朱砂残照
         const hh = d.getHours();
         const isNight = hh >= 20 || hh < 5;
-        if (document.body.classList.contains('night') !== isNight) {
-          document.body.classList.toggle('night', isNight);
+        if (document.documentElement.classList.contains('night') !== isNight) {
+          document.documentElement.classList.toggle('night', isNight);
         }
         const duskTint = (hh >= 17 && hh < 20) ? 'rgba(168,50,50,.14)' : 'rgba(0,0,0,0)';
         const dayKey = 'n' + isNight + duskTint;
