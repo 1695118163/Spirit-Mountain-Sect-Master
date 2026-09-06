@@ -1169,7 +1169,7 @@
           const obj = JSON.parse(decodeURIComponent(escape(atob(raw))));
           if (!obj || obj.v !== 1 || typeof obj.realm !== 'number') throw new Error('格式不对');
           s.friends = s.friends || [];
-          if (s.friends.some(f => f.dao === obj.dao && f.ts === obj.ts)) { toast('这位道友已在录中'); return; }
+          if (s.friends.some(f => f.dao === obj.dao)) { toast('这位道友已在录中'); return; }
           s.friends.push({ dao: obj.dao, card: obj, realmName: (g.LS.BAL.realms[obj.realm] || {}).name || '?', myWin: 0, myLose: 0 });
           g.LS.save.save();
           toast('道友「' + (obj.dao || '无名') + '」已入录，可随时斗法');
