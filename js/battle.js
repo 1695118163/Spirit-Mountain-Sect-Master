@@ -276,13 +276,14 @@
     startTurn();
   }
 
-  /** 回合开始：灵力回满、罡气清零、AI 亮意图、丹毒结算 */
+  /** 回合开始：灵力回满、罡气清零、弃牌堆洗回、AI 亮意图、丹毒结算 */
   function startTurn() {
     const a = active;
     if (!a) return;
     a.round += 1;
     a.my.qi = a.my.qiMax;
     a.my.shield = 0;
+    a.my.played = []; // StS 规则：每张牌每回合限出一次，回合结束洗回
     a.op.qi = a.op.qiMax;
     rollIntent(a.op);
     const lines = [];
@@ -297,12 +298,15 @@
     syncUI();
   }
 
-  /** 我方出牌：立即结算（护盾先抵），灵力不足/牌未解锁时按钮已禁用 */
+  /** 我方出牌：立即结算；每张牌每回合限一次（打出入弃牌堆），灵力不足/已出时按钮禁用 */
   function playCard(idx) {
     const a = active;
     if (!a) return;
     const card = a.my.hand[idx];
     if (!card || a.my.qi < (card.cost || 0)) return;
+    if ((a.my.played || []).indexOf(card.id) !== -1) { g.LS.ui.toast('此招本回合已使出，气机未复'); return; }
+    a.my.played = a.my.played || [];
+    a.my.played.push(card.id);
     a.my.qi -= card.cost || 0;
     const lines = [];
     let el = card.el;
@@ -360,7 +364,7 @@
       idx: i, name: c.name, cost: c.cost || 0, desc: c.desc || '',
       dmg: c.dmg ? c.dmgFinal : 0, heal: c.heal || 0, shield: c.shield || 0,
       el: c.el === 'root' ? (a.my.element || '五行') : (c.el || null),
-      disabled: a.my.qi < (c.cost || 0)
+      disabled: a.my.qi < (c.cost || 0) || (a.my.played || []).indexOf(c.id) !== -1
     })));
   }
 

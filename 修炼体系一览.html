@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>灵山掌门 · 修炼体系一览</title>
+<style>
+  :root { --bg:#15130f; --card:#1e1b15; --ink:#e8dcc8; --soft:#a6987f; --line:#3a332a; --cinnabar:#c0392b; --gold:#e8c34a; }
+  * { box-sizing:border-box; }
+  body { margin:0; padding:32px 16px 64px; background:var(--bg); color:var(--ink); font-family:"Kaiti SC","KaiTi","STKaiti",serif; line-height:1.75; }
+  .wrap { max-width:920px; margin:0 auto; }
+  h1 { text-align:center; font-size:30px; letter-spacing:10px; font-weight:normal; margin:8px 0 4px; }
+  .sub { text-align:center; color:var(--soft); font-size:13px; margin-bottom:26px; }
+  .sub b { color:var(--gold); }
+  nav { display:flex; flex-wrap:wrap; gap:8px; justify-content:center; margin-bottom:30px; position:sticky; top:0; background:linear-gradient(var(--bg) 82%, transparent); padding:10px 0; z-index:5; }
+  nav a { color:var(--soft); text-decoration:none; border:1px solid var(--line); border-radius:16px; padding:3px 14px; font-size:13px; }
+  nav a:hover { color:var(--cinnabar); border-color:var(--cinnabar); }
+  section { background:var(--card); border:1px solid var(--line); border-radius:12px; padding:20px 24px; margin-bottom:26px; }
+  h2 { font-size:19px; letter-spacing:5px; font-weight:normal; border-left:3px solid var(--cinnabar); padding-left:12px; margin:2px 0 14px; }
+  h2 small { font-size:12px; color:var(--soft); letter-spacing:1px; margin-left:10px; }
+  table { width:100%; border-collapse:collapse; font-size:13.5px; }
+  th { color:var(--soft); font-weight:normal; text-align:left; border-bottom:1px solid var(--line); padding:6px 8px; white-space:nowrap; }
+  td { border-bottom:1px dashed rgba(58,51,42,.6); padding:7px 8px; vertical-align:top; }
+  tr:last-child td { border-bottom:none; }
+  .muted { color:var(--soft); font-size:12.5px; }
+  .realm-dot { display:inline-block; width:9px; height:9px; border-radius:50%; margin-right:7px; }
+  .chip { display:inline-block; border:1px solid var(--line); border-radius:14px; padding:2px 12px; font-size:12.5px; color:var(--soft); margin:3px 4px 3px 0; }
+  .note { background:rgba(192,57,43,.08); border:1px dashed rgba(192,57,43,.45); border-radius:8px; padding:10px 14px; font-size:13px; margin:12px 0 4px; }
+  .rule { font-size:13.5px; padding-left:20px; margin:0; }
+  .rule li { margin-bottom:5px; }
+  .cycle { text-align:center; font-size:15px; letter-spacing:2px; margin:10px 0 2px; color:var(--gold); }
+  .foot { text-align:center; color:var(--soft); font-size:12px; margin-top:34px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>修 炼 体 系 一 览</h1>
+  <div class="sub">《灵山掌门》 <b>v0.18.1</b> · 生成于 2026/9/12 · 数值与游戏数据同源（改数据重跑 tools/gen_codex_page.js 即同步）</div>
+  <nav>
+    <a href="#realm">境界十层</a><a href="#root">灵根</a><a href="#weapon">兵器谱</a><a href="#tech">功法谱</a><a href="#pill">丹药五阶</a><a href="#cards">斗法与卡组</a><a href="#misc">段位与难度</a>
+  </nav>
+
+  <section id="realm">
+    <h2>境界十层<small>练气 → 飞升：突破所需修为 / 全局产量被动 / 解锁内容</small></h2>
+    <table><tr><th>境界</th><th>突破所需修为</th><th>产量被动</th><th>解锁建筑</th><th>特性</th></tr>
+<tr><td><span class="realm-dot" style="background:#9fb3c8"></span>练气</td><td>—（起始）</td><td>×1</td><td>吐纳法、灵田、灵泉</td><td>—</td></tr>
+<tr><td><span class="realm-dot" style="background:#6b9bd1"></span>筑基</td><td>150 修为</td><td>×2</td><td>炼丹炉、坊市</td><td>—</td></tr>
+<tr><td><span class="realm-dot" style="background:#e8c96a"></span>金丹</td><td>1500 修为</td><td>×3</td><td>剑冢、药园</td><td>奇遇节奏 ×0.9（越小遇事越勤）</td></tr>
+<tr><td><span class="realm-dot" style="background:#b39ddb"></span>元婴</td><td>1.5万 修为</td><td>×4</td><td>藏经阁、护山阵</td><td>—</td></tr>
+<tr><td><span class="realm-dot" style="background:#f0906a"></span>化神</td><td>20万 修为</td><td>×6</td><td>灵兽栏</td><td>解锁「转生」</td></tr>
+<tr><td><span class="realm-dot" style="background:#63d8d8"></span>炼虚</td><td>300万 修为</td><td>×10</td><td>洞府</td><td>—</td></tr>
+<tr><td><span class="realm-dot" style="background:#e07ba8"></span>合体</td><td>5000万 修为</td><td>×15</td><td>诛仙剑阵</td><td>—</td></tr>
+<tr><td><span class="realm-dot" style="background:#ffd700"></span>大乘</td><td>8亿 修为</td><td>×25</td><td>—</td><td>—</td></tr>
+<tr><td><span class="realm-dot" style="background:#ff6b6b"></span>渡劫</td><td>200亿 修为</td><td>×40</td><td>—</td><td>—</td></tr>
+<tr><td><span class="realm-dot" style="background:#fff2cc"></span>飞升</td><td>10000亿 修为</td><td>×100</td><td>—</td><td>功行圆满，可飞升立碑</td></tr>
+    </table>
+    <div class="note">小层：每境分初期 / 中期 / 后期 / 大圆满四段，修为在境内持续累积。金丹起突破必渡劫雷劈——成功晋境，失败走火（修为折半 + 产量减半），连败三次天道怜悯必成。</div>
+  </section>
+
+  <section id="root">
+    <h2>灵根<small>开局随机，转生重抽——修为速度与斗法五行</small></h2>
+    <table><tr><th>灵根</th><th>出现率</th><th>修为倍率</th><th>描述</th></tr>
+<tr><td>伪</td><td>40%</td><td>×0.85</td><td class="muted">五行混杂，吸纳灵气效果差——但传闻伪灵根自有造化。</td></tr>
+<tr><td>真</td><td>30%</td><td>×1</td><td class="muted">两三行灵根，寻常资质。</td></tr>
+<tr><td>异</td><td>20%</td><td>×1.15</td><td class="muted">雷冰风等变异灵根，宗门争抢的天之骄子。</td></tr>
+<tr><td>天</td><td>10%</td><td>×1.35</td><td class="muted">五行单一圆满，修炼一日千里。</td></tr>
+    </table>
+    <div class="cycle">金 克 木，木 克 土，土 克 水，水 克 火，火 克 金（克制 ×1.25，被克 ×0.85）</div>
+    <div class="muted" style="text-align:center">灵根偏向五行之一，斗法中同属性功法威力+8%。</div>
+  </section>
+
+  <section id="weapon">
+    <h2>兵器谱<small>坊市购买 · 锋锐加斗法气血与招式威力</small></h2>
+    <table><tr><th>兵器</th><th>品阶</th><th>五行</th><th>锋锐</th><th>斗法招式</th><th>价格</th></tr>
+<tr><td><b>青锋剑</b></td><td>凡</td><td>金</td><td>10</td><td class="muted">青锋惊雷（威力 ×1.2）</td><td>800 灵石</td></tr>
+<tr><td><b>桃木拂尘</b></td><td>凡</td><td>木</td><td>10</td><td class="muted">桃木拂尘·生灭（威力 ×1.15）</td><td>800 灵石</td></tr>
+<tr><td><b>玄水幡</b></td><td>凡</td><td>水</td><td>12</td><td class="muted">玄水翻浪（威力 ×1.2）</td><td>1200 灵石</td></tr>
+<tr><td><b>火纹匕</b></td><td>凡</td><td>火</td><td>12</td><td class="muted">火纹刺（威力 ×1.2）</td><td>1200 灵石</td></tr>
+<tr><td><b>赤霄环</b></td><td>灵</td><td>火</td><td>25</td><td class="muted">赤霄焰环（威力 ×1.45）</td><td>8000 灵石</td></tr>
+<tr><td><b>碧玉葫芦</b></td><td>灵</td><td>木</td><td>22</td><td class="muted">碧玉缠藤（威力 ×1.4）</td><td>7200 灵石</td></tr>
+<tr><td><b>寒冰镜</b></td><td>灵</td><td>水</td><td>28</td><td class="muted">寒冰镜照（威力 ×1.5）</td><td>9600 灵石</td></tr>
+<tr><td><b>紫电锥</b></td><td>灵</td><td>金</td><td>26</td><td class="muted">紫电贯（威力 ×1.45）</td><td>8800 灵石</td></tr>
+<tr><td><b>诛仙剑</b></td><td>珍</td><td>金</td><td>55</td><td class="muted">诛仙一剑（威力 ×1.9）</td><td>6.6万 灵石</td></tr>
+<tr><td><b>山河扇</b></td><td>珍</td><td>土</td><td>50</td><td class="muted">山河扇展（威力 ×1.8）</td><td>6万 灵石</td></tr>
+<tr><td><b>太虚鼎</b></td><td>仙</td><td>土</td><td>110</td><td class="muted">太虚镇世（威力 ×2.6）</td><td>48万 灵石</td></tr>
+    </table>
+  </section>
+
+  <section id="tech">
+    <h2>功法谱<small>坊市购买 · 决定斗法五行招式</small></h2>
+    <table><tr><th>功法</th><th>品阶</th><th>五行</th><th>斗法招式</th><th>价格</th></tr>
+<tr><td><b>长春功</b></td><td>凡</td><td>木</td><td class="muted">长春缠丝劲（威力 ×1.1）</td><td>600 灵石</td></tr>
+<tr><td><b>吐纳诀</b></td><td>凡</td><td>水</td><td class="muted">吐纳归元（威力 ×1.1）</td><td>600 灵石</td></tr>
+<tr><td><b>烈火掌</b></td><td>灵</td><td>火</td><td class="muted">烈火燎原（威力 ×1.3）</td><td>5600 灵石</td></tr>
+<tr><td><b>庚金诀</b></td><td>灵</td><td>金</td><td class="muted">庚金裂石（威力 ×1.3）</td><td>5600 灵石</td></tr>
+<tr><td><b>厚土功</b></td><td>灵</td><td>土</td><td class="muted">厚土壁（威力 ×1.25，附带罡气）</td><td>5600 灵石</td></tr>
+<tr><td><b>碧波诀</b></td><td>灵</td><td>水</td><td class="muted">碧波荡（威力 ×1.25）</td><td>5200 灵石</td></tr>
+<tr><td><b>紫霄功</b></td><td>珍</td><td>金</td><td class="muted">紫霄雷落（威力 ×1.6）</td><td>4.4万 灵石</td></tr>
+<tr><td><b>赤炎真解</b></td><td>珍</td><td>火</td><td class="muted">赤炎焚野（威力 ×1.55）</td><td>4万 灵石</td></tr>
+<tr><td><b>青元剑诀</b></td><td>仙</td><td>木</td><td class="muted">青元万剑（威力 ×1.9）</td><td>32万 灵石</td></tr>
+<tr><td><b>太上忘情录</b></td><td>仙</td><td>土</td><td class="muted">太上忘情一指（威力 ×2.1）</td><td>36万 灵石</td></tr>
+    </table>
+  </section>
+
+  <section id="pill">
+    <h2>丹药五阶<small>劣 &lt; 凡 &lt; 灵 &lt; 珍 &lt; 仙：越高越纯，越低越毒</small></h2>
+    <table><tr><th>品阶</th><th>药效倍率</th><th>积毒</th></tr>
+<tr><td>劣</td><td>×1</td><td>+8 丹毒</td></tr>
+<tr><td>凡</td><td>×1</td><td>+6 丹毒</td></tr>
+<tr><td>灵</td><td>×1.5</td><td>+3 丹毒</td></tr>
+<tr><td>珍</td><td>×2</td><td>+1 丹毒</td></tr>
+<tr><td>仙</td><td>×2.5</td><td>+0 丹毒</td></tr>
+    </table>
+    <div class="note">丹毒：每 10 点全局产量 −3%（封顶 −30%），随时间消散，清心丹速排，洗髓丹清零，转生清空；丹毒 ≥60 进入「丹毒攻心」。境界不匹配的丹：药效 ×0.6、丹毒 ×1.5。</div>
+    <table><tr><th>丹药</th><th>品阶</th><th>药效</th></tr>
+<tr><td><b>灵力丹</b></td><td>灵</td><td class="muted">全局 ×2（60 秒）</td></tr>
+<tr><td><b>聚气丹</b></td><td>灵</td><td class="muted">一缕精纯药力沉入气海，修为顿进。</td></tr>
+<tr><td><b>破障丹</b></td><td>珍</td><td class="muted">丹力护住气海，下次冲关气机顺畅不少。</td></tr>
+<tr><td><b>清心丹</b></td><td>灵</td><td class="muted">药性清冽，涤荡丹毒心魔，神台复明。</td></tr>
+<tr><td><b>洗髓丹</b></td><td>珍</td><td class="muted">丹毒-true</td></tr>
+<tr><td><b>凝神丹</b></td><td>灵</td><td class="muted">点击 ×3（90 秒）</td></tr>
+<tr><td><b>避尘丹</b></td><td>灵</td><td class="muted">服后周身笼起一层清光，妖邪晦气不得近身。</td></tr>
+<tr><td><b>固元丹</b></td><td>灵</td><td class="muted">药力温养百脉，气滞之处应手而解，炉灶复通。</td></tr>
+<tr><td><b>远行丹</b></td><td>灵</td><td class="muted">服后神游物外，冥冥中似有机缘之兆遥遥相召。</td></tr>
+<tr><td><b>悟道丹</b></td><td>珍</td><td class="muted">一粒入腹，灵台如洗，苦思不解处霍然而通。</td></tr>
+<tr><td><b>还灵丹</b></td><td>灵</td><td class="muted">药力化作灵雨，泽被诸峰，门中上下各沾一分灵惠。</td></tr>
+<tr><td><b>渡厄丹</b></td><td>仙</td><td class="muted">传说中逆天改命的丹药，可解一时之厄。</td></tr>
+<tr><td><b>锈灵丹</b></td><td>劣</td><td class="muted">全局 ×1.3（60 秒）</td></tr>
+<tr><td><b>浊元丹</b></td><td>劣</td><td class="muted">浊气凝成的石丹，来路不明，食之确有进项。</td></tr>
+<tr><td><b>假破障丹</b></td><td>劣</td><td class="muted">货郎信誓旦旦的突破神丹，包装倒是体面。</td></tr>
+    </table>
+  </section>
+
+  <section id="cards">
+    <h2>斗法与卡组<small>杀戮尖塔式回合制选牌 + 皇室战争式构筑</small></h2>
+    <ul class="rule">
+      <li>每回合 <b>3 点灵力</b>，点手牌出招；<b>每张牌每回合限出一次</b>（气机未复），结束回合进入下一回合。</li>
+      <li>对方每回合先亮<b>意图</b>（将出什么招、约多少伤害）再动手——看意图排牌序：他出杀招你开罡气，他凝罡你趁机回气。</li>
+      <li><b>罡气护罩只保当回合</b>；五行克制 ×1.25；雨天助水行、落雪寒气；丹毒每回合自伤。</li>
+      <li>大师兄还会藏<b>连招后手</b>：意图只亮主招，剩余灵力可能再补一招。</li>
+    </ul>
+    <div class="note">卡组构筑：攻式 / 五行 / 守式 / 回式四类，<b>每类限带一张、只能从已参悟的牌里挑</b>。道友录「整备卡组」定编；异行五行牌在坊市「秘传」购买，可针对对手灵根换克制。</div>
+    <table><tr><th>类别</th><th>牌</th><th>灵力</th><th>五行</th><th>效果</th><th>获取</th></tr>
+<tr><td>攻式</td><td><b>吐纳掌</b></td><td>0</td><td>无相</td><td>杀 6</td><td class="muted">初始参悟</td></tr>
+<tr><td>攻式</td><td><b>御剑术</b></td><td>1</td><td>无相</td><td>杀 11</td><td class="muted">初始参悟</td></tr>
+<tr><td>攻式</td><td><b>破军斩</b></td><td>2</td><td>无相</td><td>杀 19</td><td class="muted">800 灵石（坊市·秘传）</td></tr>
+<tr><td>攻式</td><td><b>本命飞剑</b></td><td>3</td><td>无相</td><td>杀 24</td><td class="muted">境界「化神」自动参悟</td></tr>
+<tr><td>五行</td><td><b>五行术</b></td><td>2</td><td>随自身灵根</td><td>杀 16</td><td class="muted">初始参悟</td></tr>
+<tr><td>五行</td><td><b>三昧真火</b></td><td>2</td><td>火</td><td>杀 15</td><td class="muted">1200 灵石（坊市·秘传）</td></tr>
+<tr><td>五行</td><td><b>玄冰箭</b></td><td>2</td><td>水</td><td>杀 15</td><td class="muted">1200 灵石（坊市·秘传）</td></tr>
+<tr><td>五行</td><td><b>青木缠</b></td><td>2</td><td>木</td><td>杀 13 回 5</td><td class="muted">1200 灵石（坊市·秘传）</td></tr>
+<tr><td>守式</td><td><b>护体罡气</b></td><td>1</td><td>无相</td><td> 护 10</td><td class="muted">初始参悟</td></tr>
+<tr><td>守式</td><td><b>金钟罩</b></td><td>1</td><td>无相</td><td> 护 15</td><td class="muted">1000 灵石（坊市·秘传）</td></tr>
+<tr><td>回式</td><td><b>周天运转</b></td><td>1</td><td>无相</td><td> 回 12</td><td class="muted">初始参悟</td></tr>
+<tr><td>回式</td><td><b>春回诀</b></td><td>2</td><td>无相</td><td> 回 20</td><td class="muted">1000 灵石（坊市·秘传）</td></tr>
+    </table>
+    <h2 style="margin-top:22px">大师兄·凌云子<small>同境切磋人机陪练：筑基起步、气血厚 30%、剑修卡组</small></h2>
+    <div><span class="chip">金锋剑气 2 费 杀13</span> <span class="chip">剑气四溢 1 费 杀8</span> <span class="chip">护山剑罩 1 费 护9</span> <span class="chip">周天剑舞 3 费 杀18</span> <span class="chip">运气调息 0 费 回10</span></div>
+    <div class="muted" style="margin-top:6px">战胜得论道积分（以下克上翻倍），败了道心小损——他不会赶尽杀绝。</div>
+  </section>
+
+  <section id="misc">
+    <h2>段位与难度</h2>
+    <div>斗法段位（按论道积分）：<span class="chip">凡品（积分 ≥ 0）</span> <span class="chip">灵品（积分 ≥ 40）</span> <span class="chip">珍品（积分 ≥ 120）</span> <span class="chip">仙品（积分 ≥ 300）</span></div>
+    <table style="margin-top:12px"><tr><th>难度</th><th>修为倍率</th><th>突破失败率</th><th>说明</th></tr>
+<tr><td>简单</td><td>修为 ×3.5</td><td>突破失败率 +10%</td><td class="muted">修为获取大幅提升，冲关更稳——适合休闲看剧情</td></tr>
+<tr><td>正常</td><td>修为 ×2</td><td>突破失败率 0%</td><td class="muted">标准节奏：熟练操作约 40 分钟一世</td></tr>
+<tr><td>困难</td><td>修为 ×1</td><td>突破失败率 -10%</td><td class="muted">修为获取减半，失败率更高——硬核渡劫</td></tr>
+    </table>
+  </section>
+
+  <div class="foot">灵山掌门 · 修炼体系一览 —— 本页由 tools/gen_codex_page.js 从 data/*.json 生成，非手写，数值与游戏实时一致。</div>
+</div>
+</body>
+</html>
