@@ -109,6 +109,8 @@
     s.pill = Object.assign({}, fresh.pill, s.pill || {});
     if (!Array.isArray(s.buffs)) s.buffs = [];
     if (!Array.isArray(s.chains)) s.chains = [];
+    if (!Array.isArray(s.cards_owned)) s.cards_owned = (fresh.cards_owned || []).slice();
+    if (!Array.isArray(s.deck)) s.deck = [];
     if (!s.tags || typeof s.tags !== 'object') s.tags = {};
     if (!s.buildings || typeof s.buildings !== 'object') s.buildings = {};
     if (!s.building_stalls) s.building_stalls = {};

@@ -43,6 +43,8 @@
       seen_hints: {},
       weapons_owned: [],
       techniques_owned: [],
+      cards_owned: ['tunazhang', 'yujianshu', 'wuxingshu', 'hutigangqi', 'zhoutian'],
+      deck: [],
       equip: { weapon: null, technique: null },
       friends: [],
       honor: 0,

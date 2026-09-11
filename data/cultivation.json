@@ -354,5 +354,195 @@
     "crit_base": 0.1,
     "guard_base": 0.18,
     "miss_base": 0.08
+  },
+  "battle_cards": {
+    "note": "回合制斗法：每回合3灵力；大师兄=同境切磋血厚15%，看意图排牌；五行克制×1.25/被克×0.85。",
+    "my_cards": [
+      {
+        "id": "tunazhang",
+        "kind": "attack",
+        "name": "吐纳掌",
+        "cost": 0,
+        "dmg": 6,
+        "default": true,
+        "desc": "免费牵制，聊胜于无。"
+      },
+      {
+        "id": "yujianshu",
+        "kind": "attack",
+        "name": "御剑术",
+        "cost": 1,
+        "dmg": 11,
+        "weapon": true,
+        "default": true,
+        "desc": "引剑气伤敌，吃武器锋锐加成。"
+      },
+      {
+        "id": "pojunzhan",
+        "kind": "attack",
+        "name": "破军斩",
+        "cost": 2,
+        "dmg": 19,
+        "price": 800,
+        "desc": "大开大合的重劈，两息蓄力。"
+      },
+      {
+        "id": "benming",
+        "kind": "attack",
+        "name": "本命飞剑",
+        "cost": 3,
+        "dmg": 24,
+        "unlock_realm": 4,
+        "desc": "境界≥化神自动参悟：飞剑出鞘，一击破胆。"
+      },
+      {
+        "id": "wuxingshu",
+        "kind": "element",
+        "name": "五行术",
+        "cost": 2,
+        "dmg": 16,
+        "el": "root",
+        "default": true,
+        "desc": "随自身灵根五行而变，克敌则 ×1.25。"
+      },
+      {
+        "id": "sanmeihuo",
+        "kind": "element",
+        "name": "三昧真火",
+        "cost": 2,
+        "dmg": 15,
+        "el": "火",
+        "price": 1200,
+        "desc": "火行秘术——克金行对手（×1.25）。"
+      },
+      {
+        "id": "xuanbingjian",
+        "kind": "element",
+        "name": "玄冰箭",
+        "cost": 2,
+        "dmg": 15,
+        "el": "水",
+        "price": 1200,
+        "desc": "水行秘术——克火行对手（×1.25）。"
+      },
+      {
+        "id": "qingmuchan",
+        "kind": "element",
+        "name": "青木缠",
+        "cost": 2,
+        "dmg": 13,
+        "heal": 5,
+        "el": "木",
+        "price": 1200,
+        "desc": "木行秘术——克土行对手，缠丝回气。"
+      },
+      {
+        "id": "hutigangqi",
+        "kind": "defense",
+        "name": "护体罡气",
+        "cost": 1,
+        "dmg": 0,
+        "shield": 10,
+        "default": true,
+        "desc": "凝气成罡，抵挡本回合伤害。"
+      },
+      {
+        "id": "jinzhongzhao",
+        "kind": "defense",
+        "name": "金钟罩",
+        "cost": 1,
+        "dmg": 0,
+        "shield": 15,
+        "price": 1000,
+        "desc": "钟声护体，罡气更厚。"
+      },
+      {
+        "id": "zhoutian",
+        "kind": "heal",
+        "name": "周天运转",
+        "cost": 1,
+        "dmg": 0,
+        "heal": 12,
+        "default": true,
+        "desc": "周天行气，回复气血。"
+      },
+      {
+        "id": "chunhuijue",
+        "kind": "heal",
+        "name": "春回诀",
+        "cost": 2,
+        "dmg": 0,
+        "heal": 20,
+        "price": 1000,
+        "desc": "春风化雨，伤势速愈。"
+      }
+    ],
+    "ai_cards": {
+      "lingyunzi": {
+        "name": "凌云子",
+        "title": "大师兄",
+        "moves": [
+          {
+            "name": "金锋剑气",
+            "cost": 2,
+            "dmg": 13,
+            "el": "金"
+          },
+          {
+            "name": "剑气四溢",
+            "cost": 1,
+            "dmg": 8,
+            "el": "金"
+          },
+          {
+            "name": "护山剑罩",
+            "cost": 1,
+            "dmg": 0,
+            "shield": 9
+          },
+          {
+            "name": "周天剑舞",
+            "cost": 3,
+            "dmg": 18,
+            "el": "金"
+          },
+          {
+            "name": "运气调息",
+            "cost": 0,
+            "dmg": 0,
+            "heal": 10
+          }
+        ],
+        "note": "境界与气血由引擎按玩家同境生成（血厚15%），此处只存卡组"
+      },
+      "generic": [
+        {
+          "name": "灵锋击",
+          "cost": 2,
+          "dmg": 12,
+          "el": null
+        },
+        {
+          "name": "气盾术",
+          "cost": 1,
+          "dmg": 0,
+          "shield": 8
+        },
+        {
+          "name": "全力一击",
+          "cost": 3,
+          "dmg": 17,
+          "el": null,
+          "cd": 3
+        },
+        {
+          "name": "调息回气",
+          "cost": 0,
+          "dmg": 0,
+          "heal": 9
+        }
+      ]
+    },
+    "deck_note": "卡组构筑（皇室战争式）：attack/element/defense/heal 四类，每类只能从已拥有(cards_owned)中选 1 张出战；默认牌 default:true 初始即有，其余坊市「秘传」页购买。"
   }
 }
