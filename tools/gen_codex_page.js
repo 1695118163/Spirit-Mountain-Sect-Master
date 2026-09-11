@@ -43,10 +43,11 @@ const cycle = wx.cycle || {};
 const cycleTxt = Object.keys(cycle).map(k => k + ' 克 ' + cycle[k]).join('，');
 
 /* ── 三、兵器谱（含斗法招） ── */
+const fmtEl = el => !el ? '无相' : (Array.isArray(el) ? el.join('·') + '（兼修）' : String(el));
 const wm = (C.moves || {}).weapon_moves || {};
 const weaponsRows = (C.weapons || []).map(w => {
   const mv = wm[w.id];
-  return '<tr><td><b>' + esc(w.name) + '</b></td><td>' + esc(w.grade) + '</td><td>' + esc(w.element) + '</td>' +
+  return '<tr><td><b>' + esc(w.name) + '</b></td><td>' + esc(w.grade) + '</td><td>' + fmtEl(w.element) + '</td>' +
     '<td>' + w.sharp + '</td><td class="muted">' + (mv ? esc(mv.name) + '（威力 ×' + mv.mult + '）' : '—') + '</td>' +
     '<td>' + fmt(w.price) + ' 灵石</td></tr>';
 }).join('\n');
@@ -55,7 +56,7 @@ const weaponsRows = (C.weapons || []).map(w => {
 const tm = (C.moves || {}).technique_moves || {};
 const techRows = (C.techniques || []).map(t => {
   const mv = tm[t.id];
-  return '<tr><td><b>' + esc(t.name) + '</b></td><td>' + esc(t.grade) + '</td><td>' + esc(t.element) + '</td>' +
+  return '<tr><td><b>' + esc(t.name) + '</b></td><td>' + esc(t.grade) + '</td><td>' + fmtEl(t.element) + '</td>' +
     '<td class="muted">' + (mv ? esc(mv.name) + (mv.guard ? '（威力 ×' + mv.mult + '，附带罡气）' : '（威力 ×' + mv.mult + '）') : '—') + '</td>' +
     '<td>' + fmt(t.price) + ' 灵石</td></tr>';
 }).join('\n');
@@ -156,6 +157,7 @@ ${srRows}
     </table>
     <div class="cycle">${esc(cycleTxt)}（克制 ×${wx.counter_mult || 1.25}，被克 ×${wx.countered_mult || 0.85}）</div>
     <div class="muted" style="text-align:center">${esc((B.spirit_root || {}).element_note || '')}</div>
+    <div class="note">专精与兼修：功法、兵器大部分<b>专精单一五行</b>；功法五行（兼修任一行亦算）与灵根契合时<b>修为获取 ×${(wx.tech_fit_mult || 1.08)}</b>——选对自家灵根的功法修行最快。少数兼修神器（两仪剑·水火、混沌钟·五行皆容）出招时自动取克制敌方的一行。坊市「秘传」的异行五行牌同理，可针对对手换克制。</div>
   </section>
 
   <section id="weapon">

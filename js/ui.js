@@ -512,6 +512,11 @@
     }
   }
 
+  function fmtEl(el) {
+    if (!el) return '无相';
+    if (el === 'root') return '随灵根';
+    return Array.isArray(el) ? el.join('·') : String(el);
+  }
   function escapeHtml(t) {
     return String(t).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
   }
@@ -1045,7 +1050,7 @@
     box.innerHTML = cards.map(c =>
       '<button class="hand-card' + (c.disabled ? ' hand-card-off' : '') + '" data-idx="' + c.idx + '"' + (c.disabled ? ' disabled' : '') + '>' +
         '<span class="hc-cost">' + c.cost + '</span><b>' + escapeHtml(c.name) + '</b>' +
-        '<span class="hc-el">' + (c.el ? escapeHtml(c.el) : '无相') + '</span>' +
+        '<span class="hc-el">' + fmtEl(c.el) + '</span>' +
         '<span class="hc-eff">' +
           (c.dmg ? '杀 ' + c.dmg : '') + (c.heal ? ' 回 ' + c.heal : '') + (c.shield ? ' 护 ' + c.shield : '') +
           (!c.dmg && !c.heal && !c.shield ? '—' : '') + '</span>' +
@@ -1108,7 +1113,7 @@
           const equippedNow = equipped === it.id;
           const canBuy = !owned && s.resources.lingshi >= (it.price || 0);
           rows += '<div class="rebirth-item"><div><b>' + escapeHtml(it.name) + '</b>' +
-            '<span class="ev-badge ev-badge-buff">' + escapeHtml(it.grade) + '·' + escapeHtml(it.element) + '</span>' +
+            '<span class="ev-badge ev-badge-buff">' + escapeHtml(it.grade) + '·' + fmtEl(it.element) + (Array.isArray(it.element) ? '（兼修）' : '') + '</span>' +
             (it.rare_only ? '<span class="ev-badge ev-badge-chain">珍稀</span>' : '') +
             '<div style="font-size:11px;color:var(--ink-soft)">' + escapeHtml(it.desc) +
             (it.sharp ? '<br>锋锐 ' + it.sharp : '') + '</div></div>' +
@@ -1189,7 +1194,7 @@
             items += '<button class="deck-card' + (activeNow ? ' deck-card-on' : '') + '" data-pick="' + c.id + '">' +
               '<b>' + escapeHtml(c.name) + '</b><span>' + c.cost + '灵力 ' +
               (c.dmg ? '杀' + c.dmg : '') + (c.shield ? '护' + c.shield : '') + (c.heal ? '回' + c.heal : '') +
-              (c.el && c.el !== 'root' ? ' · ' + escapeHtml(c.el) : (c.el === 'root' ? ' · 随灵根' : '')) + '</span></button>';
+              (c.el ? ' · ' + fmtEl(c.el) : (c.weapon ? ' · 随武器' : '')) + '</span></button>';
           }
         }
         cols += '<div class="deck-col"><div class="deck-kind">' + (KIND_NAME[kind] || kind) + '</div>' + items + '</div>';

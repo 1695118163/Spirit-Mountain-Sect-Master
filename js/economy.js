@@ -39,13 +39,26 @@
     return m;
   }
 
-  /** 修为获取总加成：剑冢 +10%/级、洞府 +25%/级（乘算）、悟性 ×1.5 */
+  /** 修为获取总加成：剑冢 +10%/级、洞府 +25%/级（乘算）、悟性 ×1.5、功法契合灵根 ×1.08 */
   function xiuMult() {
     let m = 1;
     m *= 1 + 0.1 * bLevel('jianzhong');
     m *= 1 + 0.25 * bLevel('dongfu');
     if (hasPrestige('wuxing')) m *= 1.5;
+    m *= techFitMult();
     return m;
+  }
+
+  /** 功法五行契合：装备功法（兼修任一行亦算）与灵根五行一致 → 修为 ×1.08（数据 cultivation.wuxing.tech_fit_mult） */
+  function techFitMult() {
+    const s = S();
+    if (!s.spirit_root || !s.spirit_root.element) return 1;
+    const cul = (BAL().cultivation || {});
+    const mult = (cul.wuxing && cul.wuxing.tech_fit_mult) || 1.08;
+    const t = (cul.techniques || []).find(x => x.id === s.equip.technique);
+    if (!t || !t.element) return 1;
+    const els = Array.isArray(t.element) ? t.element : [t.element];
+    return els.indexOf(s.spirit_root.element) !== -1 ? mult : 1;
   }
 
   function stalled(id, now) {

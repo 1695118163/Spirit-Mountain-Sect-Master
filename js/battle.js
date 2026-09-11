@@ -48,12 +48,20 @@
     return Math.round(Math.min(100, (realmEdge * 4 + sharp * 0.9 + 8) * toxicCut));
   }
 
-  /* ── 五行克制 ── */
-  function elementMult(myEl, opEl) {
+  /* ── 五行克制（myEl 支持兼修数组：取最有利一行，两仪/混沌路数） ── */
+  function elMultOne(myEl, opEl) {
     const wx = CUL().wuxing || {};
     if (myEl && opEl && wx.cycle && wx.cycle[myEl] === opEl) return wx.counter_mult || 1.25;
     if (myEl && opEl && wx.cycle && wx.cycle[opEl] === myEl) return wx.countered_mult || 0.85;
     return 1;
+  }
+  function elementMult(myEl, opEl) {
+    if (Array.isArray(myEl)) {
+      let best = 1;
+      for (const e of myEl) best = Math.max(best, elMultOne(e, opEl));
+      return best;
+    }
+    return elMultOne(myEl, opEl);
   }
 
   function currentWeatherMod() {
@@ -109,7 +117,9 @@
     const hand = resolveDeck()
       .filter(c => !c.unlock_realm || realm >= c.unlock_realm)
       .map(c => Object.assign({}, c, {
-        dmgFinal: c.dmg ? Math.round((c.dmg + realm * 2 + (c.weapon ? sharp * 0.3 : 0)) * Math.min(1.25, rootMult)) : 0
+        dmgFinal: c.dmg ? Math.round((c.dmg + realm * 2 + (c.weapon ? sharp * 0.3 : 0)) * Math.min(1.25, rootMult)) : 0,
+        // 武器牌五行随装备武器（兼修武器为数组，克制判定取最有利行）
+        el: c.weapon ? (w ? w.element : null) : c.el
       }));
     return {
       dao: myDaoHao(), realm, realmName: (bal.realms[realm] || {}).name || '?',
