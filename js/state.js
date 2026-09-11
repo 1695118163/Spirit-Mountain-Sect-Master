@@ -45,6 +45,7 @@
       techniques_owned: [],
       cards_owned: ['tunazhang', 'yujianshu', 'wuxingshu', 'hutigangqi', 'zhoutian'],
       deck: [],
+      seen_update: '',
       equip: { weapon: null, technique: null },
       friends: [],
       honor: 0,

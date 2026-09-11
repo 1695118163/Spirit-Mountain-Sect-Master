@@ -96,6 +96,13 @@
     if (!g.LS.S.settings.difficulty && g.LS.S.stats.play_seconds < 5) {
       setTimeout(() => g.LS.ui.showDifficultyPick(), 800);
     }
+    // 版本更新公告：balance.update_notes 版本变化时弹一次，点叉关（seen_update 记已读）
+    try {
+      const notes = g.LS.BAL.update_notes;
+      if (notes && notes.version && g.LS.S.seen_update !== notes.version && g.LS.ui.showUpdateNotes) {
+        setTimeout(() => g.LS.ui.showUpdateNotes(notes), 2600); // 让离线卷轴/首引先走
+      }
+    } catch (e) {}
   }
 
   g.LS.boot = { loadData, init };

@@ -110,7 +110,7 @@
     refs.btnRebirth = $id('btn-rebirth');
     // 面板按钮统一事件委托（document 级）：元素被任何方式重建/替换都不会丢绑定
     document.addEventListener('click', (e) => {
-      const t = e.target.closest('#btn-market, #btn-friends, #btn-help, #btn-codex, #btn-pillhouse, #btn-settings');
+      const t = e.target.closest('#btn-market, #btn-friends, #btn-help, #btn-codex, #btn-pillhouse, #btn-settings, #btn-codexpage');
       if (!t) return;
       if (t.id === 'btn-market') showMarket();
       else if (t.id === 'btn-friends') showFriends();
@@ -118,6 +118,7 @@
       else if (t.id === 'btn-codex') showCodex();
       else if (t.id === 'btn-pillhouse') showPillHouse();
       else if (t.id === 'btn-settings') showSettings();
+      else if (t.id === 'btn-codexpage') showCodexPage();
     });
     refs.logList = $id('log-list');
     refs.permList = $id('perm-list');
@@ -1080,6 +1081,44 @@
     card.querySelector('#br-close').addEventListener('click', removeModals);
   }
 
+  /* ── 体系一览：游戏内弹窗嵌入《修炼体系一览.html》（tools/gen_codex_page.js 生成的静态页） ── */
+  function showCodexPage() {
+    removeModals();
+    const { card, mask } = makeModal(removeModals);
+    card.classList.add('codexpage-card');
+    card.innerHTML =
+      '<div class="modal-title">修 炼 体 系 一 览<button class="icon-btn" id="cp-close" style="float:right;font-size:12px;padding:3px 12px">合 上</button></div>' +
+      '<iframe class="codexpage-frame" src="修炼体系一览.html?v=' + Date.now() + '"></iframe>' +
+      '<div style="text-align:center;margin-top:6px"><button class="icon-btn" id="cp-newwin">新窗口全屏阅读</button></div>';
+    card.querySelector('#cp-close').addEventListener('click', removeModals);
+    card.querySelector('#cp-newwin').addEventListener('click', () => {
+      window.open('修炼体系一览.html', '_blank');
+    });
+  }
+
+  /* ── 版本更新公告：balance.update_notes，版本变化弹一次，点叉关（存档 seen_update 记已读） ── */
+  function showUpdateNotes(notes) {
+    // 有别的弹窗开着（离线卷轴/首引等）就晚点再来
+    if (document.querySelector('.modal-mask') || g.LS.battle.active) { setTimeout(() => showUpdateNotes(notes), 3000); return; }
+    removeModals();
+    const { card } = makeModal(null);
+    card.innerHTML =
+      '<div class="modal-title">' + escapeHtml(notes.title || '更 新 公 告') +
+        ' <span style="font-size:12px;color:var(--gold,#e8c34a)">' + escapeHtml(notes.version || '') + '</span>' +
+        '<button class="icon-btn" id="un-close" style="float:right;font-size:13px;padding:2px 10px;min-height:0">✕</button></div>' +
+      '<div class="update-notes">' +
+        (notes.lines || []).map(l => '<div class="un-line">' + escapeHtml(l) + '</div>').join('') +
+      '</div>' +
+      '<div style="text-align:center;margin-top:8px"><button class="btn-primary" id="un-ok" style="padding:6px 24px">知 道 了</button></div>';
+    const close = () => {
+      const s = g.LS.S;
+      if (s) { s.seen_update = notes.version; g.LS.save.save(); }
+      removeModals();
+    };
+    card.querySelector('#un-close').addEventListener('click', close);
+    card.querySelector('#un-ok').addEventListener('click', close);
+  }
+
   /* ── 大师兄档位选择（师弟/同门/师兄，正常修炼都能赢） ── */
   function showSeniorPick() {
     removeModals();
@@ -1786,7 +1825,7 @@
     initRefs, renderAll, renderResources, renderBuildings, renderCenter,
     renderChronicle, renderPermList, pushLog, markNewBuildings, isModalOpen, hintOnce,
     showEventModal, closeEventModal, showOfflinePopup, showBreakthroughOverlay, showFailOverlay,
-    showSettings, showRebirthPanel, showTutorial, showPillHouse, showHelpPanel, showMarket, showFriends, showDeckEditor, showSeniorPick,
+    showSettings, showRebirthPanel, showTutorial, showPillHouse, showHelpPanel, showMarket, showFriends, showDeckEditor, showSeniorPick, showCodexPage, showUpdateNotes,
     showBattleArena, updateBattleHP, updateBattleShields, updateBattleQi, renderBattleHands, showBattleIntent,
     showBattleScreen, battleLog, battleAppend, showBattleResult,
     toast, tweenNumber, setBgm,
