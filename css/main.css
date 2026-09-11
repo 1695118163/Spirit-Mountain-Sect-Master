@@ -669,3 +669,11 @@ html.night body #version-mark { opacity: .3; }
 .deck-card span { display:block; font-size:10.5px; color:#c8a86a; }
 .deck-card-on { border-color:#e8c34a; box-shadow:0 0 8px rgba(232,195,74,.35); }
 .deck-card-locked { opacity:.42; filter:grayscale(.7); cursor:not-allowed; }
+
+/* ── 大师兄档位选择 ── */
+.senior-row { display:flex; gap:10px; justify-content:center; flex-wrap:wrap; margin-top:10px; }
+.senior-tier { flex:1; min-width:150px; max-width:190px; padding:14px 10px; background:linear-gradient(180deg,rgba(58,50,38,.9),rgba(30,26,20,.92)); border:1px solid #5d5142; border-radius:10px; color:var(--ink,#e8dcc8); cursor:pointer; text-align:center; transition:border-color .12s ease, transform .12s ease; }
+.senior-tier:hover { border-color:var(--cinnabar,#c0392b); transform:translateY(-3px); }
+.senior-tier b { display:block; font-size:15px; letter-spacing:2px; margin-bottom:5px; }
+.st-rel { display:block; font-size:11.5px; color:var(--gold,#e8c34a); margin-bottom:5px; }
+.st-desc { display:block; font-size:11px; color:var(--ink-soft,#a6987f); line-height:1.6; }

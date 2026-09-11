@@ -130,21 +130,28 @@
     };
   }
 
-  /** 对方战斗单位：大师兄（同境切磋、气血略厚、固定卡组）或好友影子（通用卡组，数值随名片） */
-  function buildOp(friend, isSenior) {
+  /** 大师兄三档（用户口径：正常修炼都能打败，只是难易与收益不同） */
+  const SENIOR_TIERS = {
+    easy:  { key: 'easy',  label: '师弟切磋', offset: -1, hpMult: 0.85, follow: 0.35, dmgAdd: 0, desc: '低你一境的师弟陪练——稳，胜负手筋基本不亏。' },
+    equal: { key: 'equal', label: '同门论道', offset: 0,  hpMult: 1.2, follow: 0.65, dmgAdd: 0, desc: '与你同境的同门——有来有回，看意图排牌可稳占上风。' },
+    hard:  { key: 'hard',  label: '师兄指教', offset: +1, hpMult: 1.25, follow: 0.65, dmgAdd: 1, desc: '高你一境的师兄——凶险，胜则论道积分更多，以下克上可留名碑林。' }
+  };
+
+  /** 对方战斗单位：大师兄（按档位：境界偏移/气血倍率/补招概率/招式加成）或好友影子（通用卡组） */
+  function buildOp(friend, isSenior, tierCfg) {
     const aiCfg = (CARDS().ai_cards || {})[isSenior ? 'lingyunzi' : 'generic'] || { moves: [] };
     const card = friend && friend.card ? friend.card : null;
     const bal = g.LS.BAL;
-    // 大师兄 = 同门切磋：修为与玩家相当（筑基起步），血厚 30%，靠意图博弈施压
-    const realm = isSenior ? Math.max(1, S().realm.index) : (card ? card.realm : 0);
+    // 大师兄境界随玩家档位偏移（0~9 夹取）；好友影子按名片境界
+    const realm = isSenior ? Math.max(0, Math.min(9, S().realm.index + tierCfg.offset)) : (card ? card.realm : 0);
     const w = card ? (bal.cultivation.weapons || []).find(x => x.id === card.weapon) : null;
     const sharp = w ? w.sharp : 5;
     const base = 80 + realm * 45 + sharp * 0.8;
-    const hpMax = isSenior ? Math.round(base * 1.3) : Math.round(base);
+    const hpMax = isSenior ? Math.round(base * tierCfg.hpMult) : Math.round(base);
     const t = card ? (bal.cultivation.techniques || []).find(x => x.id === card.technique) : null;
     const realmName = (bal.realms[realm] || {}).name || '?';
     const hand = (aiCfg.moves || []).map(m => Object.assign({}, m, {
-      dmgFinal: m.dmg ? m.dmg + realm * 2 : 0,
+      dmgFinal: m.dmg ? m.dmg + realm * 2 + (isSenior ? (tierCfg.dmgAdd || 0) : 0) : 0,
       cdLeft: 0
     }));
     return {
@@ -156,7 +163,8 @@
       element: isSenior ? (aiCfg.moves || [])[0] && (aiCfg.moves[0].el || null) : (card && card.spirit && card.spirit.element) || (t ? t.element : null),
       daoxin: isSenior ? 60 : (card ? card.daoxin || 0 : 30),
       hpMax, hp: hpMax, qi: 3, qiMax: 3, shield: 0, hand,
-      intent: null
+      intent: null,
+      tier: isSenior ? tierCfg.key : null
     };
   }
 
@@ -254,12 +262,13 @@
     openArena();
   }
 
-  /** 挑战大师兄（人机测试陪练） */
-  function challengeSenior() {
+  /** 挑战大师兄（三档人机陪练：easy 师弟 / equal 同门 / hard 师兄） */
+  function challengeSenior(tier) {
     if (active) return;
+    const tierCfg = SENIOR_TIERS[tier] || SENIOR_TIERS.equal;
     const my = buildMe();
-    const op = buildOp(null, true);
-    active = { my, op, friend: { dao: op.dao }, weather: currentWeatherMod(), round: 0, mode: 'senior' };
+    const op = buildOp(null, true, tierCfg);
+    active = { my, op, friend: { dao: op.dao }, weather: currentWeatherMod(), round: 0, mode: 'senior', tier: tierCfg, aiFollow: tierCfg.follow };
     openArena();
   }
 
@@ -273,7 +282,9 @@
       my: { dao: a.my.dao, realm: a.my.realmName, weapon: a.my.weaponName, tech: a.my.techName, el: a.my.element || '—', hp: a.my.hpMax, cards: a.my.hand.length },
       op: { dao: a.op.dao, realm: a.op.realmName, weapon: a.op.weaponName, tech: a.op.techName, el: a.op.element || '—', hp: a.op.hpMax },
       elRel, weather: a.weather.text,
-      mode: a.mode, senior: a.mode === 'senior'
+      mode: a.mode, senior: a.mode === 'senior',
+      tierLabel: a.tier ? a.tier.label : '',
+      tierDesc: a.tier ? a.tier.desc : ''
     }, () => beginFight());
   }
 
@@ -342,9 +353,9 @@
       if (it.heal) lines.push(applyHeal(a.op, it.heal, it.name, false));
       if (it.shield) lines.push(applyShield(a.op, it.shield, it.name, false));
       a.op.qi -= it.cost || 0;
-      // 连招后手：意图只亮主招，剩余灵力 45% 概率再补一张——看破主招不等于稳赢
+      // 连招后手：意图只亮主招，剩余灵力按档位概率再补一招——看破主招不等于稳赢
       let follow = 0;
-      while (follow < 2 && a.op.qi > 0 && Math.random() < 0.55) {
+      while (follow < 2 && a.op.qi > 0 && Math.random() < (a.aiFollow || 0.55)) {
         const pool = a.op.hand.filter(m => m !== it && (m.cost || 0) <= a.op.qi);
         if (!pool.length) break;
         const extra = pool[Math.floor(Math.random() * pool.length)];
@@ -413,7 +424,7 @@
   g.LS.battle = {
     makeCard, cardPower, elementMult, myDaoHao,
     prepareBattle, challengeSenior, playCard, endTurn, skip, abort,
-    resolveDeck, ownsCard, KINDS, KIND_NAME,
+    resolveDeck, ownsCard, KINDS, KIND_NAME, SENIOR_TIERS,
     get active() { return active; }
   };
 })(typeof window !== 'undefined' ? window : globalThis);

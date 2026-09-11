@@ -970,7 +970,7 @@
     const { card, mask } = makeModal(() => { g.LS.battle.abort(); removeModals(); });
     card.innerHTML =
       '<div class="modal-title">斗 法 · 论 道</div>' +
-      (info.senior ? '<div class="modal-desc" style="text-align:center;color:var(--cinnabar)">大师兄凌云子前来指教——看意图、排牌序，先手夺势。</div>' : '') +
+      (info.senior ? '<div class="modal-desc" style="text-align:center;color:var(--cinnabar)">大师兄·' + escapeHtml(info.tierLabel || '凌云子') + '前来指教——看意图、排牌序，先手夺势。<br><span style="font-size:11px;color:var(--ink-soft)">' + escapeHtml(info.tierDesc || '') + '</span></div>' : '') +
       '<div class="battle-card-row"><div class="bc-side">' +
         '<div class="bc-dao"><b>' + escapeHtml(info.my.dao) + '</b></div>' +
         '<div class="bc-line">' + escapeHtml(info.my.realm) + '境 · ' + escapeHtml(info.my.weapon) + '</div>' +
@@ -1078,6 +1078,31 @@
         : '招式被看穿，' + (info.senior ? '大师兄收剑：回去把功法练熟再来。' : '胜败乃修士常事，道心不坠即可。')) + '</div>' +
       '<div style="text-align:center;margin-top:10px"><button class="btn-primary" id="br-close">归 位</button></div>';
     card.querySelector('#br-close').addEventListener('click', removeModals);
+  }
+
+  /* ── 大师兄档位选择（师弟/同门/师兄，正常修炼都能赢） ── */
+  function showSeniorPick() {
+    removeModals();
+    const { card } = makeModal(removeModals);
+    const tiers = g.LS.battle.SENIOR_TIERS;
+    const realmName = i => (g.LS.BAL.realms[i] || {}).name || '?';
+    const myIdx = g.LS.S.realm.index;
+    const rows = Object.values(tiers).map(t => {
+      const oppIdx = Math.max(0, Math.min(9, myIdx + t.offset));
+      const rel = t.offset === 0 ? '与你同境' : (t.offset < 0 ? '低你一境' : '高你一境');
+      return '<button class="senior-tier" data-tier="' + t.key + '"><b>' + escapeHtml(t.label) + '</b>' +
+        '<span class="st-rel">大师兄 · ' + realmName(oppIdx) + '境（' + rel + '）</span>' +
+        '<span class="st-desc">' + escapeHtml(t.desc) + '</span></button>';
+    }).join('');
+    card.innerHTML =
+      '<div class="modal-title">挑 战 大 师 兄<button class="icon-btn" id="sp-close" style="float:right;font-size:12px;padding:3px 12px">合 上</button></div>' +
+      '<div class="modal-desc">凌云子随你挑档位过招——三档都留了活路，正常修炼都能赢，看你想稳还是想搏。</div>' +
+      '<div class="senior-row">' + rows + '</div>';
+    card.querySelector('#sp-close').addEventListener('click', removeModals);
+    card.querySelectorAll('[data-tier]').forEach(btn => btn.addEventListener('click', () => {
+      removeModals();
+      g.LS.battle.challengeSenior(btn.dataset.tier);
+    }));
   }
 
   /* ── 坊市：兵器/功法/秘传牌购买与装备（坊市炼器为主获取） ── */
@@ -1283,10 +1308,10 @@
           if (f) { removeModals(); g.LS.battle.prepareBattle(f); }
         });
       });
-      // 挑战大师兄（回合制选牌人机陪练）
+      // 挑战大师兄：先选档位（师弟/同门/师兄）
       card.querySelector('#fr-duel-senior').addEventListener('click', () => {
         removeModals();
-        g.LS.battle.challengeSenior();
+        showSeniorPick();
       });
       // 整备卡组（四类各带一张，皇室战争式构筑）
       card.querySelector('#fr-deck').addEventListener('click', () => {
@@ -1761,7 +1786,7 @@
     initRefs, renderAll, renderResources, renderBuildings, renderCenter,
     renderChronicle, renderPermList, pushLog, markNewBuildings, isModalOpen, hintOnce,
     showEventModal, closeEventModal, showOfflinePopup, showBreakthroughOverlay, showFailOverlay,
-    showSettings, showRebirthPanel, showTutorial, showPillHouse, showHelpPanel, showMarket, showFriends, showDeckEditor,
+    showSettings, showRebirthPanel, showTutorial, showPillHouse, showHelpPanel, showMarket, showFriends, showDeckEditor, showSeniorPick,
     showBattleArena, updateBattleHP, updateBattleShields, updateBattleQi, renderBattleHands, showBattleIntent,
     showBattleScreen, battleLog, battleAppend, showBattleResult,
     toast, tweenNumber, setBgm,
