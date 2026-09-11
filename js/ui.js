@@ -7,6 +7,20 @@
 
   const refs = {};
   const uiState = { holdingBreath: false }; // 按住吐纳状态（进度条流转加速用）
+  // Buff 详情表（悬停 title 用）：id → 名称与说明
+  const BUFF_DETAIL = {
+    pill: { name: '丹力', txt: '全身灵机鼓荡，全局产量倍增', badge: '丹力' },
+    pill_prod: { name: '灵力丹', txt: '灵力丹药力，全局产量倍增', badge: '丹力' },
+    pill_click: { name: '凝神', txt: '凝神丹药力，点击产量大增', badge: '凝神' },
+    pill_toxic_debuff: { name: '丹毒攻心', txt: '丹毒攻心：全局产量大减，等它散去或服清心丹', badge: '毒' },
+    qihuo_debuff: { name: '走火入魔', txt: '真气逆行：全局产量减半', badge: '劫' },
+    xinmo_debuff: { name: '心魔侵扰', txt: '心魔作祟：全局产量下降', badge: '魔' },
+    chidun_debuff: { name: '修炼迟滞', txt: '修炼迟滞：全局产量下降，可用修为温养冲刷', badge: '滞' },
+    zhuoyuan_debuff: { name: '浊元余毒', txt: '浊元丹余毒：全局产量下降', badge: '浊' },
+    insight_click: { name: '顿悟', txt: '灵台清明：点击产量大增', badge: '悟' },
+    event_buff: { name: '灵机', txt: '奇遇带来的临时增益', badge: '灵' },
+    pill_shield: { name: '避尘', txt: '避尘丹清光护体：邪祟不侵', badge: '护' }
+  };
   const lastStr = {};
   let evTimer = null;
   const newBuildingUntil = {};
@@ -238,9 +252,13 @@
     for (const b of buffs) {
       const chip = document.createElement('span');
       chip.className = 'buff-chip';
-      const label = b.id === 'pill' ? '丹力' : '灵机';
-      const multTxt = b.mult && b.mult > 1 ? '×' + b.mult.toFixed(1) : (b.click_mult ? '点击×' + b.click_mult : '');
-      chip.textContent = label + ' ' + multTxt + ' ' + Math.ceil((b.ts_end - now) / 1000) + 's';
+      chip.style.cursor = 'help';
+      const left = Math.ceil((b.ts_end - now) / 1000);
+      // 悬停详情：来源与具体效果（用户反馈：状态看不懂）
+      const detail = BUFF_DETAIL[b.id] || { name: label, txt: '' };
+      chip.title = detail.name + '：' + detail.txt + '（剩 ' + left + ' 秒）';
+      const multTxt = (b.mult && b.mult > 1 ? '×' + b.mult.toFixed(1) + ' ' : '') + (b.click_mult ? '点击×' + b.click_mult.toFixed(0) + ' ' : '');
+      chip.textContent = (detail.badge || label) + ' ' + multTxt + left + 's';
       refs.buffBar.appendChild(chip);
     }
   }

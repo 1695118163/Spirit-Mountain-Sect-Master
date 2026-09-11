@@ -121,7 +121,7 @@
       "cost_growth": 2.3,
       "effects": {
         "rate": {
-          "lingqi": 0.5
+          "lingqi": 0.9
         }
       }
     },
