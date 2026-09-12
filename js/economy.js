@@ -48,7 +48,20 @@
     m *= 1 + 0.25 * bLevel('dongfu');
     m *= 1 + 0.12 * talentLv('wuxing');
     m *= techFitMult();
+    m *= gearXpMult(); // 装备修为词条（甲§5：佩戴中的武器/功法 bonus.xp_mult 加算）
     return m;
+  }
+
+  /** 装备修为词条：佩戴中的武器+功法 bonus.xp_mult 加算（全套 ≈ +63% 上限设计） */
+  function gearXpMult() {
+    const s = S();
+    const cul = BAL().cultivation || {};
+    let add = 0;
+    const w = (cul.weapons || []).find(x => x.id === s.equip.weapon);
+    const t = (cul.techniques || []).find(x => x.id === s.equip.technique);
+    if (w && w.bonus && w.bonus.xp_mult) add += w.bonus.xp_mult;
+    if (t && t.bonus && t.bonus.xp_mult) add += t.bonus.xp_mult;
+    return 1 + add;
   }
 
   /** 功法五行契合：装备功法（兼修任一行亦算）与灵根五行一致 → 修为 ×1.08（数据 cultivation.wuxing.tech_fit_mult） */
@@ -641,7 +654,7 @@
     clickMult, clickQiGain, clickXpGain, breath,
     buildingCost, bulkCost, canAfford, pay, grant, costText, buyBuilding,
     pillInterval, pillTick, servePill, autoPillTick,
-    upgradeState, buyUpgrade, hasPrestige, talentLv, bLevel, clampAll,
+    upgradeState, buyUpgrade, hasPrestige, talentLv, gearXpMult, bLevel, clampAll,
     abilityDef, abilityCooldownLeft, useAbility,
     pillCat, pillQualityCfg, pillTotal, pillCount, grantPill, rollPillQuality, rollPillOutput, consumePill, toxicDecay, difficultyCfg
   };

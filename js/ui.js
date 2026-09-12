@@ -110,7 +110,7 @@
     refs.btnRebirth = $id('btn-rebirth');
     // 面板按钮统一事件委托（document 级）：元素被任何方式重建/替换都不会丢绑定
     document.addEventListener('click', (e) => {
-      const t = e.target.closest('#btn-market, #btn-friends, #btn-help, #btn-codex, #btn-pillhouse, #btn-settings, #btn-codexpage');
+      const t = e.target.closest('#btn-market, #btn-friends, #btn-help, #btn-codex, #btn-pillhouse, #btn-settings, #btn-codexpage, #btn-trial');
       if (!t) return;
       if (t.id === 'btn-market') showMarket();
       else if (t.id === 'btn-friends') showFriends();
@@ -119,6 +119,7 @@
       else if (t.id === 'btn-pillhouse') showPillHouse();
       else if (t.id === 'btn-settings') showSettings();
       else if (t.id === 'btn-codexpage') showCodexPage();
+      else if (t.id === 'btn-trial') showTrial();
     });
     refs.logList = $id('log-list');
     refs.permList = $id('perm-list');
@@ -462,7 +463,8 @@
       const stageNames = ['初期', '中期', '后期', '大圆满'];
       const stage = stageNames[Math.floor(frac0 * 4)];
       const rootTxt = s.spirit_root ? '　灵根·' + s.spirit_root.key + s.spirit_root.element : '';
-      const dStr = stage + rootTxt + '　道心 ' + (s.dao_heart > 0 ? '+' : '') + s.dao_heart + (tier ? ' · ' + tier.name : '');
+      const xm = typeof s.xinmo === 'number' && s.xinmo > 0 ? '　<span style="color:var(--cinnabar)">心魔 ' + s.xinmo + (s.xinmo >= 85 ? '·入魔' : s.xinmo >= 60 ? '·缠身' : s.xinmo >= 30 ? '·滋生' : '') + '</span>' : '';
+      const dStr = stage + rootTxt + '　道心 ' + (s.dao_heart > 0 ? '+' : '') + s.dao_heart + (tier ? ' · ' + tier.name : '') + xm;
       if (lastStr.dao !== dStr) { refs.daoHeart.textContent = dStr; lastStr.dao = dStr; }
     }
     const next = bal.realms[s.realm.index + 1];
@@ -1079,8 +1081,8 @@
     card.innerHTML =
       '<div class="modal-title">' + (win ? '斗 法 得 胜' : '斗 法 惜 败') + '</div>' +
       '<div class="modal-desc">' + (win
-        ? '招式连绵，灵机压过一头——' + (info.diff >= 2 ? '以下克上，一战成名！' : (info.senior ? '大师兄颔首：拳怕少壮，后生可畏。' : '旗鼓相当，技高一筹。')) +
-          '<br>论道积分 +' + info.honor
+        ? '招式连绵，灵机压过一头——' + (info.diff >= 2 ? '以下克上，一战成名！' : (info.senior ? '大师兄颔首：拳怕少壮，后生可畏。' : (info.trial ? '野修授首。' : '旗鼓相当，技高一筹。'))) +
+          (info.trial ? '<br>' + info.trial : ('<br>论道积分 +' + info.honor))
         : '招式被看穿，' + (info.senior ? '大师兄收剑：回去把功法练熟再来。' : '胜败乃修士常事，道心不坠即可。')) + '</div>' +
       '<div style="text-align:center;margin-top:10px"><button class="btn-primary" id="br-close">归 位</button></div>';
     card.querySelector('#br-close').addEventListener('click', removeModals);
@@ -1120,6 +1122,59 @@
       setTimeout(step, 650);
     };
     setTimeout(step, 500);
+  }
+
+  /* ── 试炼塔面板：10 章×5 关 + 帝路（trial.js 结算） ── */
+  function showTrial() {
+    removeModals();
+    const { card } = makeModal(removeModals);
+    const render = () => {
+      const T = g.LS.trial;
+      const LVd = g.LS.BAL.levels || {};
+      const s = g.LS.S;
+      let rows = '';
+      for (const ch of (LVd.chapters || [])) {
+        const unlocked = T.chapterUnlocked(ch);
+        const curRealm = s.realm.index === ch.realm;
+        rows += '<div class="rebirth-item" style="' + (unlocked ? '' : 'opacity:.45') + '"><div><b>' + escapeHtml(ch.name) + '</b>' +
+          (curRealm ? '<span class="ev-badge ev-badge-buff">当前境</span>' : '') +
+          '<div style="font-size:11px;color:var(--ink-soft)">' + (unlocked ? '已通 ' + ch.levels.filter((l, i) => T.isCleared(ch.realm, i + 1)).length + '/5 关 · 首通掉落装备/丹药' : '境界「' + escapeHtml(ch.name.split('·')[1] || '') + '」解锁') + '</div></div>' +
+          '<div style="display:flex;gap:4px;flex-wrap:wrap;justify-content:flex-end;max-width:230px">' +
+          ch.levels.map((l, i) => {
+            const idx = i + 1;
+            const open = T.levelUnlocked(ch.realm, idx);
+            const cleared = T.isCleared(ch.realm, idx);
+            if (!open) return '<button class="icon-btn" disabled style="min-height:0;padding:3px 8px;font-size:11px">🔒' + idx + '</button>';
+            return '<button class="icon-btn" data-trial="' + ch.realm + ':' + idx + '" style="min-height:0;padding:3px 8px;font-size:11px;' + (cleared ? '' : 'border-color:var(--cinnabar);color:var(--cinnabar)') + '">' + (cleared ? '✓' : (l.kind === 'boss' ? 'BOSS' : idx)) + '</button>';
+          }).join(' ') + '</div></div>';
+      }
+      // 帝路
+      const impOpen = T.imperialUnlocked();
+      rows += '<div class="rebirth-item" style="' + (impOpen ? '' : 'opacity:.45') + '"><div><b>帝 路 · 三 关</b>' +
+        '<div style="font-size:11px;color:var(--ink-soft)">飞升后可闯——各得帝纹×1（大帝雷劫 +2%/枚），禁扫荡</div></div>' +
+        '<div style="display:flex;gap:4px">' +
+        [1, 2, 3].map(idx => {
+          const open = T.imperialUnlocked(idx);
+          const cleared = !!((s.trial || {}).cleared || {})['imperial_' + idx];
+          if (!open) return '<button class="icon-btn" disabled style="min-height:0;padding:3px 8px;font-size:11px">🔒</button>';
+          return '<button class="icon-btn" data-imperial="' + idx + '" style="min-height:0;padding:3px 8px;font-size:11px;' + (cleared ? '' : 'border-color:var(--cinnabar);color:var(--cinnabar)') + '">' + (cleared ? '✓' : '关' + idx) + '</button>';
+        }).join(' ') + '</div></div>';
+      card.innerHTML =
+        '<div class="modal-title">试 炼 塔<button class="icon-btn" id="tt-close" style="float:right;font-size:12px;padding:3px 12px">离 开</button></div>' +
+        '<div class="modal-desc">每关首通有灵石与掉落；已通关可扫荡（90 秒产量/次，每关 5 次/小时）。1~8 境在此熟悉斗法机制，帝路在飞升后等你。</div>' +
+        rows;
+      card.querySelector('#tt-close').addEventListener('click', removeModals);
+      card.querySelectorAll('[data-trial]').forEach(btn => btn.addEventListener('click', () => {
+        const [r, i] = btn.dataset.trial.split(':').map(Number);
+        removeModals();
+        g.LS.trial.fight(r, i);
+      }));
+      card.querySelectorAll('[data-imperial]').forEach(btn => btn.addEventListener('click', () => {
+        removeModals();
+        g.LS.trial.fightImperial(Number(btn.dataset.imperial));
+      }));
+    };
+    render();
   }
 
   /* ── 体系一览：游戏内弹窗嵌入《修炼体系一览.html》（tools/gen_codex_page.js 生成的静态页） ── */
@@ -1195,7 +1250,24 @@
     const KIND_NAME = { attack: '攻式', element: '五行', defense: '守式', heal: '回式' };
     const render = (tabName) => {
       let rows = '';
-      if (tabName === 'cards') {
+      if (tabName === 'relics') {
+        const relics = (g.LS.BAL.relics || []);
+        const own = s.relics || {};
+        for (const r of relics) {
+          const broken = !!own[r.id + '_broken'];
+          const used = r.id === 'huanhunjia' && !!own.huanhunjia_used;
+          const has = !!own[r.id] && !broken;
+          let act;
+          if (broken) act = '<button class="icon-btn" data-reforge="' + r.id + '">重铸 ' + g.LS.util.fmt(r.reforge_price || Math.round(r.price / 2)) + ' 灵石</button>';
+          else if (has) act = '<span class="stamp">随 身</span>' + (used ? '<div style="font-size:10px;color:var(--ink-soft)">本世已触发</div>' : '');
+          else act = '<button class="icon-btn" data-buyrelic="' + r.id + '" ' + (s.resources.lingshi >= r.price ? '' : 'disabled') + '>' + g.LS.util.fmt(r.price) + ' 灵石</button>';
+          rows += '<div class="rebirth-item"><div><b>' + escapeHtml(r.name) + '</b>' +
+            '<span class="ev-badge ev-badge-chain">保命</span>' +
+            '<div style="font-size:11px;color:var(--ink-soft)">' + escapeHtml(r.desc) + '</div></div>' +
+            '<div>' + act + '</div></div>';
+        }
+        rows += '<div class="modal-desc" style="font-size:11px;color:var(--ink-soft)">名刀碎裂后半价重铸；还魂甲一世触发一次、转生重置。渡劫有死亡率，命只有一条——或花灵石买后备。</div>';
+      } else if (tabName === 'cards') {
         const pool = ((cul.battle_cards || {}).my_cards || []).filter(c => c.price);
         const owned = s.cards_owned || [];
         for (const c of pool) {
@@ -1233,10 +1305,36 @@
         '<div class="set-row" style="justify-content:center">' +
         '<button class="icon-btn" data-tab="weapon" style="' + (tabName === 'weapon' ? 'border-color:var(--cinnabar);color:var(--cinnabar)' : '') + '">兵 器</button>' +
         '<button class="icon-btn" data-tab="tech" style="' + (tabName === 'tech' ? 'border-color:var(--cinnabar);color:var(--cinnabar)' : '') + '">功 法</button>' +
-        '<button class="icon-btn" data-tab="cards" style="' + (tabName === 'cards' ? 'border-color:var(--cinnabar);color:var(--cinnabar)' : '') + '">秘 传</button></div>' +
+        '<button class="icon-btn" data-tab="cards" style="' + (tabName === 'cards' ? 'border-color:var(--cinnabar);color:var(--cinnabar)' : '') + '">秘 传</button>' +
+        '<button class="icon-btn" data-tab="relics" style="' + (tabName === 'relics' ? 'border-color:var(--cinnabar);color:var(--cinnabar)' : '') + '">法 宝</button></div>' +
         rows;
       card.querySelector('#mk-close').addEventListener('click', removeModals);
       card.querySelectorAll('[data-tab]').forEach(b => b.addEventListener('click', () => render(b.dataset.tab)));
+      card.querySelectorAll('[data-buyrelic]').forEach(btn => btn.addEventListener('click', () => {
+        const r = (g.LS.BAL.relics || []).find(x => x.id === btn.dataset.buyrelic);
+        if (!r) return;
+        if (s.resources.lingshi < r.price) { toast('灵石不够'); return; }
+        s.resources.lingshi -= r.price;
+        s.relics = s.relics || {};
+        s.relics[r.id] = true;
+        if (r.id === 'huanhunjia') s.relics.huanhunjia_used = false;
+        sfx('guqin');
+        toast('已请得【' + r.name + '】——命硬一分。');
+        render('relics');
+        g.LS.save.save();
+      }));
+      card.querySelectorAll('[data-reforge]').forEach(btn => btn.addEventListener('click', () => {
+        const r = (g.LS.BAL.relics || []).find(x => x.id === btn.dataset.reforge);
+        if (!r) return;
+        const fee = r.reforge_price || Math.round(r.price / 2);
+        if (s.resources.lingshi < fee) { toast('灵石不够'); return; }
+        s.resources.lingshi -= fee;
+        s.relics[r.id + '_broken'] = false;
+        sfx('guqin');
+        toast('【' + r.name + '】重铸如新。');
+        render('relics');
+        g.LS.save.save();
+      }));
       card.querySelectorAll('[data-buycard]').forEach(btn => btn.addEventListener('click', () => {
         const c = (((cul.battle_cards || {}).my_cards) || []).find(x => x.id === btn.dataset.buycard);
         if (!c) return;
@@ -1878,7 +1976,7 @@
     initRefs, renderAll, renderResources, renderBuildings, renderCenter,
     renderChronicle, renderPermList, pushLog, markNewBuildings, isModalOpen, hintOnce,
     showEventModal, closeEventModal, showOfflinePopup, showBreakthroughOverlay, showFailOverlay,
-    showSettings, showRebirthPanel, showTutorial, showPillHouse, showHelpPanel, showMarket, showFriends, showDeckEditor, showSeniorPick, showCodexPage, showUpdateNotes, playEmperorTribulation,
+    showSettings, showRebirthPanel, showTutorial, showPillHouse, showHelpPanel, showMarket, showFriends, showDeckEditor, showSeniorPick, showCodexPage, showUpdateNotes, playEmperorTribulation, showTrial,
     showBattleArena, updateBattleHP, updateBattleShields, updateBattleQi, renderBattleHands, showBattleIntent,
     showBattleScreen, battleLog, battleAppend, showBattleResult,
     toast, tweenNumber, setBgm,

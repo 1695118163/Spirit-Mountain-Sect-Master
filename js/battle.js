@@ -310,6 +310,34 @@
     openArena();
   }
 
+  /** 试炼塔敌人（trial.js 组装 spec）：野怪/守关者按 spec 直接建单位 */
+  function startTrialFight(spec, ctx) {
+    if (active) return;
+    const aiCfg = { name: spec.name || '野修', moves: spec.moves || [] };
+    const op = buildOp(null, false, { offset: 0, hpMult: 1, follow: 0.6, dmgAdd: 0 });
+    // 以 spec 覆盖（realm/element/moves/hpMult）
+    op.dao = spec.name || '野修';
+    op.realm = spec.realm != null ? spec.realm : op.realm;
+    op.realmName = (g.LS.BAL.realms[op.realm] || {}).name || '?';
+    op.element = spec.element || null;
+    op.qiMax = op.realm + 1;
+    op.qi = op.qiMax;
+    const base = 80 + op.realm * 45 + 5 * 0.8;
+    op.hpMax = Math.round(base * (spec.hpMult || 1));
+    op.hp = op.hpMax;
+    op.hand = (spec.moves || []).map(m => Object.assign({}, m, {
+      dmgFinal: m.dmg ? m.dmg + op.realm * 2 : 0,
+      cdLeft: 0
+    }));
+    active = { my: buildMe(), op, friend: { dao: op.dao }, weather: currentWeatherMod(), round: 0, mode: 'trial', aiFollow: 0.6, trialCtx: ctx };
+    const info = {
+      my: { dao: active.my.dao, realm: active.my.realmName, weapon: active.my.weaponName, tech: active.my.techName, el: active.my.element || '—', hp: active.my.hpMax, cards: active.my.hand.length },
+      op: { dao: op.dao, realm: op.realmName, weapon: '未知', tech: '野修招式', el: op.element || '—', hp: op.hpMax },
+      elRel: '', weather: active.weather.text, mode: 'trial'
+    };
+    g.LS.ui.showBattleArena(info, () => beginFight());
+  }
+
   /** 挑战大师兄（三档人机陪练：easy 师弟 / equal 同门 / hard 师兄） */
   function challengeSenior(tier) {
     if (active) return;
@@ -481,8 +509,20 @@
       lines.push('胜负已分——' + a.op.dao + '技高一筹，' + a.my.dao + '拱手认负，来日再战。');
     }
     g.LS.ui.battleAppend(lines);
+    const tctx = a.trialCtx;
+    let trialLines = null;
+    if (win && tctx && g.LS.trial) {
+      const r = g.LS.trial.settle(tctx);
+      trialLines = r.lines;
+      honor = 0; // 试炼塔不计论道积分
+    }
+    g.LS.ui.battleAppend(trialLines || []);
     setTimeout(() => {
-      g.LS.ui.showBattleResult(win, { honor, diff, hpLeft: Math.max(0, Math.ceil(a.my.hp)), senior: a.mode === 'senior' });
+      g.LS.ui.showBattleResult(win, {
+        honor, diff, hpLeft: Math.max(0, Math.ceil(a.my.hp)),
+        senior: a.mode === 'senior',
+        trial: trialLines ? trialLines.join('<br>') : ''
+      });
       g.LS.save.save();
       active = null;
     }, 600);
@@ -494,7 +534,7 @@
   g.LS.battle = {
     makeCard, cardPower, elementMult, myDaoHao,
     prepareBattle, challengeSenior, playCard, endTurn, skip, abort,
-    resolveDeck, ownsCard, KINDS, KIND_NAME, KIND_LIMITS, SENIOR_TIERS, combatPower, talentLv,
+    resolveDeck, ownsCard, KINDS, KIND_NAME, KIND_LIMITS, SENIOR_TIERS, combatPower, talentLv, startTrialFight,
     get active() { return active; }
   };
 })(typeof window !== 'undefined' ? window : globalThis);

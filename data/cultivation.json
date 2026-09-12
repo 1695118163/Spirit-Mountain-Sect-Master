@@ -31,22 +31,13 @@
       "desc": "坊市铁匠打的制式飞剑，胜在便宜顺手。"
     },
     {
-      "id": "taomu",
+      "id": "taomufuchen",
       "name": "桃木拂尘",
       "grade": "凡",
       "element": "木",
       "sharp": 10,
       "price": 800,
-      "desc": "桃木三十年成材，拂尘丝自带生发之气。"
-    },
-    {
-      "id": "xuanfan",
-      "name": "玄水幡",
-      "grade": "凡",
-      "element": "水",
-      "sharp": 12,
-      "price": 1200,
-      "desc": "幡布浸过寒潭，展开时水气逼人。"
+      "desc": "桃木万缕，最宜清修炼气。"
     },
     {
       "id": "huowenbi",
@@ -54,17 +45,44 @@
       "grade": "凡",
       "element": "火",
       "sharp": 12,
-      "price": 1200,
-      "desc": "匕身火纹天成，近身短刺尤利。"
+      "price": 1500,
+      "desc": "匕首藏火纹，近身突袭用。"
     },
     {
-      "id": "chixiao",
-      "name": "赤霄环",
-      "grade": "灵",
+      "id": "xuanshuifan",
+      "name": "玄水幡",
+      "grade": "凡",
+      "element": "水",
+      "sharp": 14,
+      "price": 3000,
+      "desc": "幡展玄波，水行修士入门好物。",
+      "bonus": {
+        "xp_mult": 0.01
+      }
+    },
+    {
+      "id": "chiyanbian",
+      "name": "赤炎鞭",
+      "grade": "凡",
       "element": "火",
-      "sharp": 25,
-      "price": 8000,
-      "desc": "赤霄环响，烈焰随身而走。"
+      "sharp": 15,
+      "price": 3500,
+      "desc": "赤炎缠鞭，抽打之间火星四溅。",
+      "bonus": {
+        "xp_mult": 0.01
+      }
+    },
+    {
+      "id": "qingzhufengyunjian",
+      "name": "青竹蜂云剑",
+      "grade": "凡",
+      "element": "木",
+      "sharp": 18,
+      "price": 6000,
+      "desc": "青竹削剑，蜂群剑意初成。",
+      "bonus": {
+        "xp_mult": 0.01
+      }
     },
     {
       "id": "biyuhulu",
@@ -72,56 +90,83 @@
       "grade": "灵",
       "element": "木",
       "sharp": 22,
-      "price": 7200,
-      "desc": "葫芦中灵植生气盎然，藤蔓可缚敌。"
-    },
-    {
-      "id": "hanbingjing",
-      "name": "寒冰镜",
-      "grade": "灵",
-      "element": "水",
-      "sharp": 28,
-      "price": 9600,
-      "desc": "镜面寒气凝霜，照谁谁僵。"
+      "price": 12000,
+      "desc": "葫芦藏灵液，木行温养。",
+      "bonus": {
+        "xp_mult": 0.02
+      }
     },
     {
       "id": "zidianzhui",
       "name": "紫电锥",
       "grade": "灵",
       "element": "金",
-      "sharp": 26,
-      "price": 8800,
-      "desc": "锥尖常跳紫芒，出手带雷音。"
+      "sharp": 24,
+      "price": 16000,
+      "desc": "锥聚紫电，破甲如纸。",
+      "bonus": {
+        "xp_mult": 0.02
+      }
     },
     {
-      "id": "zhuxianjian",
-      "name": "诛仙剑",
-      "grade": "珍",
-      "element": "金",
-      "sharp": 55,
-      "price": 66000,
-      "desc": "古宝残意入剑，剑出诸邪避退。",
-      "rare_only": true
+      "id": "jinleizhu",
+      "name": "金雷竹",
+      "grade": "灵",
+      "element": "木",
+      "sharp": 28,
+      "price": 30000,
+      "desc": "万年金雷竹炼就，雷蕴木中。",
+      "bonus": {
+        "xp_mult": 0.02
+      }
     },
     {
-      "id": "shanheshan",
+      "id": "chixiaohuan",
+      "name": "赤霄环",
+      "grade": "灵",
+      "element": "火",
+      "sharp": 32,
+      "price": 60000,
+      "desc": "赤霄绕环，焚敌于方寸。",
+      "bonus": {
+        "xp_mult": 0.03
+      }
+    },
+    {
+      "id": "hanbingjing",
+      "name": "寒冰镜",
+      "grade": "灵",
+      "element": "水",
+      "sharp": 34,
+      "price": 80000,
+      "desc": "镜封寒潭，照处结冰。",
+      "bonus": {
+        "xp_mult": 0.03
+      }
+    },
+    {
+      "id": "sanyanshan",
+      "name": "三焰扇",
+      "grade": "灵",
+      "element": "火",
+      "sharp": 40,
+      "price": 120000,
+      "desc": "三昧扇影，焰分三色。",
+      "bonus": {
+        "xp_mult": 0.03
+      }
+    },
+    {
+      "id": "shanhesan",
       "name": "山河扇",
       "grade": "珍",
       "element": "土",
-      "sharp": 50,
-      "price": 60000,
-      "desc": "扇面绘山河，展开自有丘壑之力。",
-      "rare_only": true
-    },
-    {
-      "id": "taixu_ding",
-      "name": "太虚鼎",
-      "grade": "仙",
-      "element": "土",
-      "sharp": 110,
-      "price": 480000,
-      "desc": "通天灵宝之仿，鼎中自成太虚，非大功法不可驱。",
-      "need_technique": "taishang"
+      "sharp": 46,
+      "price": 300000,
+      "desc": "扇展山河，一掷有开碑之力。",
+      "bonus": {
+        "xp_mult": 0.04
+      }
     },
     {
       "id": "liangyijian",
@@ -131,14 +176,101 @@
         "水",
         "火"
       ],
-      "sharp": 48,
-      "price": 72000,
-      "desc": "水火同炉，阴阳互济——出招时自动取克制敌方的一行。"
+      "sharp": 50,
+      "price": 600000,
+      "desc": "水火同炉，阴阳互济——出招时自动取克制敌方的一行。",
+      "bonus": {
+        "xp_mult": 0.04
+      }
+    },
+    {
+      "id": "shijinrongxia",
+      "name": "噬金虫匣",
+      "grade": "珍",
+      "element": "金",
+      "sharp": 55,
+      "price": 800000,
+      "desc": "匣中金虫噬金如泥，韩立同款凶物。",
+      "bonus": {
+        "xp_mult": 0.04
+      }
+    },
+    {
+      "id": "zhuxianjian",
+      "name": "诛仙剑",
+      "grade": "仙",
+      "element": "金",
+      "sharp": 70,
+      "price": 2000000,
+      "desc": "古阵四剑之首，剑气纵横。",
+      "bonus": {
+        "xp_mult": 0.06
+      }
+    },
+    {
+      "id": "fengleichi",
+      "name": "风雷翅",
+      "grade": "仙",
+      "element": "金",
+      "sharp": 78,
+      "price": 3000000,
+      "desc": "背生双翅，风雷助力，身法倍增。",
+      "bonus": {
+        "xp_mult": 0.06
+      }
+    },
+    {
+      "id": "yuancishenshan",
+      "name": "元磁神山",
+      "grade": "仙",
+      "element": "土",
+      "sharp": 88,
+      "price": 5000000,
+      "desc": "元磁吸金，诸般铁器不由自主。",
+      "bonus": {
+        "xp_mult": 0.06
+      }
+    },
+    {
+      "id": "taixuding",
+      "name": "太虚鼎",
+      "grade": "仙",
+      "element": "土",
+      "sharp": 110,
+      "price": 15000000,
+      "desc": "鼎定太虚，镇压气运。",
+      "bonus": {
+        "xp_mult": 0.08
+      }
+    },
+    {
+      "id": "tuntianmoguan",
+      "name": "吞天魔罐",
+      "grade": "仙",
+      "element": "水",
+      "sharp": 130,
+      "price": 25000000,
+      "desc": "魔罐吞天，噬灵化煞。",
+      "bonus": {
+        "xp_mult": 0.08
+      }
+    },
+    {
+      "id": "xihuangta",
+      "name": "西皇塔",
+      "grade": "仙",
+      "element": "土",
+      "sharp": 150,
+      "price": 40000000,
+      "desc": "塔镇西皇，万法不侵。",
+      "bonus": {
+        "xp_mult": 0.08
+      }
     },
     {
       "id": "hundunzhong",
       "name": "混沌钟",
-      "grade": "仙",
+      "grade": "帝",
       "element": [
         "金",
         "木",
@@ -146,9 +278,96 @@
         "水",
         "火"
       ],
-      "sharp": 118,
-      "price": 580000,
-      "desc": "混沌未分，五行皆容——对任何灵根都可寻到克制之径。"
+      "sharp": 170,
+      "price": 300000000,
+      "desc": "混沌未分，五行皆容——对任何灵根都可寻到克制之径。",
+      "bonus": {
+        "xp_mult": 0.1
+      }
+    },
+    {
+      "id": "hengyulu",
+      "name": "恒宇炉",
+      "grade": "帝",
+      "element": "火",
+      "sharp": 190,
+      "price": 600000000,
+      "desc": "炉纳恒星，焚尽八荒。",
+      "bonus": {
+        "xp_mult": 0.1
+      }
+    },
+    {
+      "id": "huangta",
+      "name": "荒塔",
+      "grade": "帝",
+      "element": "土",
+      "sharp": 210,
+      "price": 1000000000,
+      "desc": "太古荒塔，镇压诸天。",
+      "bonus": {
+        "xp_mult": 0.1
+      }
+    },
+    {
+      "id": "wanwu_muqi_ding",
+      "name": "万物母气鼎",
+      "grade": "帝",
+      "element": [
+        "金",
+        "木",
+        "土",
+        "水",
+        "火"
+      ],
+      "sharp": 240,
+      "price": 20000000000,
+      "desc": "母气滋长，万物之源。",
+      "bonus": {
+        "xp_mult": 0.13
+      }
+    },
+    {
+      "id": "jiuzi_zhenyan_yin",
+      "name": "九字真言印",
+      "grade": "帝",
+      "element": "金",
+      "sharp": 270,
+      "price": 40000000000,
+      "desc": "九字镇魔，一印定山河。",
+      "bonus": {
+        "xp_mult": 0.13
+      }
+    },
+    {
+      "id": "busi_tiandao",
+      "name": "不死天刀",
+      "grade": "帝",
+      "element": "金",
+      "sharp": 300,
+      "price": 400000000000,
+      "desc": "刀出不死不休，帝路凶物。",
+      "bonus": {
+        "xp_mult": 0.16
+      }
+    },
+    {
+      "id": "chengxianding",
+      "name": "成仙鼎",
+      "grade": "帝",
+      "element": [
+        "金",
+        "木",
+        "土",
+        "水",
+        "火"
+      ],
+      "sharp": 360,
+      "price": 800000000000,
+      "desc": "鼎成仙路——传说举鼎者可登帝位。",
+      "bonus": {
+        "xp_mult": 0.16
+      }
     }
   ],
   "techniques": [
@@ -166,75 +385,51 @@
       "grade": "凡",
       "element": "水",
       "price": 600,
-      "desc": "水行入门吐纳法，人人可修。"
+      "desc": "水行吐纳法门，如溪汇海。"
     },
     {
       "id": "liehuozhang",
       "name": "烈火掌",
       "grade": "灵",
       "element": "火",
-      "price": 5600,
-      "desc": "掌心聚火，连击时有火星迸溅。"
+      "price": 3000,
+      "desc": "火行掌法，灼气伤敌。",
+      "bonus": {
+        "xp_mult": 0.01
+      }
     },
     {
       "id": "gengjinjue",
       "name": "庚金诀",
       "grade": "灵",
       "element": "金",
-      "price": 5600,
-      "desc": "金气锐利，QTE 出手更见锋芒。"
+      "price": 3500,
+      "desc": "金行锐气，削铁如泥。",
+      "bonus": {
+        "xp_mult": 0.01
+      }
     },
     {
-      "id": "houtu",
+      "id": "houtugong",
       "name": "厚土功",
       "grade": "灵",
       "element": "土",
-      "price": 5600,
-      "desc": "土行厚重磅礴，斗法中根基极稳。"
+      "price": 3000,
+      "desc": "土行厚重，守御无双。",
+      "bonus": {
+        "xp_mult": 0.01
+      }
     },
     {
-      "id": "bibo",
+      "id": "bibojue",
       "name": "碧波诀",
       "grade": "灵",
       "element": "水",
-      "price": 5200,
-      "desc": "碧波荡漾，缩圈轮中水波放缓时序。"
-    },
-    {
-      "id": "zixiao",
-      "name": "紫霄功",
-      "grade": "珍",
-      "element": "金",
-      "price": 44000,
-      "desc": "紫霄贯体，锐不可当。",
-      "rare_only": true
-    },
-    {
-      "id": "chihuo",
-      "name": "赤炎真解",
-      "grade": "珍",
-      "element": "火",
-      "price": 40000,
-      "desc": "真火入脉，斗法时火势自涨。",
-      "rare_only": true
-    },
-    {
-      "id": "qingyuan",
-      "name": "青元剑诀",
-      "grade": "仙",
-      "element": "木",
-      "price": 320000,
-      "desc": "剑诀通灵，木行至高法门。",
-      "need_weapon": "qingfeng"
-    },
-    {
-      "id": "taishang",
-      "name": "太上忘情录",
-      "grade": "仙",
-      "element": "土",
-      "price": 360000,
-      "desc": "忘情方能驭太虚——太虚鼎的配套通宝诀。",
-      "need_weapon": "taixu_ding"
+      "price": 3000,
+      "desc": "水行碧波，绵里藏针。",
+      "bonus": {
+        "xp_mult": 0.01
+      }
     },
     {
       "id": "yinyanglu",
@@ -245,7 +440,98 @@
         "火"
       ],
       "price": 80000,
-      "desc": "水火双修，阴阳互根——水火灵根修之皆契合（修为 +8%）。"
+      "desc": "水火双修，阴阳互根——水火灵根修之皆契合（修为 +8%）。",
+      "bonus": {
+        "xp_mult": 0.03
+      }
+    },
+    {
+      "id": "zixiaogong",
+      "name": "紫霄功",
+      "grade": "珍",
+      "element": "金",
+      "price": 50000,
+      "desc": "紫霄神雷护体，金行上乘法。",
+      "bonus": {
+        "xp_mult": 0.03
+      }
+    },
+    {
+      "id": "chijiao_zhenjie",
+      "name": "赤炎真解",
+      "grade": "珍",
+      "element": "火",
+      "price": 60000,
+      "desc": "赤炎焚天真解，火行秘传。",
+      "bonus": {
+        "xp_mult": 0.03
+      }
+    },
+    {
+      "id": "dayanjue",
+      "name": "大衍诀",
+      "grade": "珍",
+      "element": "木",
+      "price": 100000,
+      "desc": "大衍之数五十，遁去其一——木行推演法门。",
+      "bonus": {
+        "xp_mult": 0.03
+      }
+    },
+    {
+      "id": "qingyuanjianjue",
+      "name": "青元剑诀",
+      "grade": "仙",
+      "element": "木",
+      "price": 150000,
+      "desc": "剑诀青元，木行剑修正途。",
+      "bonus": {
+        "xp_mult": 0.04
+      }
+    },
+    {
+      "id": "yuancishenguang",
+      "name": "元磁神光",
+      "grade": "仙",
+      "element": "土",
+      "price": 250000,
+      "desc": "神光磁化，土行大成之法。",
+      "bonus": {
+        "xp_mult": 0.04
+      }
+    },
+    {
+      "id": "fengxingbu",
+      "name": "风行步",
+      "grade": "仙",
+      "element": "金",
+      "price": 300000,
+      "bonus": {
+        "xp_mult": 0.04
+      },
+      "desc": "身法如风，金行轻功身法诀。"
+    },
+    {
+      "id": "taiwang",
+      "name": "太上忘情录",
+      "grade": "仙",
+      "element": "土",
+      "price": 9000000,
+      "desc": "太上忘情，情之所钟——土行至高典。",
+      "bonus": {
+        "xp_mult": 0.06
+      }
+    },
+    {
+      "id": "tuntianmogong",
+      "name": "吞天魔功",
+      "grade": "仙",
+      "element": "水",
+      "price": 15000000,
+      "desc": "魔功吞天，水行邪径（威力惊人，莫入魔障）。",
+      "bonus": {
+        "xp_mult": 0.06
+      }
     },
     {
       "id": "wuxingguiyuan",
@@ -258,8 +544,62 @@
         "水",
         "火"
       ],
-      "price": 360000,
-      "desc": "万行归一，无根不契——任何灵根修之皆获契合（修为 +8%）。"
+      "price": 36000000,
+      "desc": "万行归一，无根不契——任何灵根修之皆获契合。",
+      "bonus": {
+        "xp_mult": 0.06
+      }
+    },
+    {
+      "id": "hunyuanzhongjue",
+      "name": "混元钟诀",
+      "grade": "帝",
+      "element": [
+        "金",
+        "木",
+        "土",
+        "水",
+        "火"
+      ],
+      "price": 400000000,
+      "desc": "混元一气，钟鸣九天。",
+      "bonus": {
+        "xp_mult": 0.1
+      }
+    },
+    {
+      "id": "dijing",
+      "name": "帝经",
+      "grade": "帝",
+      "element": [
+        "金",
+        "木",
+        "土",
+        "水",
+        "火"
+      ],
+      "price": 12000000000,
+      "desc": "帝者之经，唯大帝血脉可镇住戾气。",
+      "bonus": {
+        "xp_mult": 0.13
+      }
+    },
+    {
+      "id": "yuantianshu",
+      "name": "源天书",
+      "grade": "帝",
+      "element": [
+        "金",
+        "木",
+        "土",
+        "水",
+        "火"
+      ],
+      "price": 240000000000,
+      "desc": "源天之道，万物本源——帝路尽头的一页天书。",
+      "bonus": {
+        "xp_mult": 0.16
+      }
     }
   ],
   "battle": {
@@ -875,11 +1215,37 @@
           "element": "木",
           "note": "第1章Boss·练气",
           "moves": [
-            { "name": "撕裂爪", "cost": 1, "dmg": 8, "el": "木" },
-            { "name": "噬灵啖", "cost": 2, "dmg": 12, "el": "木" },
-            { "name": "坚毛倒竖", "cost": 1, "dmg": 0, "shield": 6 },
-            { "name": "灵息狂啸", "cost": 3, "dmg": 18, "el": "木", "cd": 2 },
-            { "name": "舐创", "cost": 0, "dmg": 0, "heal": 6 }
+            {
+              "name": "撕裂爪",
+              "cost": 1,
+              "dmg": 8,
+              "el": "木"
+            },
+            {
+              "name": "噬灵啖",
+              "cost": 2,
+              "dmg": 12,
+              "el": "木"
+            },
+            {
+              "name": "坚毛倒竖",
+              "cost": 1,
+              "dmg": 0,
+              "shield": 6
+            },
+            {
+              "name": "灵息狂啸",
+              "cost": 3,
+              "dmg": 18,
+              "el": "木",
+              "cd": 2
+            },
+            {
+              "name": "舐创",
+              "cost": 0,
+              "dmg": 0,
+              "heal": 6
+            }
           ]
         },
         {
@@ -889,11 +1255,37 @@
           "element": "火",
           "note": "第2章Boss·筑基（乙§5.3示例原案）",
           "moves": [
-            { "name": "烈风刀", "cost": 1, "dmg": 12, "el": "火" },
-            { "name": "撩火", "cost": 2, "dmg": 16, "el": "火" },
-            { "name": "赤霞盾", "cost": 1, "dmg": 0, "shield": 10 },
-            { "name": "火龙咆哮", "cost": 3, "dmg": 22, "el": "火", "cd": 2 },
-            { "name": "狂性", "cost": 0, "dmg": 0, "heal": 10 }
+            {
+              "name": "烈风刀",
+              "cost": 1,
+              "dmg": 12,
+              "el": "火"
+            },
+            {
+              "name": "撩火",
+              "cost": 2,
+              "dmg": 16,
+              "el": "火"
+            },
+            {
+              "name": "赤霞盾",
+              "cost": 1,
+              "dmg": 0,
+              "shield": 10
+            },
+            {
+              "name": "火龙咆哮",
+              "cost": 3,
+              "dmg": 22,
+              "el": "火",
+              "cd": 2
+            },
+            {
+              "name": "狂性",
+              "cost": 0,
+              "dmg": 0,
+              "heal": 10
+            }
           ]
         },
         {
@@ -903,11 +1295,37 @@
           "element": "金",
           "note": "第3章Boss·金丹",
           "moves": [
-            { "name": "白骨刺", "cost": 1, "dmg": 14, "el": "金" },
-            { "name": "尸气弹", "cost": 2, "dmg": 18, "el": "金" },
-            { "name": "骨盾横陈", "cost": 1, "dmg": 0, "shield": 12 },
-            { "name": "白骨葬天槌", "cost": 3, "dmg": 26, "el": "金", "cd": 2 },
-            { "name": "食髓", "cost": 0, "dmg": 0, "heal": 12 }
+            {
+              "name": "白骨刺",
+              "cost": 1,
+              "dmg": 14,
+              "el": "金"
+            },
+            {
+              "name": "尸气弹",
+              "cost": 2,
+              "dmg": 18,
+              "el": "金"
+            },
+            {
+              "name": "骨盾横陈",
+              "cost": 1,
+              "dmg": 0,
+              "shield": 12
+            },
+            {
+              "name": "白骨葬天槌",
+              "cost": 3,
+              "dmg": 26,
+              "el": "金",
+              "cd": 2
+            },
+            {
+              "name": "食髓",
+              "cost": 0,
+              "dmg": 0,
+              "heal": 12
+            }
           ]
         },
         {
@@ -917,11 +1335,37 @@
           "element": "水",
           "note": "第4章Boss·元婴",
           "moves": [
-            { "name": "蛛丝鞭", "cost": 1, "dmg": 17, "el": "水" },
-            { "name": "蚀月毒涎", "cost": 2, "dmg": 23, "el": "水" },
-            { "name": "月茧衣", "cost": 1, "dmg": 0, "shield": 15 },
-            { "name": "万丝噬心阵", "cost": 3, "dmg": 33, "el": "水", "cd": 3 },
-            { "name": "吸精续脉", "cost": 0, "dmg": 0, "heal": 15 }
+            {
+              "name": "蛛丝鞭",
+              "cost": 1,
+              "dmg": 17,
+              "el": "水"
+            },
+            {
+              "name": "蚀月毒涎",
+              "cost": 2,
+              "dmg": 23,
+              "el": "水"
+            },
+            {
+              "name": "月茧衣",
+              "cost": 1,
+              "dmg": 0,
+              "shield": 15
+            },
+            {
+              "name": "万丝噬心阵",
+              "cost": 3,
+              "dmg": 33,
+              "el": "水",
+              "cd": 3
+            },
+            {
+              "name": "吸精续脉",
+              "cost": 0,
+              "dmg": 0,
+              "heal": 15
+            }
           ]
         },
         {
@@ -931,11 +1375,37 @@
           "element": "土",
           "note": "第5章Boss·化神",
           "moves": [
-            { "name": "裂地锤", "cost": 1, "dmg": 21, "el": "土" },
-            { "name": "崩山肘", "cost": 2, "dmg": 29, "el": "土" },
-            { "name": "蛮皮罡", "cost": 1, "dmg": 0, "shield": 19 },
-            { "name": "断岳神镇压", "cost": 3, "dmg": 42, "el": "土", "cd": 3 },
-            { "name": "蛮血沸腾", "cost": 0, "dmg": 0, "heal": 18 }
+            {
+              "name": "裂地锤",
+              "cost": 1,
+              "dmg": 21,
+              "el": "土"
+            },
+            {
+              "name": "崩山肘",
+              "cost": 2,
+              "dmg": 29,
+              "el": "土"
+            },
+            {
+              "name": "蛮皮罡",
+              "cost": 1,
+              "dmg": 0,
+              "shield": 19
+            },
+            {
+              "name": "断岳神镇压",
+              "cost": 3,
+              "dmg": 42,
+              "el": "土",
+              "cd": 3
+            },
+            {
+              "name": "蛮血沸腾",
+              "cost": 0,
+              "dmg": 0,
+              "heal": 18
+            }
           ]
         },
         {
@@ -945,11 +1415,37 @@
           "element": "火",
           "note": "第6章Boss·炼虚",
           "moves": [
-            { "name": "血爪撕天", "cost": 1, "dmg": 26, "el": "火" },
-            { "name": "罗刹焰舞", "cost": 2, "dmg": 36, "el": "火" },
-            { "name": "血煞红绡", "cost": 1, "dmg": 0, "shield": 23 },
-            { "name": "血海滔天戮", "cost": 3, "dmg": 52, "el": "火", "cd": 3 },
-            { "name": "饮血回元", "cost": 0, "dmg": 0, "heal": 22 }
+            {
+              "name": "血爪撕天",
+              "cost": 1,
+              "dmg": 26,
+              "el": "火"
+            },
+            {
+              "name": "罗刹焰舞",
+              "cost": 2,
+              "dmg": 36,
+              "el": "火"
+            },
+            {
+              "name": "血煞红绡",
+              "cost": 1,
+              "dmg": 0,
+              "shield": 23
+            },
+            {
+              "name": "血海滔天戮",
+              "cost": 3,
+              "dmg": 52,
+              "el": "火",
+              "cd": 3
+            },
+            {
+              "name": "饮血回元",
+              "cost": 0,
+              "dmg": 0,
+              "heal": 22
+            }
           ]
         },
         {
@@ -959,11 +1455,37 @@
           "element": "金",
           "note": "第7章Boss·合体",
           "moves": [
-            { "name": "螯钳剪", "cost": 1, "dmg": 32, "el": "金" },
-            { "name": "铁甲冲撞", "cost": 2, "dmg": 44, "el": "金" },
-            { "name": "玄铁蟹壳", "cost": 1, "dmg": 0, "shield": 28 },
-            { "name": "横行天下斩", "cost": 3, "dmg": 63, "el": "金", "cd": 3 },
-            { "name": "吐纳月华", "cost": 0, "dmg": 0, "heal": 26 }
+            {
+              "name": "螯钳剪",
+              "cost": 1,
+              "dmg": 32,
+              "el": "金"
+            },
+            {
+              "name": "铁甲冲撞",
+              "cost": 2,
+              "dmg": 44,
+              "el": "金"
+            },
+            {
+              "name": "玄铁蟹壳",
+              "cost": 1,
+              "dmg": 0,
+              "shield": 28
+            },
+            {
+              "name": "横行天下斩",
+              "cost": 3,
+              "dmg": 63,
+              "el": "金",
+              "cd": 3
+            },
+            {
+              "name": "吐纳月华",
+              "cost": 0,
+              "dmg": 0,
+              "heal": 26
+            }
           ]
         },
         {
@@ -973,11 +1495,37 @@
           "element": "水",
           "note": "第8章Boss·大乘（守关者序列）",
           "moves": [
-            { "name": "蛟尾横扫", "cost": 1, "dmg": 40, "el": "水" },
-            { "name": "寒潭冰刺", "cost": 2, "dmg": 54, "el": "水" },
-            { "name": "玄冰蛟鳞", "cost": 1, "dmg": 0, "shield": 34 },
-            { "name": "寒潭蛟龙啸", "cost": 3, "dmg": 78, "el": "水", "cd": 4 },
-            { "name": "潜渊养息", "cost": 0, "dmg": 0, "heal": 30 }
+            {
+              "name": "蛟尾横扫",
+              "cost": 1,
+              "dmg": 40,
+              "el": "水"
+            },
+            {
+              "name": "寒潭冰刺",
+              "cost": 2,
+              "dmg": 54,
+              "el": "水"
+            },
+            {
+              "name": "玄冰蛟鳞",
+              "cost": 1,
+              "dmg": 0,
+              "shield": 34
+            },
+            {
+              "name": "寒潭蛟龙啸",
+              "cost": 3,
+              "dmg": 78,
+              "el": "水",
+              "cd": 4
+            },
+            {
+              "name": "潜渊养息",
+              "cost": 0,
+              "dmg": 0,
+              "heal": 30
+            }
           ]
         },
         {
@@ -987,11 +1535,37 @@
           "element": "火",
           "note": "第9章Boss·渡劫（守关者序列）",
           "moves": [
-            { "name": "夜行神火", "cost": 1, "dmg": 50, "el": "火" },
-            { "name": "摄魂灯焰", "cost": 2, "dmg": 66, "el": "火" },
-            { "name": "夜幕垂帘", "cost": 1, "dmg": 0, "shield": 41 },
-            { "name": "夜游千灯烬", "cost": 3, "dmg": 92, "el": "火", "cd": 4 },
-            { "name": "更鼓还魂", "cost": 0, "dmg": 0, "heal": 34 }
+            {
+              "name": "夜行神火",
+              "cost": 1,
+              "dmg": 50,
+              "el": "火"
+            },
+            {
+              "name": "摄魂灯焰",
+              "cost": 2,
+              "dmg": 66,
+              "el": "火"
+            },
+            {
+              "name": "夜幕垂帘",
+              "cost": 1,
+              "dmg": 0,
+              "shield": 41
+            },
+            {
+              "name": "夜游千灯烬",
+              "cost": 3,
+              "dmg": 92,
+              "el": "火",
+              "cd": 4
+            },
+            {
+              "name": "更鼓还魂",
+              "cost": 0,
+              "dmg": 0,
+              "heal": 34
+            }
           ]
         },
         {
@@ -1001,11 +1575,37 @@
           "element": "土",
           "note": "第10章Boss·飞升（守关者序列）",
           "moves": [
-            { "name": "鼎镇压岳", "cost": 1, "dmg": 62, "el": "土" },
-            { "name": "混元罡风", "cost": 2, "dmg": 80, "el": "土" },
-            { "name": "万钧鼎壁", "cost": 1, "dmg": 0, "shield": 48 },
-            { "name": "混元一炁崩", "cost": 3, "dmg": 108, "el": "土", "cd": 4 },
-            { "name": "鼎中天地", "cost": 0, "dmg": 0, "heal": 38 }
+            {
+              "name": "鼎镇压岳",
+              "cost": 1,
+              "dmg": 62,
+              "el": "土"
+            },
+            {
+              "name": "混元罡风",
+              "cost": 2,
+              "dmg": 80,
+              "el": "土"
+            },
+            {
+              "name": "万钧鼎壁",
+              "cost": 1,
+              "dmg": 0,
+              "shield": 48
+            },
+            {
+              "name": "混元一炁崩",
+              "cost": 3,
+              "dmg": 108,
+              "el": "土",
+              "cd": 4
+            },
+            {
+              "name": "鼎中天地",
+              "cost": 0,
+              "dmg": 0,
+              "heal": 38
+            }
           ]
         }
       ],
@@ -1017,12 +1617,43 @@
           "element": "土",
           "note": "帝路第1关守关者·AP 11口径·血量+40%",
           "moves": [
-            { "name": "镇墓钺", "cost": 4, "dmg": 105, "el": "土" },
-            { "name": "幽冥碑击", "cost": 5, "dmg": 118, "el": "土" },
-            { "name": "万墓朝宗", "cost": 7, "dmg": 140, "el": "土" },
-            { "name": "镇墓大阵·殓", "cost": 9, "dmg": 178, "el": "土", "cd": 4 },
-            { "name": "玄碑壁", "cost": 5, "dmg": 0, "shield": 55 },
-            { "name": "殓魂还土", "cost": 4, "dmg": 0, "heal": 45 }
+            {
+              "name": "镇墓钺",
+              "cost": 4,
+              "dmg": 105,
+              "el": "土"
+            },
+            {
+              "name": "幽冥碑击",
+              "cost": 5,
+              "dmg": 118,
+              "el": "土"
+            },
+            {
+              "name": "万墓朝宗",
+              "cost": 7,
+              "dmg": 140,
+              "el": "土"
+            },
+            {
+              "name": "镇墓大阵·殓",
+              "cost": 9,
+              "dmg": 178,
+              "el": "土",
+              "cd": 4
+            },
+            {
+              "name": "玄碑壁",
+              "cost": 5,
+              "dmg": 0,
+              "shield": 55
+            },
+            {
+              "name": "殓魂还土",
+              "cost": 4,
+              "dmg": 0,
+              "heal": 45
+            }
           ]
         },
         {
@@ -1032,12 +1663,43 @@
           "element": "金",
           "note": "帝路第2关守关者·AP 11口径·血量+70%",
           "moves": [
-            { "name": "天角裂空斩", "cost": 4, "dmg": 108, "el": "金" },
-            { "name": "星芒贯日", "cost": 5, "dmg": 122, "el": "金" },
-            { "name": "摘星断岳", "cost": 7, "dmg": 145, "el": "金" },
-            { "name": "天角断穹击", "cost": 9, "dmg": 180, "el": "金", "cd": 4 },
-            { "name": "角宿星铠", "cost": 4, "dmg": 0, "shield": 48 },
-            { "name": "星辉回照", "cost": 4, "dmg": 0, "heal": 42 }
+            {
+              "name": "天角裂空斩",
+              "cost": 4,
+              "dmg": 108,
+              "el": "金"
+            },
+            {
+              "name": "星芒贯日",
+              "cost": 5,
+              "dmg": 122,
+              "el": "金"
+            },
+            {
+              "name": "摘星断岳",
+              "cost": 7,
+              "dmg": 145,
+              "el": "金"
+            },
+            {
+              "name": "天角断穹击",
+              "cost": 9,
+              "dmg": 180,
+              "el": "金",
+              "cd": 4
+            },
+            {
+              "name": "角宿星铠",
+              "cost": 4,
+              "dmg": 0,
+              "shield": 48
+            },
+            {
+              "name": "星辉回照",
+              "cost": 4,
+              "dmg": 0,
+              "heal": 42
+            }
           ]
         },
         {
@@ -1047,12 +1709,43 @@
           "element": "root",
           "note": "帝路第3关守关者·AP 11口径·血量+100%·五行归一随灵根取克",
           "moves": [
-            { "name": "残念一指", "cost": 4, "dmg": 110, "el": "root" },
-            { "name": "帝威压世", "cost": 5, "dmg": 125, "el": "root" },
-            { "name": "万道归流", "cost": 7, "dmg": 148, "el": "root" },
-            { "name": "一念成劫", "cost": 9, "dmg": 180, "el": "root", "cd": 4 },
-            { "name": "大帝残躯", "cost": 5, "dmg": 0, "shield": 52 },
-            { "name": "念起回天", "cost": 4, "dmg": 0, "heal": 48 }
+            {
+              "name": "残念一指",
+              "cost": 4,
+              "dmg": 110,
+              "el": "root"
+            },
+            {
+              "name": "帝威压世",
+              "cost": 5,
+              "dmg": 125,
+              "el": "root"
+            },
+            {
+              "name": "万道归流",
+              "cost": 7,
+              "dmg": 148,
+              "el": "root"
+            },
+            {
+              "name": "一念成劫",
+              "cost": 9,
+              "dmg": 180,
+              "el": "root",
+              "cd": 4
+            },
+            {
+              "name": "大帝残躯",
+              "cost": 5,
+              "dmg": 0,
+              "shield": 52
+            },
+            {
+              "name": "念起回天",
+              "cost": 4,
+              "dmg": 0,
+              "heal": 48
+            }
           ]
         }
       ]

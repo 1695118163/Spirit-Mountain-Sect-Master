@@ -38,6 +38,10 @@
             const r6 = await fetch('./data/cultivation.json');
             if (r6.ok) balance.cultivation = (await r6.json());
           } catch (e) {}
+          try {
+            const r7 = await fetch('./data/levels.json');
+            if (r7.ok) balance.levels = (await r7.json());
+          } catch (e) {}
           return { balance, events, chains };
         }
       }
