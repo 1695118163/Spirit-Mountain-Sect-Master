@@ -1,0 +1,350 @@
+/* ============================================================================
+   灵山掌门 · 视觉升级 v0.21.1（DeepSeek 美术方案落地版）
+   来源：灵山掌门_v3_样式底稿.css §1~§13（预览段 §14~16 未采用）
+   落地方式：token 并入 + 场景层 #ms-scene + 真实类名移植（.panel/#btn-breath/.modal-card/.hand-card/.map-canvas 等）
+   夜色：--ms-* 一份变量表挂 html.night，切类即全变
+   ============================================================================ */
+
+/* ── §1 设计 Token（DeepSeek 原案） ── */
+:root{
+  --ms-ink-deep:#241f18;
+  --ms-ink-mid:#4a4033;
+  --ms-ink-3:rgba(58,50,38,.62);
+  --ms-ink-4:rgba(58,50,38,.40);
+  --ms-ink-5:rgba(58,50,38,.22);
+  --ms-ink-6:rgba(58,50,38,.12);
+  --ms-ink-7:rgba(58,50,38,.06);
+  --ms-paper-lit:#fdf8ec;
+  --ms-paper-warm:#faf3e4;
+  --ms-paper-deep:#e8dcc2;
+  --ms-jade:rgba(255,253,247,.80);
+  --ms-jade-2:rgba(255,253,247,.56);
+  --ms-jade-3:rgba(255,253,247,.28);
+  --ms-vermilion-lit:#d4564a;
+  --ms-vermilion-press:#8e2a1f;
+  --ms-vermilion-ghost:rgba(192,57,43,.10);
+  --ms-gold-lit:#f0d47c;
+  --ms-gold-deep:#a8852a;
+  --ms-gold-ghost:rgba(232,195,74,.14);
+  --ms-dai-lit:#8ea6bd;
+  --ms-dai:#5f7183;
+  --ms-dai-2:rgba(95,113,131,.34);
+  --ms-dai-3:rgba(95,113,131,.16);
+  --ms-wuxing-mu:#5d8a63; --ms-wuxing-huo:#c0503f; --ms-wuxing-tu:#a8852a;
+  --ms-wuxing-jin:#8a93a0; --ms-wuxing-shui:#4f7f9e;
+  --ms-mist:rgba(255,252,244,.90);
+  --ms-moon:#f2e6cc;
+  --ms-glow:#fff6e0;
+  --ms-r-s:6px; --ms-r-m:12px; --ms-r-l:18px; --ms-r-xl:26px; --ms-r-full:999px;
+  --ms-sh-1:0 1px 2px rgba(58,50,38,.06), 0 2px 8px rgba(58,50,38,.05);
+  --ms-sh-2:0 2px 6px rgba(58,50,38,.08), 0 10px 26px rgba(58,50,38,.08);
+  --ms-sh-3:0 4px 14px rgba(58,50,38,.12), 0 24px 52px rgba(58,50,38,.14);
+  --ms-sh-in:inset 0 1px 0 rgba(255,255,255,.70), inset 0 -1px 0 rgba(58,50,38,.05);
+  --ms-sh-in-deep:inset 0 2px 6px rgba(58,50,38,.16), inset 0 -1px 0 rgba(255,255,255,.55);
+  --ms-sh-seal:0 0 0 1px rgba(192,57,43,.30), 0 2px 10px rgba(192,57,43,.20);
+  --ms-sh-gold:0 1px 0 rgba(255,255,255,.45) inset, 0 8px 20px rgba(168,133,42,.26), 0 0 30px var(--ms-gold-ghost);
+  --ms-t-fast:.14s; --ms-t-mid:.22s; --ms-t-slow:.30s; --ms-t-lazy:.35s;
+  --ms-ease:cubic-bezier(.22,.61,.36,1);
+  --ms-ease-soft:cubic-bezier(.33,1,.68,1);
+  --ms-fs-hero:44px; --ms-fs-h2:20px; --ms-fs-sub:16px; --ms-fs-body:14px; --ms-fs-cap:12px; --ms-fs-tiny:10px;
+  --ms-lh:1.65; --ms-lh-tight:1.35;
+  --ms-ls:.04em; --ms-ls-wide:.14em;
+}
+/* 夜色映射（DeepSeek §15 预览变量表 → html.night，原案一致） */
+html.night{
+  color-scheme:dark;
+  --ms-ink-deep:#f6ecd8; --ms-ink-mid:#d9cbb0;
+  --ms-ink-3:rgba(232,220,200,.66); --ms-ink-4:rgba(232,220,200,.44);
+  --ms-ink-5:rgba(232,220,200,.24); --ms-ink-6:rgba(232,220,200,.13); --ms-ink-7:rgba(232,220,200,.07);
+  --ms-paper-lit:#242c3a; --ms-paper-warm:#1b2130; --ms-paper-deep:#141922;
+  --ms-jade:rgba(30,38,52,.78); --ms-jade-2:rgba(30,38,52,.54); --ms-jade-3:rgba(30,38,52,.26);
+  --ms-vermilion-lit:#e0655a; --ms-vermilion-press:#6f2017; --ms-vermilion-ghost:rgba(224,101,90,.14);
+  --ms-gold-lit:#f3d98a; --ms-gold-deep:#8a6d1f; --ms-gold-ghost:rgba(243,217,138,.12);
+  --ms-dai-lit:#a8bed3; --ms-dai:#8ea6bd; --ms-dai-2:rgba(142,166,189,.32); --ms-dai-3:rgba(142,166,189,.14);
+  --ms-mist:rgba(20,26,36,.90); --ms-moon:#dfe6f2; --ms-glow:#8fa8c8;
+  --ms-sh-1:0 1px 2px rgba(0,0,0,.30), 0 2px 10px rgba(0,0,0,.24);
+  --ms-sh-2:0 2px 8px rgba(0,0,0,.36), 0 12px 30px rgba(0,0,0,.34);
+  --ms-sh-3:0 6px 18px rgba(0,0,0,.46), 0 28px 60px rgba(0,0,0,.50);
+  --ms-sh-in:inset 0 1px 0 rgba(255,255,255,.06), inset 0 -1px 0 rgba(0,0,0,.30);
+  --ms-sh-in-deep:inset 0 2px 8px rgba(0,0,0,.50), inset 0 -1px 0 rgba(255,255,255,.05);
+  --ms-sh-seal:0 0 0 1px rgba(224,101,90,.30), 0 2px 12px rgba(224,101,90,.22);
+  --ms-sh-gold:0 1px 0 rgba(255,255,255,.10) inset, 0 8px 22px rgba(0,0,0,.40), 0 0 30px var(--ms-gold-ghost);
+}
+
+/* ── §2 全局质感 ── */
+body{
+  -webkit-font-smoothing:antialiased;
+  -moz-osx-font-smoothing:grayscale;
+  letter-spacing:var(--ms-ls);
+  line-height:var(--ms-lh);
+}
+
+/* ── §3 场景层 #ms-scene（替代批一的 body::before/::after 三层，五层景深+月+竹+朱印） ── */
+#ms-scene{position:fixed;inset:0;z-index:0;pointer-events:none;overflow:hidden}
+#ms-scene .moon{
+  position:absolute;top:6.5%;right:12%;width:64px;height:64px;border-radius:50%;
+  background:radial-gradient(circle at 38% 34%, var(--ms-moon) 0%, rgba(242,230,204,.55) 62%, rgba(242,230,204,0) 72%);
+  box-shadow:0 0 42px 15px rgba(242,230,204,.28); opacity:.85;
+  animation:ms-moon 9s var(--ms-ease-soft) infinite;
+}
+html.night #ms-scene .moon{
+  background:radial-gradient(circle at 38% 34%, var(--ms-moon) 0%, rgba(223,230,242,.42) 62%, rgba(223,230,242,0) 72%);
+  box-shadow:0 0 48px 17px rgba(143,168,200,.24); opacity:.92;
+}
+#ms-scene .moon-halo{
+  position:absolute;top:1%;right:6%;width:150px;height:150px;border-radius:50%;
+  border:1px solid rgba(242,230,204,.16);
+  animation:ms-moon 12s var(--ms-ease-soft) infinite;
+}
+html.night #ms-scene .moon-halo{border-color:rgba(143,168,200,.14)}
+@keyframes ms-moon{0%,100%{opacity:.76}50%{opacity:.96}}
+#ms-scene .range{position:absolute;left:-6%;width:112%;background-repeat:no-repeat;background-size:100% 100%}
+#ms-scene .r1{height:30%;top:4%;opacity:.20;filter:blur(2.4px)}
+#ms-scene .r2{height:30%;top:13%;opacity:.30;filter:blur(1.2px)}
+#ms-scene .r3{height:28%;top:24%;opacity:.42}
+#ms-scene .r4{height:24%;top:38%;opacity:.30;filter:blur(.8px)}
+#ms-scene .r5{height:20%;top:52%;opacity:.20;filter:blur(1.6px)}
+html.night #ms-scene .range{filter:brightness(.62) saturate(.7)}
+html.night #ms-scene .range.r3{filter:brightness(.72)}
+#ms-scene .foot{
+  position:absolute;left:0;right:0;bottom:0;height:42%;
+  background:radial-gradient(80% 60% at 50% 100%, var(--ms-glow) 0%, transparent 70%);
+  opacity:.42;
+}
+html.night #ms-scene .foot{opacity:.22}
+#ms-scene .mist{
+  position:absolute;left:-25%;width:150%;height:150px;
+  background:
+    radial-gradient(60% 100% at 30% 55%, var(--ms-mist) 0%, transparent 70%),
+    radial-gradient(48% 90% at 68% 45%, var(--ms-mist) 0%, transparent 72%);
+  opacity:.62; filter:blur(10px);
+}
+#ms-scene .m1{top:26%;animation:ms-drift 44s linear infinite}
+#ms-scene .m2{top:44%;opacity:.46;animation:ms-drift 62s linear infinite reverse}
+#ms-scene .m3{top:60%;opacity:.34;animation:ms-drift 80s linear infinite}
+html.night #ms-scene .mist{opacity:.40}
+@keyframes ms-drift{from{transform:translate3d(-8%,0,0)}to{transform:translate3d(8%,0,0)}}
+#ms-scene .grain{
+  position:absolute;inset:0;opacity:.34;mix-blend-mode:multiply;
+  background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='140' height='140'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' stitchTiles='stitch'/><feColorMatrix type='saturate' values='0'/></filter><rect width='140' height='140' filter='url(%23n)' opacity='0.30'/></svg>");
+}
+html.night #ms-scene .grain{opacity:.20;mix-blend-mode:screen}
+#ms-scene .bamboo{
+  position:absolute;left:-10px;top:2%;width:120px;opacity:.16;
+  transform-origin:0 0; animation:ms-sway 11s var(--ms-ease-soft) infinite;
+}
+html.night #ms-scene .bamboo{opacity:.14}
+@keyframes ms-sway{0%,100%{transform:rotate(-1.2deg)}50%{transform:rotate(1.2deg)}}
+#ms-scene .seal{
+  position:absolute;right:5.5%;bottom:7%;
+  width:54px;height:54px;border-radius:var(--ms-r-s);
+  border:2px solid var(--cinnabar);color:var(--cinnabar);
+  display:grid;place-items:center;text-align:center;
+  font-size:11px;line-height:1.05;letter-spacing:.06em;
+  opacity:.30;transform:rotate(-4deg);
+  box-shadow:var(--ms-sh-seal);
+}
+html.night #ms-scene .seal{border-color:var(--ms-vermilion-lit);color:var(--ms-vermilion-lit);opacity:.34}
+
+/* ── §4 面板卡片：三层描边玉白玻璃（移植到 .panel/#topbar） ── */
+.panel, #topbar{
+  background:linear-gradient(180deg, var(--ms-jade) 0%, var(--ms-jade-2) 100%) !important;
+  border:1px solid var(--ms-dai-2);
+  border-radius:var(--ms-r-l);
+  box-shadow:var(--ms-sh-2), var(--ms-sh-in);
+  backdrop-filter:blur(10px) saturate(1.08);
+  -webkit-backdrop-filter:blur(10px) saturate(1.08);
+  position:relative;
+}
+.panel::before, #topbar::before{
+  content:"";position:absolute;inset:0;border-radius:inherit;pointer-events:none;
+  border-top:1px solid rgba(255,255,255,.55);
+}
+html.night .panel::before, html.night #topbar::before{border-top-color:rgba(255,255,255,.10)}
+.panel::after, #topbar::after{
+  content:"";position:absolute;inset:4px;border-radius:calc(var(--ms-r-l) - 5px);
+  border:1px solid var(--ms-dai-3);pointer-events:none;
+}
+html.night .panel, html.night #topbar{
+  background:linear-gradient(180deg, var(--ms-jade) 0%, var(--ms-jade-2) 100%) !important;
+}
+
+/* ── §6 吐纳大钮：三层环+墨气旋+朱砂脉冲+朱砂实底呼吸 ── */
+#breath-wrap{position:relative;display:grid;place-items:center}
+#breath-wrap::before{ /* 外层三环（halo/halo2/halo3 合成） */
+  content:"";position:absolute;width:212px;height:212px;border-radius:50%;
+  border:1px solid var(--ms-dai-2);
+  box-shadow:inset 0 0 30px var(--ms-dai-3), 0 0 40px rgba(58,50,38,.06);
+  pointer-events:none;
+}
+#breath-wrap::after{ /* 虚线内环 */
+  content:"";position:absolute;width:194px;height:194px;border-radius:50%;
+  border:1px dashed var(--ms-ink-6); pointer-events:none;
+}
+#btn-breath{
+  position:relative;width:168px;height:168px;border-radius:50%;
+  font-family:inherit;color:#fff8ee;border:none;cursor:pointer;
+  background:radial-gradient(circle at 34% 28%, var(--ms-vermilion-lit) 0%, var(--cinnabar) 52%, var(--ms-vermilion-press) 100%) !important;
+  box-shadow:
+    0 0 0 1px rgba(255,255,255,.22) inset,
+    0 10px 26px rgba(142,42,31,.28),
+    0 0 46px rgba(192,57,43,.20) !important;
+  transition:transform var(--ms-t-fast) var(--ms-ease), box-shadow var(--ms-t-mid) var(--ms-ease);
+  animation:ms-breath 4.6s var(--ms-ease-soft) infinite;
+}
+#btn-breath .breath-label{
+  font-size:var(--ms-fs-hero);letter-spacing:.16em;margin-left:.16em;
+  text-shadow:0 2px 10px rgba(90,20,12,.42);
+}
+#btn-breath:active{
+  transform:scale(.965);
+  box-shadow:0 0 0 1px rgba(255,255,255,.18) inset, 0 6px 16px rgba(142,42,31,.34), 0 0 60px rgba(192,57,43,.32) !important;
+}
+@keyframes ms-breath{0%,100%{transform:scale(1)}50%{transform:scale(1.022)}}
+/* 墨气旋两片 + 朱砂脉冲：用 #breath-wrap 追加子元素（index.html 提供） */
+#breath-wrap .ms-qi, #breath-wrap .ms-qi2, #breath-wrap .ms-pulse{position:absolute;border-radius:50%;pointer-events:none}
+#breath-wrap .ms-qi{
+  inset:26px;
+  background:conic-gradient(from 0deg, transparent 0deg, var(--ms-ink-6) 90deg, transparent 180deg, var(--ms-ink-5) 270deg, transparent 360deg);
+  opacity:.9; animation:ms-spin 26s linear infinite;
+}
+#breath-wrap .ms-qi2{inset:40px;opacity:.55;animation:ms-spin 38s linear infinite reverse}
+@keyframes ms-spin{to{transform:rotate(360deg)}}
+#breath-wrap .ms-pulse{
+  inset:14px; border:1px solid var(--ms-vermilion-ghost);
+  animation:ms-pulse 4.6s var(--ms-ease-soft) infinite;
+}
+@keyframes ms-pulse{0%{transform:scale(.94);opacity:.9}70%{transform:scale(1.10);opacity:0}100%{opacity:0}}
+
+/* 突破金钮 */
+#btn-break{
+  background:linear-gradient(180deg, var(--ms-gold-lit) 0%, var(--gold) 46%, #c9a238 100%) !important;
+  border:1px solid var(--ms-gold-deep) !important;
+  color:#4a3712 !important;
+  box-shadow:var(--ms-sh-gold) !important;
+  text-shadow:0 .5px 0 rgba(255,255,255,.35);
+  letter-spacing:.18em;
+}
+
+/* ── §7 进度条：内凹轨道+双色填充+流光（太极小人保留现有） ── */
+#xp-bar{
+  height:16px;border-radius:var(--ms-r-full);
+  background:linear-gradient(180deg, var(--ms-ink-7), var(--ms-ink-6));
+  border:1px solid var(--ms-dai-2);
+  box-shadow:var(--ms-sh-in-deep), 0 1px 0 rgba(255,255,255,.5);
+}
+#xp-fill{box-shadow:0 0 14px rgba(232,195,74,.34), inset 0 1px 0 rgba(255,255,255,.5)}
+#xp-fill::after{
+  content:"";position:absolute;inset:0;border-radius:inherit;
+  background:linear-gradient(100deg, transparent 30%, rgba(255,255,255,.55) 50%, transparent 70%);
+  background-size:220% 100%;
+  animation:ms-flow 3.6s linear infinite;
+}
+@keyframes ms-flow{from{background-position:180% 0}to{background-position:-80% 0}}
+
+/* ── §9 按钮体系 ── */
+.btn-primary{
+  font-size:var(--ms-fs-body);letter-spacing:.12em;
+  padding:11px 22px;border-radius:var(--ms-r-m);
+  border:1px solid var(--ms-vermilion-press);color:#fff6f2;
+  background:linear-gradient(180deg, var(--ms-vermilion-lit) 0%, var(--cinnabar) 58%, var(--ms-vermilion-press) 100%) !important;
+  box-shadow:0 1px 0 rgba(255,255,255,.28) inset, 0 6px 16px rgba(142,42,31,.24);
+  transition:transform var(--ms-t-fast) var(--ms-ease), box-shadow var(--ms-t-mid) var(--ms-ease);
+}
+.btn-primary:active{transform:translateY(1px) scale(.985)}
+.icon-btn{
+  min-width:36px;min-height:36px;display:inline-grid;place-items:center;cursor:pointer;
+  border-radius:var(--ms-r-m);border:1px solid var(--ms-dai-2);color:var(--ms-ink-mid);
+  background:linear-gradient(180deg, var(--ms-jade-2), transparent) !important;
+  font-family:inherit;
+  transition:transform var(--ms-t-fast) var(--ms-ease), border-color var(--ms-t-mid) var(--ms-ease), color var(--ms-t-mid) var(--ms-ease);
+}
+.icon-btn:active{transform:scale(.94);border-color:var(--cinnabar);color:var(--cinnabar)}
+
+/* ── §10 弹窗：纸白渐变+双线描边+顶部瑞光+遮罩玻璃化 ── */
+.modal-mask{background:rgba(58,50,38,.34) !important;backdrop-filter:blur(3px);-webkit-backdrop-filter:blur(3px)}
+html.night .modal-mask{background:rgba(4,6,10,.62) !important}
+.modal-card{
+  border-radius:var(--ms-r-xl);
+  background:linear-gradient(180deg, var(--ms-paper-lit) 0%, var(--paper) 100%) !important;
+  border:1px solid var(--ms-dai-2);
+  box-shadow:var(--ms-sh-3), var(--ms-sh-in) !important;
+}
+.modal-card::after{
+  content:"";position:absolute;inset:6px;border-radius:calc(var(--ms-r-xl) - 7px);
+  border:1px solid var(--ms-dai-3);pointer-events:none;
+}
+html.night .modal-card{background:linear-gradient(180deg, #1c2432 0%, #141a24 100%) !important}
+
+/* ── §11 斗法：手牌纸白竖卡+意图横幅+战报内凹 ── */
+.hand-card{
+  border-radius:var(--ms-r-m);border:1px solid var(--ms-dai-2) !important;
+  background:linear-gradient(180deg, var(--ms-paper-lit) 0%, var(--paper) 100%) !important;
+  color:var(--ms-ink-deep);
+  box-shadow:var(--ms-sh-2), var(--ms-sh-in) !important;
+}
+html.night .hand-card{background:linear-gradient(180deg, #1e2634 0%, #151b25 100%) !important}
+.hand-card b{color:var(--ms-ink-deep)}
+.hand-card .hc-el{color:var(--ms-dai)}
+.hand-card .hc-eff{color:var(--ms-vermilion)}
+.hand-card:disabled{opacity:.48;filter:grayscale(.5)}
+#battle-intent{
+  border-radius:var(--ms-r-m);
+  border:1px solid rgba(192,57,43,.34);
+  background:linear-gradient(90deg, var(--ms-vermilion-ghost) 0%, transparent 100%) !important;
+  color:var(--ms-ink-deep);
+}
+#battle-log{
+  background:linear-gradient(180deg, var(--ms-ink-7), transparent) !important;
+  border:1px solid var(--ms-dai-3);
+}
+
+/* ── §12 舆图：朱印方块地点 ── */
+.map-canvas{
+  background:linear-gradient(180deg, var(--ms-paper-lit) 0%, var(--paper) 100%);
+  border:1px solid var(--ms-dai-2);
+  box-shadow:var(--ms-sh-2), var(--ms-sh-in);
+}
+html.night .map-canvas{background:linear-gradient(180deg, #1a2130 0%, #12171f 100%)}
+.map-spot .ms-icon{
+  width:26px;height:26px;border-radius:5px;
+  border:1.5px solid var(--cinnabar);color:var(--cinnabar);
+  background:rgba(255,253,247,.72);
+  box-shadow:var(--ms-sh-seal);
+  font-size:11px;
+}
+html.night .map-spot .ms-icon{background:rgba(20,26,36,.78);border-color:var(--ms-vermilion-lit);color:var(--ms-vermilion-lit)}
+.map-spot.locked .ms-icon{border-color:var(--ms-ink-5);color:var(--ms-ink-5);box-shadow:none;background:var(--ms-ink-7)}
+.map-spot span{background:rgba(243,234,216,.7);padding:1px 5px;border-radius:var(--ms-r-s)}
+html.night .map-spot span{background:rgba(14,17,23,.7);color:#d9cbb0}
+
+/* ── §16b 自适应与降级 ── */
+@media (max-width:360px){
+  :root{--ms-fs-hero:38px}
+  #breath-wrap::before{width:186px;height:186px}
+  #breath-wrap::after{width:170px;height:170px}
+  #btn-breath{width:148px;height:148px}
+}
+@media (prefers-reduced-motion:reduce){
+  #ms-scene *, #btn-breath, #xp-fill::after{animation:none !important}
+}
+
+/* ── 批一旧背景退役：场景层已由 #ms-scene 承载 ── */
+body::before, body::after{content:none !important}
+body{
+  background:
+    radial-gradient(120% 70% at 50% 0%, var(--ms-glow) 0%, transparent 58%),
+    linear-gradient(180deg, var(--ms-paper-warm) 0%, var(--paper) 46%, var(--ms-paper-deep) 100%);
+}
+html.night body{
+  background:
+    radial-gradient(120% 70% at 50% 0%, rgba(96,124,166,.22) 0%, transparent 58%),
+    linear-gradient(180deg, #131a26 0%, #0e1117 52%, #0a0d13 100%);
+}
+/* #page-root 页面也垫场景底色（保持一致） */
+#page-root.open{background:linear-gradient(180deg, var(--ms-paper-warm) 0%, var(--ms-paper) 46%, var(--ms-paper-deep) 100%)}
+html.night #page-root.open{background:linear-gradient(180deg, #131a26 0%, #0e1117 52%, #0a0d13 100%)}
+
+/* ── 手机窄屏：境界行防腰斩（心魔段不折行、整行紧凑） ── */
+#dao-heart{font-size:12.5px;letter-spacing:.02em;line-height:1.7}
+#dao-heart span{white-space:nowrap}

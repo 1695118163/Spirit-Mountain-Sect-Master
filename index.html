@@ -14,8 +14,33 @@
   })();
 </script>
 <link rel="stylesheet" href="css/main.css">
+<link rel="stylesheet" href="css/ms-upgrade.css">
 </head>
 <body>
+<div id="ms-scene" aria-hidden="true">
+  <div class="moon-halo"></div>
+  <div class="moon"></div>
+  <svg class="bamboo" viewBox="0 0 120 200" aria-hidden="true">
+    <g fill="#3a3226">
+      <rect x="6" y="0" width="3" height="200" rx="1.5"/>
+      <path d="M9 26 C34 14 60 16 82 6 C62 26 34 30 9 26 Z"/>
+      <path d="M9 52 C36 46 64 48 88 40 C64 62 36 62 9 52 Z"/>
+      <path d="M9 80 C30 76 52 80 70 74 C52 94 30 94 9 80 Z"/>
+      <path d="M9 112 C34 106 58 110 80 104 C58 126 34 126 9 112 Z"/>
+    </g>
+  </svg>
+  <div class="range r1" style="background-image:url(&quot;data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 400 120' preserveAspectRatio='none'><path d='M0 120 L0 84 C34 74 52 44 84 36 C112 29 128 56 158 50 C188 44 204 16 238 22 C268 27 286 60 318 66 C346 71 372 88 400 82 L400 120 Z' fill='%23c9bda3'/></svg>&quot;)"></div>
+  <div class="range r2" style="background-image:url(&quot;data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 400 120' preserveAspectRatio='none'><path d='M0 120 L0 96 C30 92 46 62 76 58 C104 54 118 82 146 78 C176 74 190 38 222 44 C252 49 270 84 300 88 C330 92 362 104 400 100 L400 120 Z' fill='%23a99c82'/></svg>&quot;)"></div>
+  <div class="range r3" style="background-image:url(&quot;data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 400 120' preserveAspectRatio='none'><path d='M0 120 L0 104 C26 100 40 76 68 72 C96 68 110 94 140 90 C172 86 184 56 216 62 C248 68 262 98 294 102 C326 106 360 112 400 108 L400 120 Z' fill='%237a6a55'/></svg>&quot;)"></div>
+  <div class="range r4" style="background-image:url(&quot;data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 400 120' preserveAspectRatio='none'><path d='M0 120 L0 112 C40 110 60 92 96 92 C132 92 150 110 190 108 C230 106 246 88 286 90 C322 92 356 108 400 104 L400 120 Z' fill='%235f7183'/></svg>&quot;)"></div>
+  <div class="range r5" style="background-image:url(&quot;data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 400 120' preserveAspectRatio='none'><path d='M0 120 L0 116 C50 114 74 106 116 106 C158 106 178 116 224 115 C270 114 300 104 344 106 C372 107 388 114 400 113 L400 120 Z' fill='%233a3226'/></svg>&quot;)"></div>
+  <div class="foot"></div>
+  <div class="mist m1"></div>
+  <div class="mist m2"></div>
+  <div class="mist m3"></div>
+  <div class="grain"></div>
+  <div class="seal">灵山<br>掌门</div>
+</div>
 <canvas id="bg"></canvas>
 <div id="tint-season"></div>
 <div id="tint-day"></div>
@@ -94,7 +119,7 @@
       <circle cx="24" cy="8" r="1.2" class="seal"/>
     </svg></div></div>
     <div id="breath-wrap">
-      <button id="btn-breath"><span class="breath-label">吐 纳</span></button>
+      <div class="ms-pulse"></div><div class="ms-qi"></div><div class="ms-qi2"></div><button id="btn-breath"><span class="breath-label">吐 纳</span></button>
     </div>
     <button id="btn-break" class="hidden">突 破</button>
     <div id="forewarn" class="hidden">远处隐有异动…</div>

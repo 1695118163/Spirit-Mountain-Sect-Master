@@ -755,8 +755,7 @@
     ov.appendChild(hint);
     document.body.appendChild(ov);
     const close = () => { ov.remove(); renderAll(); };
-    ov.addEventListener('click', close);
-    setTimeout(() => { if (ov.parentNode) close(); }, (g.LS.BAL.breakthrough && g.LS.BAL.breakthrough.anim_ms) || 1500);
+    ov.addEventListener('click', close); // 用户要求：过场画面点一下才关，不自动消失（动画照常播完，看完再点）
   }
 
   /** 概念即遇即讲：每个关键节点首次出现时解释一句（seen_hints 去重） */
@@ -908,8 +907,7 @@
     ov.appendChild(hint);
     document.body.appendChild(ov);
     const close = () => { ov.remove(); renderAll(); };
-    ov.addEventListener('click', close);
-    setTimeout(() => { if (ov.parentNode) close(); }, (g.LS.BAL.breakthrough && g.LS.BAL.breakthrough.anim_ms) || 1500);
+    ov.addEventListener('click', close); // 用户要求：过场画面点一下才关，不自动消失（动画照常播完，看完再点）
   }
 
   /* ── 突破策略面板：稳扎稳打 / 常规 / 兵行险着 + 服丹护法 ── */
