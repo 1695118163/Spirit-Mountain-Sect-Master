@@ -338,6 +338,32 @@
     g.LS.ui.showBattleArena(info, () => beginFight());
   }
 
+  /** 奇遇强敌（乙§6）：ambush 模式——败北按 cp_scale 走死亡链或掉灵石 */
+  function startAmbushFight(spec, ctx) {
+    if (active) return false;
+    const op = buildOp(null, false, { offset: 0, hpMult: 1, follow: 0.65, dmgAdd: 0 });
+    op.dao = spec.name || '邪修';
+    op.realm = spec.realm != null ? spec.realm : op.realm;
+    op.realmName = (g.LS.BAL.realms[op.realm] || {}).name || '?';
+    op.element = spec.element || null;
+    op.qiMax = op.realm + 1;
+    op.qi = op.qiMax;
+    const base = 80 + op.realm * 45 + 5 * 0.8;
+    op.hpMax = Math.round(base * (spec.hpMult || 1));
+    op.hp = op.hpMax;
+    op.hand = (spec.moves || []).map(m => Object.assign({}, m, {
+      dmgFinal: m.dmg ? m.dmg + op.realm * 2 + (spec.dmgAdd || 0) : 0,
+      cdLeft: 0
+    }));
+    active = { my: buildMe(), op, friend: { dao: op.dao }, weather: currentWeatherMod(), round: 0, mode: 'ambush', aiFollow: 0.7, ambushCtx: ctx };
+    g.LS.ui.showBattleArena({
+      my: { dao: active.my.dao, realm: active.my.realmName, weapon: active.my.weaponName, tech: active.my.techName, el: active.my.element || '—', hp: active.my.hpMax, cards: active.my.hand.length },
+      op: { dao: op.dao, realm: op.realmName, weapon: '凶相毕露', tech: '邪门歪道', el: op.element || '—', hp: op.hpMax },
+      elRel: '', weather: active.weather.text, mode: 'ambush'
+    }, () => beginFight());
+    return true;
+  }
+
   /** 挑战大师兄（三档人机陪练：easy 师弟 / equal 同门 / hard 师兄） */
   function challengeSenior(tier) {
     if (active) return;
@@ -509,6 +535,18 @@
       lines.push('胜负已分——' + a.op.dao + '技高一筹，' + a.my.dao + '拱手认负，来日再战。');
     }
     g.LS.ui.battleAppend(lines);
+    // 奇遇强敌结算（乙§6.4）：胜=夺其财+心魔；败=强敌走死亡链、弱敌掉灵石
+    if (a.mode === 'ambush' && a.ambushCtx) {
+      const ctx = a.ambushCtx;
+      if (win) {
+        active = null;
+        setTimeout(() => { if (ctx.onWin) ctx.onWin(); }, 500);
+        return;
+      }
+      active = null;
+      setTimeout(() => { if (ctx.onLose) ctx.onLose(); }, 500);
+      return;
+    }
     const tctx = a.trialCtx;
     let trialLines = null;
     if (win && tctx && g.LS.trial) {
@@ -534,7 +572,7 @@
   g.LS.battle = {
     makeCard, cardPower, elementMult, myDaoHao,
     prepareBattle, challengeSenior, playCard, endTurn, skip, abort,
-    resolveDeck, ownsCard, KINDS, KIND_NAME, KIND_LIMITS, SENIOR_TIERS, combatPower, talentLv, startTrialFight,
+    resolveDeck, ownsCard, KINDS, KIND_NAME, KIND_LIMITS, SENIOR_TIERS, combatPower, talentLv, startTrialFight, startAmbushFight,
     get active() { return active; }
   };
 })(typeof window !== 'undefined' ? window : globalThis);

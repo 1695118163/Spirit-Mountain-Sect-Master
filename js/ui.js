@@ -110,7 +110,7 @@
     refs.btnRebirth = $id('btn-rebirth');
     // 面板按钮统一事件委托（document 级）：元素被任何方式重建/替换都不会丢绑定
     document.addEventListener('click', (e) => {
-      const t = e.target.closest('#btn-market, #btn-friends, #btn-help, #btn-codex, #btn-pillhouse, #btn-settings, #btn-codexpage, #btn-trial');
+      const t = e.target.closest('#btn-market, #btn-friends, #btn-help, #btn-codex, #btn-pillhouse, #btn-settings, #btn-codexpage, #btn-trial, #btn-xinmo');
       if (!t) return;
       if (t.id === 'btn-market') showMarket();
       else if (t.id === 'btn-friends') showFriends();
@@ -120,6 +120,7 @@
       else if (t.id === 'btn-settings') showSettings();
       else if (t.id === 'btn-codexpage') showCodexPage();
       else if (t.id === 'btn-trial') showTrial();
+      else if (t.id === 'btn-xinmo') showXinmo();
     });
     refs.logList = $id('log-list');
     refs.permList = $id('perm-list');
@@ -1124,6 +1125,105 @@
     setTimeout(step, 500);
   }
 
+  /* ── 奇遇强敌弹窗：战力预判明示，死是「你非要打」的死 ── */
+  function showAmbushModal(info) {
+    removeModals();
+    const { card } = makeModal(null);
+    const myCP = g.LS.battle.combatPower();
+    const ratio = myCP / Math.max(1, info.enemyCP);
+    const F = g.LS.util.fmt;
+    const judge = ratio >= 1.2 ? { txt: '此獠色厉内荏——战力占优（我 ' + F(myCP) + ' / 敌 ' + F(info.enemyCP) + '）', color: 'var(--gold,#e8c34a)', canFleeFree: true }
+      : ratio >= 0.6 ? { txt: '五五之数，胜负难料（我 ' + F(myCP) + ' / 敌 ' + F(info.enemyCP) + '）', color: 'var(--ink,#e8dcc8)' }
+      : { txt: '十死无生！战力被碾压（我 ' + F(myCP) + ' / 敌 ' + F(info.enemyCP) + '）', color: 'var(--cinnabar,#c0392b)' };
+    card.innerHTML =
+      '<div class="modal-title" style="color:var(--cinnabar)">杀 机 骤 至</div>' +
+      '<div class="modal-desc">' + escapeHtml(info.name) + '拦住去路——招式：' + escapeHtml(info.moves) +
+        '<br><b style="color:' + judge.color + '">' + escapeHtml(judge.txt) + '</b>' +
+        (info.xinmo >= 30 ? '<br><span style="font-size:11px;color:var(--cinnabar)">你业力缠身，仇家寻上门来。</span>' : '') + '</div>' +
+      '<div style="display:flex;gap:8px;justify-content:center;margin-top:10px;flex-wrap:wrap">' +
+        '<button class="btn-primary" id="am-fight" style="padding:8px 22px">正 面 一 战</button>' +
+        '<button class="icon-btn" id="am-pay">破财免灾（失 15% 灵石）</button>' +
+        '<button class="icon-btn" id="am-flee">转身逃遁（失 20% 灵石）</button></div>';
+    const s = g.LS.S;
+    card.querySelector('#am-pay').addEventListener('click', () => {
+      s.resources.lingshi = Math.floor(s.resources.lingshi * 0.85);
+      g.LS.save.save();
+      toast('留下买路财，对方掂量一番放行了。');
+      removeModals();
+    });
+    card.querySelector('#am-flee').addEventListener('click', () => {
+      s.resources.lingshi = Math.floor(s.resources.lingshi * 0.8);
+      g.LS.save.save();
+      toast('你遁光一展，狼狈走脱——背后传来嗤笑。');
+      removeModals();
+    });
+    card.querySelector('#am-fight').addEventListener('click', () => {
+      removeModals();
+      g.LS.battle.startAmbushFight(info.spec, {
+        cpScale: info.cpScale,
+        name: info.name,
+        onWin: () => {
+          const gain = Math.max(50, Math.floor(g.LS.economy.computePerSecond('lingshi') * 180));
+          s.resources.lingshi += gain;
+          s.xinmo = Math.min(100, (s.xinmo || 0) + 5);
+          g.LS.save.save();
+          g.LS.ui.toast('斩杀' + info.name + '——夺其囊中灵石 +' + g.LS.util.fmt(gain) + '，心魔 +5。', 4200);
+          g.LS.ui.renderAll();
+        },
+        onLose: () => {
+          if (info.cpScale >= 1.3 && g.LS.realm.resolveDeath) {
+            const how = g.LS.realm.resolveDeath('battle');
+            if (how === 'death') return;
+            g.LS.ui.toast('重伤垂死之际保住一命——修为十不存一。', 4200);
+            s.resources.xiufu *= 0.1;
+            g.LS.save.save();
+          } else {
+            const lost = Math.floor(s.resources.lingshi * 0.2);
+            s.resources.lingshi -= lost;
+            g.LS.save.save();
+            g.LS.ui.toast('不敌' + info.name + '——被夺走灵石 ' + g.LS.util.fmt(lost) + '，侥幸留得性命。', 4200);
+          }
+          g.LS.ui.renderAll();
+        }
+      });
+    });
+  }
+
+  /* ── 邪修面板：劫掠/血祭/黑市（心魔≥30 解锁） ── */
+  function showXinmo() {
+    removeModals();
+    const { card } = makeModal(removeModals);
+    const render = () => {
+      const s = g.LS.S;
+      g.LS.economy.xinmoDecay();
+      const xm = s.xinmo || 0;
+      const th = ((g.LS.BAL.xinmo || {}).thresholds || []);
+      const tier = th.filter(t => xm >= t.min).pop();
+      const acts = (g.LS.BAL.xinmo || {}).acts || {};
+      const rows = Object.keys(acts).map(k => {
+        const a = acts[k];
+        const cd = (s.xinmo_cd || {})[k];
+        const left = cd && cd > Date.now() ? Math.ceil((cd - Date.now()) / 60000) : 0;
+        return '<div class="rebirth-item"><div><b>' + escapeHtml(a.name) + '</b>' +
+          '<span class="ev-badge" style="color:var(--cinnabar)">心魔 +' + a.xinmo + '</span>' +
+          '<div style="font-size:11px;color:var(--ink-soft)">' + escapeHtml(a.desc) + '</div></div>' +
+          '<button class="icon-btn" data-xact="' + k + '" ' + (left ? 'disabled' : '') + '>' + (left ? left + ' 分' : '行 事') + '</button></div>';
+      }).join('');
+      card.innerHTML =
+        '<div class="modal-title">邪 修 之 道<button class="icon-btn" id="xm-close" style="float:right;font-size:12px;padding:3px 12px">离 开</button></div>' +
+        '<div class="modal-desc">心魔 <b style="color:var(--cinnabar)">' + xm + '</b>/100' + (tier ? '（' + escapeHtml(tier.name) + '：' + escapeHtml(tier.desc) + '）' : '（心境清明）') +
+        '<br><span style="font-size:11px;color:var(--ink-soft)">心魔随岁月缓消（1 点/游戏年），清心丹珍品 −5、仙品 −15，转生清零。干坏事来钱快——雷劫与突破的账，迟早要还。</span></div>' +
+        rows;
+      card.querySelector('#xm-close').addEventListener('click', removeModals);
+      card.querySelectorAll('[data-xact]').forEach(btn => btn.addEventListener('click', () => {
+        const r = g.LS.economy.xinmoAct(btn.dataset.xact);
+        toast(r.msg, r.ok ? 4200 : 2600);
+        if (r.ok) { sfx('guqin'); render(); renderResources(); renderAll(); }
+      }));
+    };
+    render();
+  }
+
   /* ── 试炼塔面板：10 章×5 关 + 帝路（trial.js 结算） ── */
   function showTrial() {
     removeModals();
@@ -1976,7 +2076,7 @@
     initRefs, renderAll, renderResources, renderBuildings, renderCenter,
     renderChronicle, renderPermList, pushLog, markNewBuildings, isModalOpen, hintOnce,
     showEventModal, closeEventModal, showOfflinePopup, showBreakthroughOverlay, showFailOverlay,
-    showSettings, showRebirthPanel, showTutorial, showPillHouse, showHelpPanel, showMarket, showFriends, showDeckEditor, showSeniorPick, showCodexPage, showUpdateNotes, playEmperorTribulation, showTrial,
+    showSettings, showRebirthPanel, showTutorial, showPillHouse, showHelpPanel, showMarket, showFriends, showDeckEditor, showSeniorPick, showCodexPage, showUpdateNotes, playEmperorTribulation, showTrial, showXinmo, showAmbushModal,
     showBattleArena, updateBattleHP, updateBattleShields, updateBattleQi, renderBattleHands, showBattleIntent,
     showBattleScreen, battleLog, battleAppend, showBattleResult,
     toast, tweenNumber, setBgm,

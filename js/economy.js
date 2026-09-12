@@ -368,6 +368,53 @@
     return true;
   }
 
+  /* ── 邪修行为（甲§7）：心魔≥30 解锁，CD 现实时间，收益随产量水涨船高 ── */
+  function xinmoAct(actId) {
+    const s = S(), bal = BAL();
+    const cfg = bal.xinmo && bal.xinmo.acts && bal.xinmo.acts[actId];
+    if (!cfg) return { ok: false, msg: '查无此道' };
+    const xm = s.xinmo || 0;
+    if (xm < (bal.xinmo.unlock || 30)) return { ok: false, msg: '心境清明，无需此道（心魔 ≥' + (bal.xinmo.unlock || 30) + ' 解锁）' };
+    s.xinmo_cd = s.xinmo_cd || {};
+    const now = Date.now();
+    if (s.xinmo_cd[actId] && s.xinmo_cd[actId] > now) {
+      const left = Math.ceil((s.xinmo_cd[actId] - now) / 60000);
+      return { ok: false, msg: cfg.name + ' 气机未复（还需 ' + left + ' 分钟）' };
+    }
+    s.xinmo_cd[actId] = now + cfg.cd_s * 1000;
+    s.xinmo = Math.min(100, xm + cfg.xinmo);
+    const lines = [cfg.name + '——心魔 +' + cfg.xinmo + '（现 ' + s.xinmo + '）'];
+    if (actId === 'lve') {
+      const ls = Math.max(50, Math.floor(computePerSecond('lingshi') * (120 + Math.random() * 120) * (1 + xm / 100)));
+      s.resources.lingshi += ls;
+      const next = bal.realms[s.realm.index + 1];
+      const xp = next && next.need_xp ? Math.floor(next.need_xp * 0.03) : 0;
+      s.resources.xiufu += xp;
+      lines.push('劫得灵石 +' + g.LS.util.fmt(ls) + (xp ? '，夺修为 +' + g.LS.util.fmt(xp) : ''));
+    } else if (actId === 'xueji') {
+      g.LS.state.addBuff({ id: 'xueji_buff', mult: 2, ts_end: now + 120000 });
+      lines.push('血祭功成——全局产量 ×2（120 秒）。鼎中呜咽，你权当没听见。');
+    } else if (actId === 'heishi') {
+      const q = Math.random() < 0.5 ? '劣' : '凡';
+      const pool = ['xiuling', 'zhuyuan', 'qingxin'];
+      const id = pool[Math.floor(Math.random() * pool.length)];
+      s.pill_stock = s.pill_stock || {};
+      const key = id + '_' + q;
+      s.pill_stock[key] = (s.pill_stock[key] || 0) + 2;
+      lines.push('黑市两颗' + q + '品丹到手（' + key + '），来路不明，服前三思。');
+    }
+    g.LS.save.save();
+    return { ok: true, msg: lines.join('；') };
+  }
+  function xinmoDecay(now) {
+    // 惰性自然消退：−1/游戏年（60 现实秒），邪修面板打开时结算
+    const s = S();
+    if (typeof s.xinmo !== 'number' || s.xinmo <= 0) return;
+    if (!s.xinmo_ts) { s.xinmo_ts = now || Date.now(); return; }
+    const years = Math.floor(((now || Date.now()) - s.xinmo_ts) / 60000);
+    if (years > 0) { s.xinmo = Math.max(0, s.xinmo - years); s.xinmo_ts = now || Date.now(); }
+  }
+
   /* ── 防护 ── */
 
   function clampAll() {
@@ -654,7 +701,7 @@
     clickMult, clickQiGain, clickXpGain, breath,
     buildingCost, bulkCost, canAfford, pay, grant, costText, buyBuilding,
     pillInterval, pillTick, servePill, autoPillTick,
-    upgradeState, buyUpgrade, hasPrestige, talentLv, gearXpMult, bLevel, clampAll,
+    upgradeState, buyUpgrade, hasPrestige, talentLv, gearXpMult, xinmoAct, xinmoDecay, bLevel, clampAll,
     abilityDef, abilityCooldownLeft, useAbility,
     pillCat, pillQualityCfg, pillTotal, pillCount, grantPill, rollPillQuality, rollPillOutput, consumePill, toxicDecay, difficultyCfg
   };

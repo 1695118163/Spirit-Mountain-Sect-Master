@@ -45,7 +45,7 @@
   function rollRarity() {
     const s = S();
     const cfg = BAL().events.rarity;
-    if (s.prestige.first_event_after_rebirth) return '仙'; // 前世机缘
+    if (s.prestige.first_event_after_rebirth) return ['灵', '珍', '仙'][Math.min(2, talentLv('qianshijiyuan') - 1)] || '仙'; // 前世机缘三档：必灵→必珍→必仙
     if (s.event_state.since_xian >= cfg.pity_no_xian) return '仙';
     if (s.event_state.since_rare >= cfg.pity_no_rare) return '珍';
     const high = s.realm.index >= cfg.high_realm_index;
@@ -562,7 +562,13 @@
           }
           s.stats.total_settled += 1;
         }
-        if (opt.daoxin) g.LS.state.changeDaoHeart(opt.daoxin);
+        if (opt.daoxin) {
+          g.LS.state.changeDaoHeart(opt.daoxin);
+          // 邪行积业（甲§7）：损人利己的选项积心魔 6~10，转生清零
+          if (opt.daoxin <= -2 && typeof s.xinmo === 'number') {
+            s.xinmo = Math.min(100, s.xinmo + 6 + Math.floor(Math.random() * 5));
+          }
+        }
         // 故人上门/托梦的即时抉择效果（boost/disturb 存给下次突破，其余立即结算）
         if (opt.effect && opt.effect !== 'none') {
           const eco = g.LS.economy;
@@ -621,7 +627,41 @@
 
   /* ── 调度入口（tick 每 250ms 调） ── */
 
+  /** 奇遇强敌（乙§6）：金丹起偶遇劫匪/邪修，战力不足可能殒命——每世至多 2 次 */
+  function maybeAmbush(now) {
+    const s = S();
+    if (s.realm.index < 2 || s.event_state.pending) return false;
+    if (typeof document !== 'undefined' && document.visibilityState !== 'visible') return false;
+    s.ambush = s.ambush || { count: 0, next_ts: 0 };
+    if (s.ambush.count >= 2 || now < (s.ambush.next_ts || 0)) return false;
+    const xm = s.xinmo || 0;
+    let p = 0.12;
+    if (xm >= 30) p *= 1.5;
+    if (xm >= 60) p *= 1.3;
+    if (Math.random() >= p) { s.ambush.next_ts = now + 240000; return false; }
+    const scale = [0.7, 1.0, 1.25, 1.45];
+    const cpScale = scale[Math.floor(Math.random() * scale.length)];
+    const names = xm >= 60 ? ['心魔化形的另一个你', '血罗刹', '黄泉引路人'] : (xm >= 30 ? ['寻仇的邪修', '黑市牙行的打手', '魔道修士'] : ['山道劫匪', '黑风寨劫匪', '断岳蛮修']);
+    const name = names[Math.floor(Math.random() * names.length)];
+    const spec = g.LS.trial.buildMob(Math.max(2, s.realm.index));
+    spec.name = name;
+    spec.hpMult = 1;
+    spec.dmgAdd = xm >= 60 ? 2 : 0;
+    const enemyCP = Math.round(g.LS.battle.combatPower() * cpScale);
+    s.ambush.count += 1;
+    s.ambush.next_ts = now + 600000;
+    g.LS.ui.showAmbushModal({
+      name, cpScale, enemyCP,
+      moves: spec.moves.map(m => m.name).slice(0, 3).join('、'),
+      spec,
+      xinmo: xm
+    });
+    scheduleNext();
+    return true;
+  }
+
   function maybeTriggerEvent(now) {
+    if (maybeAmbush(now)) return;
     const s = S();
     if (s.event_state.pending) return;      // 管线占用期间不触发；弹窗开着的新事件走队列
     if (typeof document !== 'undefined' && document.visibilityState !== 'visible') return;
@@ -636,7 +676,7 @@
   }
 
   g.LS.events = {
-    drawEvent, chooseOption, maybeTriggerEvent, scheduleNext, pumpQueue, maybeContinueChain,
+    drawEvent, chooseOption, maybeTriggerEvent, scheduleNext, pumpQueue, maybeContinueChain, maybeAmbush,
     maybeVisitor, rollDream, isPastLife, chronicle, carveStele,
     rollSlots, rollRarity, pickByRarity, materializeSlot,
     buildFallbackEvent, buildBuiltinFinal, karmaCheck, resolveTag,

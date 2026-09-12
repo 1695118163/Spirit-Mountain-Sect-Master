@@ -57,15 +57,16 @@
     rec.n += 1;
   }
 
-  /** 野怪生成：前缀名池 × 随机灵根 × 「境界≤章」卡池抽 4~5 招（乙§5.2） */
+  /** 野怪生成：前缀名池 × 随机灵根 × 「境界≤章」卡池抽 4~5 招（乙§5.2）；ch 可为章节对象或境界数字 */
   function buildMob(ch) {
     const LVd = LV();
+    const realmNum = typeof ch === 'object' ? ch.realm : ch;
     const prefixes = LVd.mob_prefixes || ['山贼'];
     const name = prefixes[Math.floor(Math.random() * prefixes.length)];
     const els = ['金', '木', '土', '水', '火'];
     const el = els[Math.floor(Math.random() * els.length)];
     const pool = ((g.LS.BAL.cultivation || {}).battle_cards || {}).my_cards || [];
-    const candidates = pool.filter(c => (c.unlock_realm || 0) <= ch.realm && (c.price || c.default || c.unlock_realm)); // 战斗牌（含基础默认牌）
+    const candidates = pool.filter(c => (c.unlock_realm || 0) <= realmNum && (c.price || c.default || c.unlock_realm)); // 战斗牌（含基础默认牌）
     const moves = [];
     const n = 4 + Math.floor(Math.random() * 2);
     const shuffled = candidates.slice().sort(() => Math.random() - 0.5);
@@ -73,7 +74,7 @@
       if (moves.length >= n) break;
       moves.push({ name: c.name, cost: c.cost, dmg: c.dmg || 0, shield: c.shield || 0, heal: c.heal || 0, el: c.el === 'root' ? el : (c.el || null), cd: c.cd || 0 });
     }
-    return { name, realm: ch.realm, element: el, moves, hpMult: 1 };
+    return { name, realm: realmNum, element: el, moves, hpMult: 1 };
   }
 
   /** 开战：组装 op 交给 battle（mode:'trial'，胜负回调 trialSettle） */
@@ -170,6 +171,6 @@
 
   g.LS.trial = {
     chapterUnlocked, levelUnlocked, isCleared, imperialUnlocked, sweepLeft,
-    fight, fightImperial, sweep, settle, anchorLingshi
+    fight, fightImperial, sweep, settle, anchorLingshi, buildMob
   };
 })(typeof window !== 'undefined' ? window : globalThis);
