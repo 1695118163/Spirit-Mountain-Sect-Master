@@ -447,7 +447,7 @@
         "cost": 3,
         "dmg": 24,
         "unlock_realm": 4,
-        "desc": "境界≥化神自动参悟：飞剑出鞘，一击破胆。"
+        "desc": "境界≥化神自动参悟：飞剑出鞘，一击破胆（化神后行动点渐高，定位降为中型牌）。"
       },
       {
         "id": "wuxingshu",
@@ -529,6 +529,277 @@
         "heal": 20,
         "price": 1000,
         "desc": "春风化雨，伤势速愈。"
+      },
+      {
+        "id": "xunleiji",
+        "kind": "attack",
+        "name": "迅雷击",
+        "cost": 1,
+        "dmg": 9,
+        "el": null,
+        "cd": 0,
+        "unlock_realm": 0,
+        "price": 300,
+        "desc": "练气解锁：一记快攻，低行动点期的第二动。"
+      },
+      {
+        "id": "zhuifengjian",
+        "kind": "attack",
+        "name": "追风剑",
+        "cost": 3,
+        "dmg": 26,
+        "el": null,
+        "cd": 1,
+        "unlock_realm": 2,
+        "price": 4000,
+        "desc": "金丹解锁：剑气追风，三费中坚主力。"
+      },
+      {
+        "id": "jingangquan",
+        "kind": "attack",
+        "name": "金刚拳",
+        "cost": 4,
+        "dmg": 34,
+        "el": null,
+        "cd": 1,
+        "unlock_realm": 3,
+        "price": 30000,
+        "desc": "元婴解锁：拳罡外放，四费重手。"
+      },
+      {
+        "id": "fentianjin",
+        "kind": "attack",
+        "name": "焚天劲",
+        "cost": 5,
+        "dmg": 44,
+        "el": "火",
+        "cd": 1,
+        "unlock_realm": 4,
+        "price": 250000,
+        "desc": "化神解锁：真火焚脉，火行五费重击。"
+      },
+      {
+        "id": "xingchenzhi",
+        "kind": "attack",
+        "name": "星辰指",
+        "cost": 6,
+        "dmg": 54,
+        "el": "金",
+        "cd": 2,
+        "unlock_realm": 5,
+        "price": 1500000,
+        "desc": "炼虚解锁：指落星坠，金行六费重击。"
+      },
+      {
+        "id": "hunyuanyiqi",
+        "kind": "attack",
+        "name": "混元一气",
+        "cost": 7,
+        "dmg": 66,
+        "el": "土",
+        "cd": 2,
+        "unlock_realm": 6,
+        "price": 12000000,
+        "desc": "合体解锁：混元一炁贯体，土行七费重击。"
+      },
+      {
+        "id": "dayan_shenlei",
+        "kind": "attack",
+        "name": "大衍神雷",
+        "cost": 8,
+        "dmg": 80,
+        "el": "金",
+        "cd": 2,
+        "unlock_realm": 7,
+        "price": 250000000,
+        "desc": "大乘解锁：大衍之数五十，天雷遁一，金行八费杀招。"
+      },
+      {
+        "id": "zhanxian_feidao",
+        "kind": "attack",
+        "name": "斩仙飞刀",
+        "cost": 9,
+        "dmg": 100,
+        "el": "金",
+        "cd": 4,
+        "unlock_realm": 8,
+        "price": 12000000000,
+        "pierce": true,
+        "desc": "渡劫解锁：九费飞刀斩仙，无视罡气的真伤之刃。"
+      },
+      {
+        "id": "gengjinrui",
+        "kind": "element",
+        "name": "庚金锐",
+        "cost": 2,
+        "dmg": 15,
+        "el": "金",
+        "cd": 0,
+        "unlock_realm": 1,
+        "price": 1200,
+        "desc": "筑基解锁：庚金之气锐利，金行二费小招。"
+      },
+      {
+        "id": "houtu_qing",
+        "kind": "element",
+        "name": "厚土诀",
+        "cost": 2,
+        "dmg": 13,
+        "shield": 8,
+        "el": "土",
+        "cd": 0,
+        "unlock_realm": 1,
+        "price": 1500,
+        "desc": "筑基解锁：厚土伤守兼备，土行二费小招。"
+      },
+      {
+        "id": "qingtengfu",
+        "kind": "element",
+        "name": "青藤缚",
+        "cost": 4,
+        "dmg": 22,
+        "el": "木",
+        "cd": 2,
+        "unlock_realm": 3,
+        "price": 30000,
+        "ap_drain": 1,
+        "desc": "元婴解锁：木行藤蔓伤敌，缠其下回合行动点 −1。"
+      },
+      {
+        "id": "tianleipo",
+        "kind": "element",
+        "name": "天雷破",
+        "cost": 5,
+        "dmg": 38,
+        "el": "金",
+        "cd": 2,
+        "unlock_realm": 4,
+        "price": 250000,
+        "desc": "化神解锁：天雷落顶，金行五费重击。"
+      },
+      {
+        "id": "liaoyuanhuo",
+        "kind": "element",
+        "name": "燎原火",
+        "cost": 5,
+        "dmg": 36,
+        "el": "火",
+        "cd": 2,
+        "unlock_realm": 4,
+        "price": 250000,
+        "desc": "化神解锁：星火燎原，火行五费重击。"
+      },
+      {
+        "id": "canghaitun",
+        "kind": "element",
+        "name": "沧海吞",
+        "cost": 5,
+        "dmg": 36,
+        "el": "水",
+        "cd": 2,
+        "unlock_realm": 4,
+        "price": 250000,
+        "lifesteal_pct": 30,
+        "desc": "化神解锁：沧海吞波，水行五费重击，伤害三成转为回气。"
+      },
+      {
+        "id": "wulei_zhengfa",
+        "kind": "element",
+        "name": "五雷正法",
+        "cost": 9,
+        "dmg": 90,
+        "el": "root",
+        "cd": 4,
+        "unlock_realm": 9,
+        "price": 40000000000,
+        "desc": "飞升解锁：九费五雷随自身灵根而行，克敌则倍增。"
+      },
+      {
+        "id": "guixigong",
+        "kind": "defense",
+        "name": "龟息功",
+        "cost": 1,
+        "dmg": 0,
+        "shield": 6,
+        "cd": 0,
+        "unlock_realm": 0,
+        "price": 500,
+        "ap_next": 1,
+        "desc": "练气解锁：龟息凝盾，并蓄气使下回合行动点 +1。"
+      },
+      {
+        "id": "tiebushan",
+        "kind": "defense",
+        "name": "铁布衫",
+        "cost": 2,
+        "dmg": 0,
+        "shield": 12,
+        "cd": 0,
+        "unlock_realm": 1,
+        "price": 1800,
+        "thorns_pct": 50,
+        "desc": "筑基解锁：布衫含劲，被罡气挡下的伤害五成弹回。"
+      },
+      {
+        "id": "xuanwu_zhenyue",
+        "kind": "defense",
+        "name": "玄武镇岳",
+        "cost": 3,
+        "dmg": 0,
+        "shield": 16,
+        "cd": 1,
+        "unlock_realm": 2,
+        "price": 5000,
+        "block_heal": 8,
+        "desc": "金丹解锁：玄武镇岳之盾，回合结束盾未破则回气 8。"
+      },
+      {
+        "id": "jingang_buhuai",
+        "kind": "defense",
+        "name": "金刚不坏",
+        "cost": 6,
+        "dmg": 0,
+        "shield": 30,
+        "cd": 2,
+        "unlock_realm": 5,
+        "price": 1500000,
+        "desc": "炼虚解锁：金身不坏，六费三十点大盾。"
+      },
+      {
+        "id": "zhoutian_xingdou",
+        "kind": "defense",
+        "name": "周天星斗大阵",
+        "cost": 9,
+        "dmg": 0,
+        "shield": 45,
+        "cd": 4,
+        "unlock_realm": 9,
+        "price": 40000000000,
+        "desc": "飞升解锁：周天星斗布阵护道，九费四十五点至极之盾。"
+      },
+      {
+        "id": "yusui_danfang",
+        "kind": "heal",
+        "name": "玉髓丹方",
+        "cost": 4,
+        "dmg": 0,
+        "heal": 32,
+        "cd": 1,
+        "unlock_realm": 3,
+        "price": 30000,
+        "desc": "元婴解锁：玉髓入药炼方，四费回气三十二。"
+      },
+      {
+        "id": "taiqing_zaohua",
+        "kind": "heal",
+        "name": "太清造化",
+        "cost": 9,
+        "dmg": 0,
+        "heal": 70,
+        "cd": 4,
+        "unlock_realm": 8,
+        "price": 200000000,
+        "desc": "渡劫解锁：太清造化之术，九费回气七十。"
       }
     ],
     "ai_cards": {
@@ -594,6 +865,195 @@
           "cost": 0,
           "dmg": 0,
           "heal": 9
+        }
+      ],
+      "trial_bosses": [
+        {
+          "id": "trial_boss_ch1",
+          "name": "噬灵兽王",
+          "realm": 0,
+          "element": "木",
+          "note": "第1章Boss·练气",
+          "moves": [
+            { "name": "撕裂爪", "cost": 1, "dmg": 8, "el": "木" },
+            { "name": "噬灵啖", "cost": 2, "dmg": 12, "el": "木" },
+            { "name": "坚毛倒竖", "cost": 1, "dmg": 0, "shield": 6 },
+            { "name": "灵息狂啸", "cost": 3, "dmg": 18, "el": "木", "cd": 2 },
+            { "name": "舐创", "cost": 0, "dmg": 0, "heal": 6 }
+          ]
+        },
+        {
+          "id": "trial_boss_ch2",
+          "name": "黑风寨主",
+          "realm": 1,
+          "element": "火",
+          "note": "第2章Boss·筑基（乙§5.3示例原案）",
+          "moves": [
+            { "name": "烈风刀", "cost": 1, "dmg": 12, "el": "火" },
+            { "name": "撩火", "cost": 2, "dmg": 16, "el": "火" },
+            { "name": "赤霞盾", "cost": 1, "dmg": 0, "shield": 10 },
+            { "name": "火龙咆哮", "cost": 3, "dmg": 22, "el": "火", "cd": 2 },
+            { "name": "狂性", "cost": 0, "dmg": 0, "heal": 10 }
+          ]
+        },
+        {
+          "id": "trial_boss_ch3",
+          "name": "白骨将军",
+          "realm": 2,
+          "element": "金",
+          "note": "第3章Boss·金丹",
+          "moves": [
+            { "name": "白骨刺", "cost": 1, "dmg": 14, "el": "金" },
+            { "name": "尸气弹", "cost": 2, "dmg": 18, "el": "金" },
+            { "name": "骨盾横陈", "cost": 1, "dmg": 0, "shield": 12 },
+            { "name": "白骨葬天槌", "cost": 3, "dmg": 26, "el": "金", "cd": 2 },
+            { "name": "食髓", "cost": 0, "dmg": 0, "heal": 12 }
+          ]
+        },
+        {
+          "id": "trial_boss_ch4",
+          "name": "蚀月蛛母",
+          "realm": 3,
+          "element": "水",
+          "note": "第4章Boss·元婴",
+          "moves": [
+            { "name": "蛛丝鞭", "cost": 1, "dmg": 17, "el": "水" },
+            { "name": "蚀月毒涎", "cost": 2, "dmg": 23, "el": "水" },
+            { "name": "月茧衣", "cost": 1, "dmg": 0, "shield": 15 },
+            { "name": "万丝噬心阵", "cost": 3, "dmg": 33, "el": "水", "cd": 3 },
+            { "name": "吸精续脉", "cost": 0, "dmg": 0, "heal": 15 }
+          ]
+        },
+        {
+          "id": "trial_boss_ch5",
+          "name": "断岳蛮王",
+          "realm": 4,
+          "element": "土",
+          "note": "第5章Boss·化神",
+          "moves": [
+            { "name": "裂地锤", "cost": 1, "dmg": 21, "el": "土" },
+            { "name": "崩山肘", "cost": 2, "dmg": 29, "el": "土" },
+            { "name": "蛮皮罡", "cost": 1, "dmg": 0, "shield": 19 },
+            { "name": "断岳神镇压", "cost": 3, "dmg": 42, "el": "土", "cd": 3 },
+            { "name": "蛮血沸腾", "cost": 0, "dmg": 0, "heal": 18 }
+          ]
+        },
+        {
+          "id": "trial_boss_ch6",
+          "name": "血罗刹王",
+          "realm": 5,
+          "element": "火",
+          "note": "第6章Boss·炼虚",
+          "moves": [
+            { "name": "血爪撕天", "cost": 1, "dmg": 26, "el": "火" },
+            { "name": "罗刹焰舞", "cost": 2, "dmg": 36, "el": "火" },
+            { "name": "血煞红绡", "cost": 1, "dmg": 0, "shield": 23 },
+            { "name": "血海滔天戮", "cost": 3, "dmg": 52, "el": "火", "cd": 3 },
+            { "name": "饮血回元", "cost": 0, "dmg": 0, "heal": 22 }
+          ]
+        },
+        {
+          "id": "trial_boss_ch7",
+          "name": "铁背蟹皇",
+          "realm": 6,
+          "element": "金",
+          "note": "第7章Boss·合体",
+          "moves": [
+            { "name": "螯钳剪", "cost": 1, "dmg": 32, "el": "金" },
+            { "name": "铁甲冲撞", "cost": 2, "dmg": 44, "el": "金" },
+            { "name": "玄铁蟹壳", "cost": 1, "dmg": 0, "shield": 28 },
+            { "name": "横行天下斩", "cost": 3, "dmg": 63, "el": "金", "cd": 3 },
+            { "name": "吐纳月华", "cost": 0, "dmg": 0, "heal": 26 }
+          ]
+        },
+        {
+          "id": "trial_boss_ch8",
+          "name": "守关者·寒潭蛟君",
+          "realm": 7,
+          "element": "水",
+          "note": "第8章Boss·大乘（守关者序列）",
+          "moves": [
+            { "name": "蛟尾横扫", "cost": 1, "dmg": 40, "el": "水" },
+            { "name": "寒潭冰刺", "cost": 2, "dmg": 54, "el": "水" },
+            { "name": "玄冰蛟鳞", "cost": 1, "dmg": 0, "shield": 34 },
+            { "name": "寒潭蛟龙啸", "cost": 3, "dmg": 78, "el": "水", "cd": 4 },
+            { "name": "潜渊养息", "cost": 0, "dmg": 0, "heal": 30 }
+          ]
+        },
+        {
+          "id": "trial_boss_ch9",
+          "name": "守关者·夜游天官",
+          "realm": 8,
+          "element": "火",
+          "note": "第9章Boss·渡劫（守关者序列）",
+          "moves": [
+            { "name": "夜行神火", "cost": 1, "dmg": 50, "el": "火" },
+            { "name": "摄魂灯焰", "cost": 2, "dmg": 66, "el": "火" },
+            { "name": "夜幕垂帘", "cost": 1, "dmg": 0, "shield": 41 },
+            { "name": "夜游千灯烬", "cost": 3, "dmg": 92, "el": "火", "cd": 4 },
+            { "name": "更鼓还魂", "cost": 0, "dmg": 0, "heal": 34 }
+          ]
+        },
+        {
+          "id": "trial_boss_ch10",
+          "name": "守关者·混元鼎灵",
+          "realm": 9,
+          "element": "土",
+          "note": "第10章Boss·飞升（守关者序列）",
+          "moves": [
+            { "name": "鼎镇压岳", "cost": 1, "dmg": 62, "el": "土" },
+            { "name": "混元罡风", "cost": 2, "dmg": 80, "el": "土" },
+            { "name": "万钧鼎壁", "cost": 1, "dmg": 0, "shield": 48 },
+            { "name": "混元一炁崩", "cost": 3, "dmg": 108, "el": "土", "cd": 4 },
+            { "name": "鼎中天地", "cost": 0, "dmg": 0, "heal": 38 }
+          ]
+        }
+      ],
+      "imperial_guards": [
+        {
+          "id": "guard_zhenmu",
+          "name": "守关者·镇墓",
+          "realm": 10,
+          "element": "土",
+          "note": "帝路第1关守关者·AP 11口径·血量+40%",
+          "moves": [
+            { "name": "镇墓钺", "cost": 4, "dmg": 105, "el": "土" },
+            { "name": "幽冥碑击", "cost": 5, "dmg": 118, "el": "土" },
+            { "name": "万墓朝宗", "cost": 7, "dmg": 140, "el": "土" },
+            { "name": "镇墓大阵·殓", "cost": 9, "dmg": 178, "el": "土", "cd": 4 },
+            { "name": "玄碑壁", "cost": 5, "dmg": 0, "shield": 55 },
+            { "name": "殓魂还土", "cost": 4, "dmg": 0, "heal": 45 }
+          ]
+        },
+        {
+          "id": "guard_tianjiao",
+          "name": "守关者·天角",
+          "realm": 10,
+          "element": "金",
+          "note": "帝路第2关守关者·AP 11口径·血量+70%",
+          "moves": [
+            { "name": "天角裂空斩", "cost": 4, "dmg": 108, "el": "金" },
+            { "name": "星芒贯日", "cost": 5, "dmg": 122, "el": "金" },
+            { "name": "摘星断岳", "cost": 7, "dmg": 145, "el": "金" },
+            { "name": "天角断穹击", "cost": 9, "dmg": 180, "el": "金", "cd": 4 },
+            { "name": "角宿星铠", "cost": 4, "dmg": 0, "shield": 48 },
+            { "name": "星辉回照", "cost": 4, "dmg": 0, "heal": 42 }
+          ]
+        },
+        {
+          "id": "dadi_canian",
+          "name": "大帝残念",
+          "realm": 10,
+          "element": "root",
+          "note": "帝路第3关守关者·AP 11口径·血量+100%·五行归一随灵根取克",
+          "moves": [
+            { "name": "残念一指", "cost": 4, "dmg": 110, "el": "root" },
+            { "name": "帝威压世", "cost": 5, "dmg": 125, "el": "root" },
+            { "name": "万道归流", "cost": 7, "dmg": 148, "el": "root" },
+            { "name": "一念成劫", "cost": 9, "dmg": 180, "el": "root", "cd": 4 },
+            { "name": "大帝残躯", "cost": 5, "dmg": 0, "shield": 52 },
+            { "name": "念起回天", "cost": 4, "dmg": 0, "heal": 48 }
+          ]
         }
       ]
     },

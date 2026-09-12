@@ -1,0 +1,532 @@
+{
+  "version": 1,
+  "note": "试炼塔：10章×5关+帝路3关。hpMult=关内系数(1+0.15×(关-1))，Boss在第5关；首通灵石=lingshi_seconds挂机产量锚，扫荡=90s产量×每现实小时5次（帝路禁扫荡）；掉落侧须排除当层最贵武器/功法（顶级件坊市独占，乙§8批驳二）。野怪卡组用 ai_cards.generic 按境界程序生成，Boss用 ai_cards.trial_bosses/imperial_guards 手配卡组。",
+  "mob_prefixes": [
+    "黑风寨劫匪",
+    "噬灵兽",
+    "魔道修士",
+    "护宝灵猴",
+    "赤目狼群",
+    "尸傀",
+    "蛊修",
+    "采补老魅",
+    "血罗刹",
+    "断岳蛮修",
+    "蚀骨阴风",
+    "千面狐妖",
+    "铁背蟹将",
+    "落魄剑客",
+    "疯道人",
+    "蛊雕",
+    "食气貘",
+    "夜游神",
+    "白骨将军",
+    "蚀月蛛母",
+    "焚谷火蜥",
+    "寒潭蛟",
+    "黄泉引路人",
+    "吞灵蟒"
+  ],
+  "chapters": [
+    {
+      "realm": 0,
+      "name": "第1章·练气",
+      "unlock_realm": 0,
+      "sweep": { "lingshi_seconds": 90, "per_hour": 5 },
+      "levels": [
+        {
+          "idx": 1,
+          "kind": "mob",
+          "hpMult": 1.0,
+          "mob_pool_hint": "黑风寨劫匪",
+          "teach": "斗法手册·一：先看敌方头顶的意图再出牌——他要攻，你便先守或先发制人。",
+          "drop": { "lingshi_seconds": 600, "gear_chance": 0.3, "pill_chance": 0.5 }
+        },
+        {
+          "idx": 2,
+          "kind": "mob",
+          "hpMult": 1.15,
+          "mob_pool_hint": "护宝灵猴",
+          "teach": "斗法手册·二：敌方罡气只保当回合——攒一记高伤招，等盾落再破。",
+          "drop": { "lingshi_seconds": 600, "gear_chance": 0.3, "pill_chance": 0.5 }
+        },
+        {
+          "idx": 3,
+          "kind": "mob",
+          "hpMult": 1.3,
+          "mob_pool_hint": "赤目狼群",
+          "teach": "斗法手册·三：五行相克×1.25——遇火行敌手，以水克火。",
+          "drop": { "lingshi_seconds": 600, "gear_chance": 0.3, "pill_chance": 0.5 }
+        },
+        {
+          "idx": 4,
+          "kind": "mob",
+          "hpMult": 1.45,
+          "mob_pool_hint": "噬灵兽",
+          "teach": "斗法手册·四：敌方大招用后有气机空窗——趁虚倾泻所有行动点。",
+          "drop": { "lingshi_seconds": 600, "gear_chance": 0.3, "pill_chance": 0.5 }
+        },
+        {
+          "idx": 5,
+          "kind": "boss",
+          "hpMult": 1.6,
+          "mob_pool_hint": null,
+          "teach": "斗法手册·五：关底强敌气血更厚——先稳两回合看清套路，再全力反击。",
+          "drop": { "lingshi_seconds": 600, "gear_chance": 0.3, "pill_chance": 0.5 }
+        }
+      ]
+    },
+    {
+      "realm": 1,
+      "name": "第2章·筑基",
+      "unlock_realm": 1,
+      "sweep": { "lingshi_seconds": 90, "per_hour": 5 },
+      "levels": [
+        {
+          "idx": 1,
+          "kind": "mob",
+          "hpMult": 1.0,
+          "mob_pool_hint": "落魄剑客",
+          "teach": "筑基期每回合 2 点行动点——一回合两动，连招从此开始。",
+          "drop": { "lingshi_seconds": 600, "gear_chance": 0.3, "pill_chance": 0.5 }
+        },
+        {
+          "idx": 2,
+          "kind": "mob",
+          "hpMult": 1.15,
+          "mob_pool_hint": "疯道人",
+          "teach": "行动点有富余时用低费填充牌补针——卡组均值费用决定真空期质量。",
+          "drop": { "lingshi_seconds": 600, "gear_chance": 0.3, "pill_chance": 0.5 }
+        },
+        {
+          "idx": 3,
+          "kind": "mob",
+          "hpMult": 1.3,
+          "mob_pool_hint": "魔道修士",
+          "teach": "手牌要攻守兼备：双动时代，纯攻卡组会被一套反打带走。",
+          "drop": { "lingshi_seconds": 600, "gear_chance": 0.3, "pill_chance": 0.5 }
+        },
+        {
+          "idx": 4,
+          "kind": "mob",
+          "hpMult": 1.45,
+          "mob_pool_hint": "尸傀",
+          "teach": "敌方也会连招了——见它连续两动的意图，提前凝盾。",
+          "drop": { "lingshi_seconds": 600, "gear_chance": 0.3, "pill_chance": 0.5 }
+        },
+        {
+          "idx": 5,
+          "kind": "boss",
+          "hpMult": 1.6,
+          "mob_pool_hint": null,
+          "teach": "Boss战：双动连招压血线，CD大招留到它换招的空档。",
+          "drop": { "lingshi_seconds": 600, "gear_chance": 0.3, "pill_chance": 0.5 }
+        }
+      ]
+    },
+    {
+      "realm": 2,
+      "name": "第3章·金丹",
+      "unlock_realm": 2,
+      "sweep": { "lingshi_seconds": 90, "per_hour": 5 },
+      "levels": [
+        {
+          "idx": 1,
+          "kind": "mob",
+          "hpMult": 1.0,
+          "mob_pool_hint": "蛊修",
+          "teach": "金丹期行动点至 3——四类牌一回合可全出。",
+          "drop": { "lingshi_seconds": 600, "gear_chance": 0.3, "pill_chance": 0.5 }
+        },
+        {
+          "idx": 2,
+          "kind": "mob",
+          "hpMult": 1.15,
+          "mob_pool_hint": "蚀骨阴风",
+          "teach": "此怪之盾带反伤：被挡伤害会弹回——先用小招探盾。",
+          "drop": { "lingshi_seconds": 600, "gear_chance": 0.3, "pill_chance": 0.5 }
+        },
+        {
+          "idx": 3,
+          "kind": "mob",
+          "hpMult": 1.3,
+          "mob_pool_hint": "白骨将军",
+          "teach": "此怪之盾未破会回血：一鼓作气破盾，或转攻本体。",
+          "drop": { "lingshi_seconds": 600, "gear_chance": 0.3, "pill_chance": 0.5 }
+        },
+        {
+          "idx": 4,
+          "kind": "mob",
+          "hpMult": 1.45,
+          "mob_pool_hint": "千面狐妖",
+          "teach": "复习五行：金克木、木克土、土克水、水克火、火克金。",
+          "drop": { "lingshi_seconds": 600, "gear_chance": 0.3, "pill_chance": 0.5 }
+        },
+        {
+          "idx": 5,
+          "kind": "boss",
+          "hpMult": 1.6,
+          "mob_pool_hint": null,
+          "teach": "金丹Boss招招入骨——罡气只保当回合，龟缩无出路。",
+          "drop": { "lingshi_seconds": 600, "gear_chance": 0.3, "pill_chance": 0.5 }
+        }
+      ]
+    },
+    {
+      "realm": 3,
+      "name": "第4章·元婴",
+      "unlock_realm": 3,
+      "sweep": { "lingshi_seconds": 90, "per_hour": 5 },
+      "levels": [
+        {
+          "idx": 1,
+          "kind": "mob",
+          "hpMult": 1.0,
+          "mob_pool_hint": "食气貘",
+          "teach": "元婴期行动点至 4——出手顺序比出手数量更重要。",
+          "drop": { "lingshi_seconds": 600, "gear_chance": 0.3, "pill_chance": 0.5 }
+        },
+        {
+          "idx": 2,
+          "kind": "mob",
+          "hpMult": 1.15,
+          "mob_pool_hint": "采补老魅",
+          "teach": "高费大招CD不短——规划好轮转，真空期用低费牌补位。",
+          "drop": { "lingshi_seconds": 600, "gear_chance": 0.3, "pill_chance": 0.5 }
+        },
+        {
+          "idx": 3,
+          "kind": "mob",
+          "hpMult": 1.3,
+          "mob_pool_hint": "蛊雕",
+          "teach": "敌方气血渐厚——回式牌别空槽，一张回气能多扛一轮。",
+          "drop": { "lingshi_seconds": 600, "gear_chance": 0.3, "pill_chance": 0.5 }
+        },
+        {
+          "idx": 4,
+          "kind": "mob",
+          "hpMult": 1.45,
+          "mob_pool_hint": "铁背蟹将",
+          "teach": "试着把伤害灌进同一回合：克行大招接连招，一回合打崩阵脚。",
+          "drop": { "lingshi_seconds": 600, "gear_chance": 0.3, "pill_chance": 0.5 }
+        },
+        {
+          "idx": 5,
+          "kind": "boss",
+          "hpMult": 1.6,
+          "mob_pool_hint": null,
+          "teach": "元婴Boss通晓套路——它凝盾的下回合多半连攻，见盾转防。",
+          "drop": { "lingshi_seconds": 600, "gear_chance": 0.3, "pill_chance": 0.5 }
+        }
+      ]
+    },
+    {
+      "realm": 4,
+      "name": "第5章·化神",
+      "unlock_realm": 4,
+      "sweep": { "lingshi_seconds": 90, "per_hour": 5 },
+      "levels": [
+        {
+          "idx": 1,
+          "kind": "mob",
+          "hpMult": 1.0,
+          "mob_pool_hint": "断岳蛮修",
+          "teach": null,
+          "drop": { "lingshi_seconds": 600, "gear_chance": 0.3, "pill_chance": 0.5 }
+        },
+        {
+          "idx": 2,
+          "kind": "mob",
+          "hpMult": 1.15,
+          "mob_pool_hint": "血罗刹",
+          "teach": null,
+          "drop": { "lingshi_seconds": 600, "gear_chance": 0.3, "pill_chance": 0.5 }
+        },
+        {
+          "idx": 3,
+          "kind": "mob",
+          "hpMult": 1.3,
+          "mob_pool_hint": "蚀月蛛母",
+          "teach": null,
+          "drop": { "lingshi_seconds": 600, "gear_chance": 0.3, "pill_chance": 0.5 }
+        },
+        {
+          "idx": 4,
+          "kind": "mob",
+          "hpMult": 1.45,
+          "mob_pool_hint": "夜游神",
+          "teach": null,
+          "drop": { "lingshi_seconds": 600, "gear_chance": 0.3, "pill_chance": 0.5 }
+        },
+        {
+          "idx": 5,
+          "kind": "boss",
+          "hpMult": 1.6,
+          "mob_pool_hint": null,
+          "teach": null,
+          "drop": { "lingshi_seconds": 600, "gear_chance": 0.3, "pill_chance": 0.5 }
+        }
+      ]
+    },
+    {
+      "realm": 5,
+      "name": "第6章·炼虚",
+      "unlock_realm": 5,
+      "sweep": { "lingshi_seconds": 90, "per_hour": 5 },
+      "levels": [
+        {
+          "idx": 1,
+          "kind": "mob",
+          "hpMult": 1.0,
+          "mob_pool_hint": "焚谷火蜥",
+          "teach": null,
+          "drop": { "lingshi_seconds": 600, "gear_chance": 0.3, "pill_chance": 0.5 }
+        },
+        {
+          "idx": 2,
+          "kind": "mob",
+          "hpMult": 1.15,
+          "mob_pool_hint": "吞灵蟒",
+          "teach": null,
+          "drop": { "lingshi_seconds": 600, "gear_chance": 0.3, "pill_chance": 0.5 }
+        },
+        {
+          "idx": 3,
+          "kind": "mob",
+          "hpMult": 1.3,
+          "mob_pool_hint": "黄泉引路人",
+          "teach": null,
+          "drop": { "lingshi_seconds": 600, "gear_chance": 0.3, "pill_chance": 0.5 }
+        },
+        {
+          "idx": 4,
+          "kind": "mob",
+          "hpMult": 1.45,
+          "mob_pool_hint": "魔道修士",
+          "teach": null,
+          "drop": { "lingshi_seconds": 600, "gear_chance": 0.3, "pill_chance": 0.5 }
+        },
+        {
+          "idx": 5,
+          "kind": "boss",
+          "hpMult": 1.6,
+          "mob_pool_hint": null,
+          "teach": null,
+          "drop": { "lingshi_seconds": 600, "gear_chance": 0.3, "pill_chance": 0.5 }
+        }
+      ]
+    },
+    {
+      "realm": 6,
+      "name": "第7章·合体",
+      "unlock_realm": 6,
+      "sweep": { "lingshi_seconds": 90, "per_hour": 5 },
+      "levels": [
+        {
+          "idx": 1,
+          "kind": "mob",
+          "hpMult": 1.0,
+          "mob_pool_hint": "吞灵蟒",
+          "teach": null,
+          "drop": { "lingshi_seconds": 600, "gear_chance": 0.3, "pill_chance": 0.5 }
+        },
+        {
+          "idx": 2,
+          "kind": "mob",
+          "hpMult": 1.15,
+          "mob_pool_hint": "蛊雕",
+          "teach": null,
+          "drop": { "lingshi_seconds": 600, "gear_chance": 0.3, "pill_chance": 0.5 }
+        },
+        {
+          "idx": 3,
+          "kind": "mob",
+          "hpMult": 1.3,
+          "mob_pool_hint": "断岳蛮修",
+          "teach": null,
+          "drop": { "lingshi_seconds": 600, "gear_chance": 0.3, "pill_chance": 0.5 }
+        },
+        {
+          "idx": 4,
+          "kind": "mob",
+          "hpMult": 1.45,
+          "mob_pool_hint": "白骨将军",
+          "teach": null,
+          "drop": { "lingshi_seconds": 600, "gear_chance": 0.3, "pill_chance": 0.5 }
+        },
+        {
+          "idx": 5,
+          "kind": "boss",
+          "hpMult": 1.6,
+          "mob_pool_hint": null,
+          "teach": null,
+          "drop": { "lingshi_seconds": 600, "gear_chance": 0.3, "pill_chance": 0.5 }
+        }
+      ]
+    },
+    {
+      "realm": 7,
+      "name": "第8章·大乘",
+      "unlock_realm": 7,
+      "sweep": { "lingshi_seconds": 90, "per_hour": 5 },
+      "levels": [
+        {
+          "idx": 1,
+          "kind": "mob",
+          "hpMult": 1.0,
+          "mob_pool_hint": "寒潭蛟",
+          "teach": null,
+          "drop": { "lingshi_seconds": 600, "gear_chance": 0.3, "pill_chance": 0.5 }
+        },
+        {
+          "idx": 2,
+          "kind": "mob",
+          "hpMult": 1.15,
+          "mob_pool_hint": "蚀月蛛母",
+          "teach": null,
+          "drop": { "lingshi_seconds": 600, "gear_chance": 0.3, "pill_chance": 0.5 }
+        },
+        {
+          "idx": 3,
+          "kind": "mob",
+          "hpMult": 1.3,
+          "mob_pool_hint": "夜游神",
+          "teach": null,
+          "drop": { "lingshi_seconds": 600, "gear_chance": 0.3, "pill_chance": 0.5 }
+        },
+        {
+          "idx": 4,
+          "kind": "mob",
+          "hpMult": 1.45,
+          "mob_pool_hint": "黄泉引路人",
+          "teach": null,
+          "drop": { "lingshi_seconds": 600, "gear_chance": 0.3, "pill_chance": 0.5 }
+        },
+        {
+          "idx": 5,
+          "kind": "boss",
+          "hpMult": 1.6,
+          "mob_pool_hint": null,
+          "teach": null,
+          "drop": { "lingshi_seconds": 600, "gear_chance": 0.3, "pill_chance": 0.5 }
+        }
+      ]
+    },
+    {
+      "realm": 8,
+      "name": "第9章·渡劫",
+      "unlock_realm": 8,
+      "sweep": { "lingshi_seconds": 90, "per_hour": 5 },
+      "levels": [
+        {
+          "idx": 1,
+          "kind": "mob",
+          "hpMult": 1.0,
+          "mob_pool_hint": "焚谷火蜥",
+          "teach": null,
+          "drop": { "lingshi_seconds": 600, "gear_chance": 0.3, "pill_chance": 0.5 }
+        },
+        {
+          "idx": 2,
+          "kind": "mob",
+          "hpMult": 1.15,
+          "mob_pool_hint": "血罗刹",
+          "teach": null,
+          "drop": { "lingshi_seconds": 600, "gear_chance": 0.3, "pill_chance": 0.5 }
+        },
+        {
+          "idx": 3,
+          "kind": "mob",
+          "hpMult": 1.3,
+          "mob_pool_hint": "千面狐妖",
+          "teach": null,
+          "drop": { "lingshi_seconds": 600, "gear_chance": 0.3, "pill_chance": 0.5 }
+        },
+        {
+          "idx": 4,
+          "kind": "mob",
+          "hpMult": 1.45,
+          "mob_pool_hint": "尸傀",
+          "teach": null,
+          "drop": { "lingshi_seconds": 600, "gear_chance": 0.3, "pill_chance": 0.5 }
+        },
+        {
+          "idx": 5,
+          "kind": "boss",
+          "hpMult": 1.6,
+          "mob_pool_hint": null,
+          "teach": null,
+          "drop": { "lingshi_seconds": 600, "gear_chance": 0.3, "pill_chance": 0.5 }
+        }
+      ]
+    },
+    {
+      "realm": 9,
+      "name": "第10章·飞升",
+      "unlock_realm": 9,
+      "sweep": { "lingshi_seconds": 90, "per_hour": 5 },
+      "levels": [
+        {
+          "idx": 1,
+          "kind": "mob",
+          "hpMult": 1.0,
+          "mob_pool_hint": "寒潭蛟",
+          "teach": null,
+          "drop": { "lingshi_seconds": 600, "gear_chance": 0.3, "pill_chance": 0.5 }
+        },
+        {
+          "idx": 2,
+          "kind": "mob",
+          "hpMult": 1.15,
+          "mob_pool_hint": "吞灵蟒",
+          "teach": null,
+          "drop": { "lingshi_seconds": 600, "gear_chance": 0.3, "pill_chance": 0.5 }
+        },
+        {
+          "idx": 3,
+          "kind": "mob",
+          "hpMult": 1.3,
+          "mob_pool_hint": "蚀骨阴风",
+          "teach": null,
+          "drop": { "lingshi_seconds": 600, "gear_chance": 0.3, "pill_chance": 0.5 }
+        },
+        {
+          "idx": 4,
+          "kind": "mob",
+          "hpMult": 1.45,
+          "mob_pool_hint": "采补老魅",
+          "teach": null,
+          "drop": { "lingshi_seconds": 600, "gear_chance": 0.3, "pill_chance": 0.5 }
+        },
+        {
+          "idx": 5,
+          "kind": "boss",
+          "hpMult": 1.6,
+          "mob_pool_hint": null,
+          "teach": null,
+          "drop": { "lingshi_seconds": 600, "gear_chance": 0.3, "pill_chance": 0.5 }
+        }
+      ]
+    }
+  ],
+  "imperial": [
+    {
+      "idx": 1,
+      "name": "守关者·镇墓",
+      "hpMult": 1.4,
+      "drop": { "stele": 1 }
+    },
+    {
+      "idx": 2,
+      "name": "守关者·天角",
+      "hpMult": 1.7,
+      "drop": { "stele": 1 }
+    },
+    {
+      "idx": 3,
+      "name": "大帝残念",
+      "hpMult": 2.0,
+      "drop": { "stele": 1 }
+    }
+  ]
+}
