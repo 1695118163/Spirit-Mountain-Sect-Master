@@ -86,20 +86,30 @@
     return !!(c.unlock_realm && S().realm.index >= c.unlock_realm);
   }
 
-  /** 出战卡组解析：S().deck 每类取第一张合法牌；缺/失效的类回退该类默认牌 */
+  /** 卡组槽位（乙§3.2）：攻3/五2/守2/回1 = 8 槽 */
+  const KIND_LIMITS = { attack: 3, element: 2, defense: 2, heal: 1 };
+
+  /** 出战卡组解析：S().deck 按类取前 N 张合法牌（8 槽）；缺槽回退该类默认牌 */
   function resolveDeck() {
     const s = S();
     const pool = CARDS().my_cards || [];
     const deck = Array.isArray(s.deck) ? s.deck.slice() : [];
     const picked = [];
     for (const kind of KINDS) {
-      let card = null;
+      const limit = KIND_LIMITS[kind] || 1;
+      let taken = 0;
       for (const id of deck) {
+        if (taken >= limit) break;
         const c = pool.find(x => x.id === id && x.kind === kind);
-        if (c && ownsCard(c) && picked.indexOf(c) === -1) { card = c; break; }
+        if (c && ownsCard(c) && picked.indexOf(c) === -1) { picked.push(c); taken += 1; }
       }
-      if (!card) card = pool.find(x => x.kind === kind && x.default) || pool.find(x => x.kind === kind);
-      if (card) picked.push(card);
+      if (taken === 0) {
+        const defaults = pool.filter(x => x.kind === kind && x.default);
+        for (const fb of (defaults.length ? defaults : pool.filter(x => x.kind === kind))) {
+          if (taken >= limit) break;
+          picked.push(fb); taken += 1;
+        }
+      }
     }
     return picked;
   }
@@ -126,7 +136,7 @@
       weaponName: w ? w.name : '徒手', techName: t ? t.name : '粗浅吐纳',
       element: (s.spirit_root && s.spirit_root.element) || (t ? t.element : null),
       daoxin: s.dao_heart, toxic: Math.floor(s.pill_toxic || 0),
-      hpMax, hp: hpMax, qi: 3, qiMax: 3, shield: 0, hand
+      hpMax, hp: hpMax, qi: realm + 1, qiMax: realm + 1, shield: 0, hand // AP=境界+1（乙§2）
     };
   }
 
@@ -134,7 +144,7 @@
   const SENIOR_TIERS = {
     easy:  { key: 'easy',  label: '师弟切磋', offset: -1, hpMult: 0.85, follow: 0.35, dmgAdd: 0, desc: '低你一境的师弟陪练——稳，胜负手筋基本不亏。' },
     equal: { key: 'equal', label: '同门论道', offset: 0,  hpMult: 1.2, follow: 0.65, dmgAdd: 0, desc: '与你同境的同门——有来有回，看意图排牌可稳占上风。' },
-    hard:  { key: 'hard',  label: '师兄指教', offset: +1, hpMult: 1.25, follow: 0.65, dmgAdd: 1, desc: '高你一境的师兄——凶险，胜则论道积分更多，以下克上可留名碑林。' }
+    hard:  { key: 'hard',  label: '师兄指教', offset: +1, hpMult: 1.6, follow: 0.8, dmgAdd: 2, desc: '高你一境的师兄——凶险，胜则论道积分更多，以下克上可留名碑林。' }
   };
 
   /** 对方战斗单位：大师兄（按档位：境界偏移/气血倍率/补招概率/招式加成）或好友影子（通用卡组） */
@@ -142,16 +152,20 @@
     const aiCfg = (CARDS().ai_cards || {})[isSenior ? 'lingyunzi' : 'generic'] || { moves: [] };
     const card = friend && friend.card ? friend.card : null;
     const bal = g.LS.BAL;
-    // 大师兄境界随玩家档位偏移（0~9 夹取）；好友影子按名片境界
-    const realm = isSenior ? Math.max(0, Math.min(9, S().realm.index + tierCfg.offset)) : (card ? card.realm : 0);
+    // 大师兄境界随玩家档位偏移（0~9 夹取）；好友影子按名片境界。
+    // 低境界（金丹前）hard 档不升境——AP 差 + 血差的复合碾压在数学上无解，改为同境强化版留活路
+    let off = tierCfg.offset;
+    if (off > 0 && S().realm.index < 2) off = 0;
+    const realm = isSenior ? Math.max(0, Math.min(9, S().realm.index + off)) : (card ? card.realm : 0);
     const w = card ? (bal.cultivation.weapons || []).find(x => x.id === card.weapon) : null;
     const sharp = w ? w.sharp : 5;
     const base = 80 + realm * 45 + sharp * 0.8;
     const hpMax = isSenior ? Math.round(base * tierCfg.hpMult) : Math.round(base);
     const t = card ? (bal.cultivation.techniques || []).find(x => x.id === card.technique) : null;
     const realmName = (bal.realms[realm] || {}).name || '?';
+    const dmgAdd = isSenior ? (S().realm.index >= 2 ? (tierCfg.dmgAdd || 0) : 0) : 0;
     const hand = (aiCfg.moves || []).map(m => Object.assign({}, m, {
-      dmgFinal: m.dmg ? m.dmg + realm * 2 + (isSenior ? (tierCfg.dmgAdd || 0) : 0) : 0,
+      dmgFinal: m.dmg ? m.dmg + realm * 2 + dmgAdd : 0,
       cdLeft: 0
     }));
     return {
@@ -162,7 +176,7 @@
       techName: t ? t.name : (isSenior ? '太上剑经' : '未知'),
       element: isSenior ? (aiCfg.moves || [])[0] && (aiCfg.moves[0].el || null) : (card && card.spirit && card.spirit.element) || (t ? t.element : null),
       daoxin: isSenior ? 60 : (card ? card.daoxin || 0 : 30),
-      hpMax, hp: hpMax, qi: 3, qiMax: 3, shield: 0, hand,
+      hpMax, hp: hpMax, qi: realm + 1, qiMax: realm + 1, shield: 0, hand, // 双方同构
       intent: null,
       tier: isSenior ? tierCfg.key : null
     };
@@ -183,18 +197,31 @@
     if (weather && weather.fire != null && el === '火') mult *= weather.fire;
     if (weather && weather.water != null && el === '水') mult *= weather.water;
     const raw = Math.round((move.dmgFinal || 0) * mult * (0.92 + Math.random() * 0.16));
-    let dealt = 0, absorbed = 0;
-    if (dst.shield > 0) {
+    let dealt = 0, absorbed = 0, thornsDealt = 0, steal = 0;
+    if (dst.shield > 0 && !move.pierce) {
       absorbed = Math.min(dst.shield, raw);
       dst.shield -= absorbed;
+      const at = dst.shieldAttrs; // 反伤（铁布衫）：被罡气吸收部分按比例弹回攻方
+      if (at && at.thorns_pct && absorbed > 0) {
+        thornsDealt = Math.max(1, Math.round(absorbed * at.thorns_pct / 100));
+        src.hp -= thornsDealt;
+      }
     }
     dealt = raw - absorbed;
     dst.hp -= dealt;
+    if (move.lifesteal_pct && dealt > 0) { // 沧海吞：伤害 30% 转回气
+      steal = Math.max(1, Math.round(dealt * move.lifesteal_pct / 100));
+      src.hp += steal;
+      if (src.hpMax && src.hp > src.hpMax) src.hp = src.hpMax;
+    }
     const parts = [];
     if (absorbed > 0) parts.push('被罡气挡下 ' + absorbed + ' 点');
     if (dealt > 0) parts.push('造成 ' + dealt + ' 点');
     else if (absorbed > 0) parts.push('未伤分毫');
     else parts.push('但被侧身避过');
+    if (move.pierce && dst.shield > 0) parts.push('（真伤破罡）');
+    if (thornsDealt > 0) parts.push('罡气反噬 ' + (isMe ? '你' : '对方') + ' ' + thornsDealt + ' 点');
+    if (steal > 0) parts.push('化伤为气回复 ' + steal + ' 点');
     return (isMe ? '' : '对方') + '施放「' + move.name + '」' + relTxt + '，' + parts.join('、') + '。';
   }
 
@@ -204,16 +231,19 @@
     return (isMe ? '' : '对方') + '运转「' + name + '」，回复 ' + healed + ' 点气血。';
   }
 
-  function applyShield(unit, amount, name, isMe) {
+  function applyShield(unit, amount, name, isMe, attrs) {
     unit.shield = (unit.shield || 0) + amount;
+    unit.shieldAttrs = attrs || unit.shieldAttrs || {}; // 机制盾（反伤/挡后回血）：同回合双盾取后出者
     return (isMe ? '' : '对方') + '祭出「' + name + '」，凝起 ' + amount + ' 点罡气护罩。';
   }
 
   /* ── AI 拟人策略 + 杀戮尖塔式意图预告 ── */
   function rollIntent(op) {
     const moves = op.hand;
-    const usable = moves.filter(m => (m.cd || 0) === 0 || m.cdLeft <= 0);
-    const pool = usable.length ? usable : moves;
+    // AI 与玩家同规则：意图招必须本回合行动点买得起、且不在 CD（否则退而选 0 费调息）
+    const affordable = moves.filter(m => (m.cost || 0) <= op.qi && (m.cd || 0) === 0 || (m.cost || 0) <= op.qi && m.cdLeft <= 0);
+    const usable = affordable.filter(m => (m.cd || 0) === 0 || m.cdLeft <= 0);
+    const pool = usable.length ? usable : moves.filter(m => (m.cost || 0) <= op.qi).concat(moves.filter(m => (m.cost || 0) === 0));
     const big = pool.find(m => m.cd);
     let pick = null;
     const r = Math.random();
@@ -230,8 +260,8 @@
       else pick = big || pickAny(pool, 'dmg');
     }
     pick = pick || pickAny(pool, 'dmg');
-    if (big && pick !== big && big.cdLeft > 0) big.cdLeft -= 1;
-    if (pick === big) pick.cdLeft = (pick.cd || 3) + 1;
+    op.hand.forEach(m => { if (m.cd && m !== pick && m.cdLeft > 0) m.cdLeft -= 1; });
+    if (pick && pick.cd) pick.cdLeft = pick.cd + 1;
     op.intent = Object.assign({}, pick);
   }
   function pickAny(pool, key) {
@@ -252,9 +282,27 @@
     return '意图：' + it.name + '。';
   }
 
+  /** 天赋等级（bought 重复计数，与 economy 同口径） */
+  function talentLv(id) { const b = S().prestige && S().prestige.bought; return b ? b.filter(x => x === id).length : 0; }
+
+  /** 战力评估（乙§2.3）：CP=100×2.05^境×装备锋锐系数×丹毒折损，事件判定/强敌/劫掠唯一出处 */
+  function combatPower() {
+    const s = S();
+    const bal = g.LS.BAL;
+    const w = (bal.cultivation.weapons || []).find(x => x.id === s.equip.weapon);
+    const sharp = w ? w.sharp : 5;
+    const cp = 100 * Math.pow(2.05, s.realm.index)
+      * (1 + Math.min(0.6, sharp / 400))
+      * Math.max(0.8, 1 - (s.pill_toxic || 0) * 0.002)
+      * (1 + 0.03 * (s.prestige && s.prestige.count || 0)); // 转生加战力口子
+    return Math.round(cp);
+  }
+
   /* ── 对阵牌 ── */
   function prepareBattle(friend) {
     if (active) return;
+    // 竞技门槛（乙§7）：化神以下禁与道友切磋（大师兄/试炼塔不限）
+    if (S().realm.index < 4) { g.LS.ui.toast('化神方可与道友切磋——此前请以大师兄与试炼塔磨砺招式。'); return; }
     if (!friend.card) { g.LS.ui.toast('这位道友还没有递过名片'); return; }
     const my = buildMe();
     const op = buildOp(friend, false);
@@ -302,10 +350,13 @@
     const a = active;
     if (!a) return;
     a.round += 1;
-    a.my.qi = a.my.qiMax;
+    a.my.qi = a.my.qiMax + (a.my.apBonus || 0); // 龟息功等「下回合+AP」
+    a.my.apBonus = 0;
     a.my.shield = 0;
     a.my.played = []; // StS 规则：每张牌每回合限出一次，回合结束洗回
-    a.op.qi = a.op.qiMax;
+    (a.my.hand || []).forEach(c => { if (c._cdLeft > 0) c._cdLeft -= 1; }); // 招式 CD 流转
+    a.op.qi = a.op.qiMax + (a.op.apBonus || 0);
+    a.op.apBonus = 0;
     rollIntent(a.op);
     const lines = [];
     if (a.my.toxic >= 10) {
@@ -328,13 +379,16 @@
     if ((a.my.played || []).indexOf(card.id) !== -1) { g.LS.ui.toast('此招本回合已使出，气机未复'); return; }
     a.my.played = a.my.played || [];
     a.my.played.push(card.id);
+    if (card.cd) card._cdLeft = card.cd + 1; // 出牌进 CD（本回合末 startTurn -1 抵消当下）
     a.my.qi -= card.cost || 0;
+    if (card.ap_next) a.my.apBonus = (a.my.apBonus || 0) + card.ap_next; // 出牌后下回合+AP
     const lines = [];
     let el = card.el;
     if (el === 'root') el = a.my.element;
     if (card.dmg) lines.push(applyHit(a.my, a.op, card, true));
     if (card.heal) lines.push(applyHeal(a.my, card.heal, card.name, true));
-    if (card.shield) lines.push(applyShield(a.my, card.shield, card.name, true));
+    if (card.shield) lines.push(applyShield(a.my, card.shield, card.name, true, { thorns_pct: card.thorns_pct || 0, block_heal: card.block_heal || 0 }));
+    if (card.ap_drain) { a.op.apBonus = (a.op.apBonus || 0) - card.ap_drain; lines.push('青藤缠身——' + a.op.dao + '下回合约少一分行功。'); }
     if (!card.dmg && !card.heal && !card.shield) lines.push(a.my.dao + '运功调整气息。');
     g.LS.ui.battleAppend(lines);
     syncUI();
@@ -355,23 +409,38 @@
       a.op.qi -= it.cost || 0;
       // 连招后手：意图只亮主招，剩余灵力按档位概率再补一招——看破主招不等于稳赢
       let follow = 0;
-      while (follow < 2 && a.op.qi > 0 && Math.random() < (a.aiFollow || 0.55)) {
-        const pool = a.op.hand.filter(m => m !== it && (m.cost || 0) <= a.op.qi);
+      const followCap = Math.max(2, Math.floor((a.op.qiMax || 3) / 3));
+      while (follow < followCap && a.op.qi > 0 && Math.random() < (a.aiFollow || 0.55)) {
+        const pool = a.op.hand.filter(m => m !== it && (m.cost || 0) <= a.op.qi && (m.cd || 0) === 0 || m !== it && (m.cost || 0) <= a.op.qi && m.cdLeft <= 0);
         if (!pool.length) break;
         const extra = pool[Math.floor(Math.random() * pool.length)];
         a.op.qi -= extra.cost || 0;
         if (extra.dmg) lines.push(applyHit(a.op, a.my, extra, false));
         if (extra.heal) lines.push(applyHeal(a.op, extra.heal, extra.name, false));
-        if (extra.shield) lines.push(applyShield(a.op, extra.shield, extra.name, false));
+        if (extra.shield) lines.push(applyShield(a.op, extra.shield, extra.name, false, { thorns_pct: extra.thorns_pct || 0, block_heal: extra.block_heal || 0 }));
         follow += 1;
       }
       if (follow) lines.push('（' + a.op.dao + '招式连绵，竟藏了后手！）');
+    }
+    // 挡后回气（玄武镇岳）：敌方出招结束我方罡气尚存 → 回气
+    if (a.my.shield > 0 && a.my.shieldAttrs && a.my.shieldAttrs.block_heal) {
+      const h = a.my.shieldAttrs.block_heal;
+      a.my.hp = Math.min(a.my.hpMax, a.my.hp + h);
+      lines.push('罡气未破——' + a.my.dao + '借势回气 ' + h + ' 点。');
     }
     g.LS.ui.battleAppend(lines);
     g.LS.ui.showBattleIntent('');
     syncUI();
     if (a.my.hp <= 0) { finish(false, lines); return; }
     if (a.op.hp <= 0) { finish(true, lines); return; }
+    // 天道裁定（乙§2）：12 回合未分胜负，按剩余气血百分比判，防双龟流与 AI 卡壳死局
+    if (a.round >= 12) {
+      const myPct = a.my.hp / a.my.hpMax, opPct = a.op.hp / a.op.hpMax;
+      lines.push('十二回合已满，天道裁定：' + (myPct > opPct ? a.my.dao + '气机更完足，判胜！' : (myPct < opPct ? a.op.dao + '气机更完足，判胜。' : '气机相当，挑战方让半招——判负。')));
+      g.LS.ui.battleAppend(lines);
+      finish(myPct > opPct, []);
+      return;
+    }
     setTimeout(startTurn, 700);
   }
 
@@ -385,7 +454,8 @@
       idx: i, name: c.name, cost: c.cost || 0, desc: c.desc || '',
       dmg: c.dmg ? c.dmgFinal : 0, heal: c.heal || 0, shield: c.shield || 0,
       el: c.el === 'root' ? (a.my.element || '五行') : (c.el || null),
-      disabled: a.my.qi < (c.cost || 0) || (a.my.played || []).indexOf(c.id) !== -1
+      cdLeft: c._cdLeft || 0,
+      disabled: a.my.qi < (c.cost || 0) || (a.my.played || []).indexOf(c.id) !== -1 || (c._cdLeft || 0) > 0
     })));
   }
 
@@ -424,7 +494,7 @@
   g.LS.battle = {
     makeCard, cardPower, elementMult, myDaoHao,
     prepareBattle, challengeSenior, playCard, endTurn, skip, abort,
-    resolveDeck, ownsCard, KINDS, KIND_NAME, SENIOR_TIERS,
+    resolveDeck, ownsCard, KINDS, KIND_NAME, KIND_LIMITS, SENIOR_TIERS, combatPower, talentLv,
     get active() { return active; }
   };
 })(typeof window !== 'undefined' ? window : globalThis);

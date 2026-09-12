@@ -71,7 +71,7 @@
     const eco = g.LS.economy;
     let eff = bal.offline.efficiency_base
       + eco.bLevel('hushanzhen') * bal.offline.efficiency_per_level;
-    if (eco.hasPrestige('hushenfu')) eff += 0.10;
+    eff += 0.03 * eco.talentLv('hushenfu') + 0.03 * eco.talentLv('shenwai_huashen');
     return Math.min(eff, bal.offline.eff_cap);
   }
 

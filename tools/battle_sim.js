@@ -79,6 +79,9 @@ for (let i = 0; i < N * TIERS.length; i++) {
   const won = global.LS.S.record.win > r0.win;
   tierStats[tierKey] = tierStats[tierKey] || { win: 0, n: 0 };
   tierStats[tierKey].n++; if (won) tierStats[tierKey].win++;
+  const rk = tierKey + '@r' + realm;
+  tierStats[rk] = tierStats[rk] || { win: 0, n: 0 };
+  tierStats[rk].n++; if (won) tierStats[rk].win++;
   // NaN 巡检：战报里不允许出现 NaN/undefined
   for (const t of logs) if (t.indexOf('NaN') !== -1 || t.indexOf('undefined') !== -1) { nanHit++; console.log('  异常文案：', t); }
 }
@@ -91,6 +94,10 @@ for (const [key, lo, hi] of TIERS) {
   const inRange = rate >= lo && rate <= hi;
   if (!inRange) ok = false;
   console.log((inRange ? '✓' : '✗') + ' ' + key + ' 档胜率 ' + (rate * 100).toFixed(1) + '%（' + st.win + '/' + st.n + '，目标 ' + lo * 100 + '%~' + hi * 100 + '%）');
+}
+for (const key of Object.keys(tierStats).filter(k => k.indexOf('@') !== -1)) {
+  const st = tierStats[key];
+  if (st.n >= 20) console.log('  ' + key + ': ' + (st.win / st.n * 100).toFixed(0) + '%（' + st.n + '场）');
 }
 console.log('崩溃 ' + crashes + ' 场 / NaN 或 undefined 文案 ' + nanHit + ' 处');
 console.log(ok ? '门禁 PASS' : '门禁 FAIL');

@@ -51,6 +51,76 @@
     return Math.max(0.1, Math.min(1, rate));
   }
 
+  /* ── 保命装与死亡链（甲 §6/§8 + 乙批驳三的统一入口） ── */
+  function relicOf(id) { const r = S().relics; return !!(r && r[id] && !r[id + '_broken'] && !(id === 'huanhunjia' && r.huanhunjia_used)); }
+  function getTalentLv(id) { const b = S().prestige && S().prestige.bought; return b ? b.filter(x => x === id).length : 0; }
+  function xinmoOf() { const v = S().xinmo; return typeof v === 'number' ? v : 0; }
+  function diwenCount() { const v = S().diwen; return typeof v === 'number' ? v : 0; }
+  function causeText(cause) {
+    return ({ tribulation: '殒于天劫', emperor: '殒于帝劫', battle: '殒于邪修之手', event: '身死道消' })[cause] || '身死道消';
+  }
+
+  /** 死亡判定链：名刀（碎裂免死、降级）→ 还魂甲（一世一次、降级）→ 真死（强制转生）。
+   *  cause: 'tribulation'|'emperor'|'battle'|'event'；返回 'mingdao'|'huanhun'|'death' */
+  function resolveDeath(cause) {
+    const s = S();
+    s.relics = s.relics || {};
+    if (s.relics.mingdao && !s.relics.mingdao_broken) {
+      s.relics.mingdao_broken = true;
+      if (g.LS.ui && g.LS.ui.toast) g.LS.ui.toast('【名刀·司命】替主碎裂——刀鸣如泣，这一劫，免了！（花半价可重铸）');
+      return 'mingdao';
+    }
+    if (s.relics.huanhunjia && !s.relics.huanhunjia_used) {
+      s.relics.huanhunjia_used = true;
+      if (g.LS.ui && g.LS.ui.toast) g.LS.ui.toast('【九转还魂甲】裹住魂光——肉身虽陨，你从死亡里硬生生走了回来！（一世一次）');
+      return 'huanhun';
+    }
+    if (g.LS.events && g.LS.events.chronicle) g.LS.events.chronicle('event', { title: causeText(cause), choice: '形神俱灭' });
+    if (g.LS.ui && g.LS.ui.toast) g.LS.ui.toast(causeText(cause) + '——形神俱灭，堕入轮回。（本世存档已封存备份，传承点照常结算）');
+    backupForRebirth();
+    doRebirth(true);
+    return 'death';
+  }
+
+  /** 大帝九重雷劫（甲 §3）：连续 9 道天雷独立判定，失败积劫伤（修为-30%/层），2 层形神俱灭 */
+  function emperorTribulation(next) {
+    const s = S();
+    const bal = BAL();
+    const tb = (bal.breakthrough && bal.breakthrough.tribulation) || {};
+    let p = tb.base_p != null ? tb.base_p : 0.70;
+    if (s.bt && s.bt.breakthrough_bonus) { p += s.bt.breakthrough_bonus; s.bt.breakthrough_bonus = 0; } // 破障丹等
+    p += getTalentLv('tiandao_qin') * 0.04 + diwenCount() * 0.02;
+    const xm = xinmoOf();
+    if (xm >= 85) p -= 0.20; else if (xm >= 60) p -= 0.12; else if (xm >= 30) p -= 0.06;
+    p = Math.max(0.55, Math.min(tb.cap != null ? tb.cap : 0.85, p));
+    const allowLayers = relicOf('mingdao') ? ((tb.death_layers || 2) + 1) : (tb.death_layers || 2);
+    const results = [];
+    for (let i = 0; i < (tb.strikes || 9); i++) results.push(Math.random() < p);
+    const fails = results.filter(x => !x).length;
+    const survived = fails <= allowLayers;
+    const replay = Object.assign({}, opts, { skipTribulation: true });
+    const finish = () => {
+      s.resources.xiufu = Math.max(s.resources.xiufu, next.need_xp); // 重入放行
+      if (survived) {
+        doBreakthrough(Object.assign({}, replay, { forceSuccess: true }));
+      } else {
+        // 劫伤结算：每层 -30% 修为，保命装介入
+        const layers = Math.min(fails, 3);
+        for (let i = 0; i < layers; i++) s.resources.xiufu *= (1 - (tb.per_strike_xp_loss || 0.3));
+        const how = resolveDeath('emperor');
+        if (how === 'death') return; // 强制转生已发生
+        // 名刀（大帝：容错+1 已计入）/还魂甲（渡劫终止算普通失败）：修为已扣，回到飞升境养伤
+        s.bt.fail_streak = (s.bt.fail_streak || 0) + 1;
+        s.bt.fail_cooldown_until = Date.now() + ((bal.breakthrough && bal.breakthrough.fail_cooldown_s) || 30) * 1000;
+        if (g.LS.ui && g.LS.ui.showFailOverlay) g.LS.ui.showFailOverlay('帝 劫 未 渡', '九重天雷' + fails + '道落空，' + (how === 'mingdao' ? '名刀碎裂护你一命' : '还魂甲裹魂还阳') + '——修为十不存三，回飞升境重整旗鼓。', true, { xpLeft: Math.floor(s.resources.xiufu), qihuo: true, cooldown: 30 });
+        if (g.LS.save) g.LS.save.save();
+      }
+    };
+    if (g.LS.ui && g.LS.ui.playEmperorTribulation) g.LS.ui.playEmperorTribulation(p, results, survived, finish);
+    else finish();
+    return survived;
+  }
+
   function doBreakthrough(opts) {
     const next = nextRealm();
     if (!next || next.need_xp == null) return false;
@@ -108,6 +178,11 @@
     const success = (opts && opts.failReplay) ? false
       : ((opts && opts.forceSuccess) || guaranteed || streak >= pity - 1 || Math.random() < rate);
 
+    // 大帝境：九重雷劫专项，不走普通成败判定
+    if (next.index >= 10 && !(opts && opts.skipTribulation) && !(opts && opts.failReplay)) {
+      return emperorTribulation(next);
+    }
+
     // 升境界天劫：金丹起每次冲关都被雷劈（与失败率体系同起点），练气/筑基保持温和水墨
     if (next.index >= 2 && g.LS.ui && g.LS.ui.playTribulation && !(opts && opts.skipTribulation)) {
       const replay = Object.assign({}, opts, { skipTribulation: true });
@@ -142,6 +217,21 @@
       }
       const title = isQihuo ? (texts.qihuo_title || '走火入魔') : (texts.fail_title || '突破未成');
       const text = isQihuo ? (texts.qihuo_text || '') : (texts.fail_text || '');
+      // ── 走火 death roll（甲 §8）：只挂走火、金丹起、大帝除外；本关只判一次（failReplay 重入沿用） ──
+      if (isQihuo && next.index >= 2 && next.index < 10 && !s.bt.death_rolled && !(opts && opts.skipDeath)) {
+        s.bt.death_rolled = true;
+        const dc = bt.death || {};
+        let dr = (dc.base != null ? dc.base : 0.05) + next.index * (dc.per_realm != null ? dc.per_realm : 0.02);
+        const xm = xinmoOf();
+        dr *= (dc.xinmo_mult || [1, 2, 3])[xm >= 85 ? 2 : (xm >= 60 ? 1 : 0)];
+        if (dfc.fail_rate_add) dr += dfc.fail_rate_add; // 简单难度 -5% 修正（负值压低），下限 0
+        if (Math.random() < Math.max(0, dr)) {
+          const how = resolveDeath('tribulation');
+          if (how === 'death') return false; // 形神俱灭：强制转生已发生
+          if (g.LS.ui && g.LS.ui.toast) g.LS.ui.toast('在生死一线走了回来——但伤势已定，修为十不存一。');
+        }
+      }
+      s.bt.death_rolled = false;
       const details = {
         xpLeft: Math.floor(s.resources.xiufu),
         qihuo: isQihuo,
@@ -225,6 +315,7 @@
     const dim = Math.max(f.dimin_floor || 0.5, Math.pow(f.dimin, s.prestige.count || 0));
     let pts = Math.floor(f.base * n * (n + 1) / 2 * dim);
     if (s.prestige.lifetime_best_realm >= 8) pts = Math.floor(pts * (f.dujie_mult || 1.2)); // 渡劫被动
+    if (s.prestige.lifetime_best_realm >= 10) pts = Math.floor(pts * (f.dadi_mult || 1.3)); // 大帝被动（与渡劫叠乘）
     return pts;
   }
 
@@ -237,9 +328,9 @@
     } catch (e) { console.warn('[灵山掌门] 转生备份失败（不影响转生）：', e.message); }
   }
 
-  function doRebirth() {
+  function doRebirth(force) {
     const bal = BAL();
-    if (!canRebirth()) return false;
+    if (!force && !canRebirth()) return false;
     const gain = rebirthGain();
     const s = S();
     if (typeof localStorage !== 'undefined' && typeof document !== 'undefined') backupForRebirth();
@@ -296,11 +387,13 @@
     fresh.prestige.points += gain;
     fresh.prestige.total_points += gain;
     fresh.rebirth_at = Date.now(); // 本世修行计时起点
-    // 初始资本
-    const capital = bal.prestige.upgrades.find(u => u.id === 'chushiziben');
-    if (capital && fresh.prestige.bought.indexOf('chushiziben') !== -1) {
-      fresh.resources.lingqi += capital.effect.start_lingqi || 0;
-      fresh.resources.lingshi += capital.effect.start_lingshi || 0;
+    // 初始资本（多级：lv1 500气+100石 / lv2 2500气+800石 / lv3 1万气+3000石）
+    const capLv = fresh.prestige.bought.filter(x => x === 'chushiziben').length;
+    if (capLv > 0) {
+      const capTable = [[500, 100], [2500, 800], [10000, 3000]];
+      const [qi0, ls0] = capTable[Math.min(capLv, 3) - 1];
+      fresh.resources.lingqi += qi0;
+      fresh.resources.lingshi += ls0;
     }
     g.LS.S = fresh;
     if (g.LS.ui && g.LS.ui.pushLog) g.LS.ui.pushLog({ title: '转世', choice: bal.texts.rebirth_after_log, gainText: '传承点 +' + gain });

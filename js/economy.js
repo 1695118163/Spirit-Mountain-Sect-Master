@@ -21,6 +21,8 @@
   function bLevel(id) { const b = S().buildings[id]; return b || 0; }
 
   function hasPrestige(id) { return S().prestige.bought.indexOf(id) !== -1; }
+  /** 天赋等级 = bought 中出现次数（多级天赋：每级重算，甲§4陷阱①） */
+  function talentLv(id) { const b = S().prestige.bought; return b ? b.filter(x => x === id).length : 0; }
 
   /** 境界总乘算 = 各段 mult_passive 叠乘（realm.js 提供，Node 下防未加载直接内联兜底） */
   function realmMultSafe() {
@@ -34,8 +36,8 @@
   /** 第5步：传承对资源的乘算（灵根·木→灵气类建筑、灵根·金→灵石类建筑；悟性→修为在 xiuMult 内） */
   function prestigeMult(res) {
     let m = 1;
-    if (res === 'lingqi' && hasPrestige('linggen_mu')) m *= 1.25;
-    if (res === 'lingshi' && hasPrestige('linggen_jin')) m *= 1.25;
+    if (res === 'lingqi') m *= 1 + 0.10 * talentLv('linggen_mu');
+    if (res === 'lingshi') m *= 1 + 0.10 * talentLv('linggen_jin');
     return m;
   }
 
@@ -44,7 +46,7 @@
     let m = 1;
     m *= 1 + 0.1 * bLevel('jianzhong');
     m *= 1 + 0.25 * bLevel('dongfu');
-    if (hasPrestige('wuxing')) m *= 1.5;
+    m *= 1 + 0.12 * talentLv('wuxing');
     m *= techFitMult();
     return m;
   }
@@ -131,8 +133,7 @@
 
   function prestigeClickMult() {
     let m = 1;
-    if (hasPrestige('chuwu')) m *= 2;
-    if (hasPrestige('shenru')) m *= 3;
+    m *= Math.pow(1.5, talentLv('tuna_yaojue'));
     return m;
   }
 
@@ -251,7 +252,7 @@
     const bal = BAL();
     let itv = bal.pill.base_interval_s;
     itv /= 1 + 0.2 * bLevel('yaoyuan');
-    if (hasPrestige('dandao')) itv /= 1.5;
+    if (talentLv('dandao')) itv /= 1 + 0.15 * talentLv('dandao');
     return itv;
   }
 
@@ -324,11 +325,17 @@
 
   /* ── 传承兑换 ── */
 
+  /** 天赋等级：bought 中出现次数（多级天赋，每级重算） */
+  function talentLv(id) { const b = S().prestige.bought; return b ? b.filter(x => x === id).length : 0; }
+
   function upgradeState(u) {
     const p = S().prestige;
-    if (p.bought.indexOf(u.id) !== -1) return 'bought';
+    const lv = talentLv(u.id);
+    const maxLv = u.max_lv || 1;
+    if (lv >= maxLv) return 'bought';
+    const cost = (u.costs && u.costs[lv]) != null ? u.costs[lv] : u.cost;
     if (u.requires && p.bought.indexOf(u.requires) === -1) return 'locked';
-    if (p.points < u.cost) return 'poor';
+    if (p.points < cost) return 'poor';
     return 'ok';
   }
 
@@ -338,9 +345,11 @@
     if (!u) return false;
     const st = upgradeState(u);
     if (st !== 'ok') return false;
-    s.prestige.points -= u.cost;
-    s.prestige.spent += u.cost;
-    s.prestige.bought.push(u.id);
+    const lv = talentLv(uId);
+    const cost = (u.costs && u.costs[lv]) != null ? u.costs[lv] : u.cost;
+    s.prestige.points -= cost;
+    s.prestige.spent += cost;
+    s.prestige.bought.push(uId);
     if (g.LS.ui && g.LS.ui.renderPermList) g.LS.ui.renderPermList();
     if (g.LS.save && g.LS.save.save) g.LS.save.save();
     return true;
@@ -492,7 +501,7 @@
       msg += '（丹毒缠身，药效减半）';
     }
     // 丹种自带丹毒（劣品丹的 toxic_add 覆盖品质默认）
-    const toxicGain = (cat.toxic_add != null ? cat.toxic_add : ((q.toxic_by_quality || {})[quality] || 0)) * (mismatch ? ((q.mismatch || {}).toxic_mult) || 1.5 : 1);
+    let toxicGain = (cat.toxic_add != null ? cat.toxic_add : ((q.toxic_by_quality || {})[quality] || 0)) * (mismatch ? ((q.mismatch || {}).toxic_mult) || 1.5 : 1);
 
     switch (cat.category) {
       case 'prod': {
@@ -516,10 +525,21 @@
         break;
       }
       case 'cure': {
-        s.pill_toxic = Math.max(0, (s.pill_toxic || 0) - cat.effect.toxic_reduce * em);
+        // 清心丹按品质显式净排毒（甲§1）：豁免境界不符与丹毒减半——「去病」不被「病」打折，永不净增毒
+        const bq = cat.effect_by_quality && cat.effect_by_quality[quality];
+        let reduce, xadd = 0;
+        if (bq) {
+          reduce = bq.toxic_reduce;
+          xadd = bq.toxic_add || 0;
+          if (bq.xinmo_reduce && typeof s.xinmo === 'number') s.xinmo = Math.max(0, s.xinmo - bq.xinmo_reduce);
+        } else {
+          reduce = cat.effect.toxic_reduce * em;
+        }
+        s.pill_toxic = Math.max(0, (s.pill_toxic || 0) - reduce);
+        toxicGain = xadd; // 清心丹积毒以本表为准（劣品 +5、凡品 +2）
         const before = s.buffs.length;
         s.buffs = s.buffs.filter(bf => bf.id !== 'qihuo_debuff' && bf.id !== 'xinmo_debuff' && bf.id !== 'pill_toxic_debuff');
-        msg += '，丹毒心魔尽去' + (s.buffs.length < before ? '，神台复明' : '');
+        msg += '，丹毒 −' + reduce + (xadd ? '（药性驳杂，反积 ' + xadd + ' 毒）' : '') + (s.buffs.length < before ? '，神台复明' : '');
         break;
       }
       case 'perm': {
@@ -621,7 +641,7 @@
     clickMult, clickQiGain, clickXpGain, breath,
     buildingCost, bulkCost, canAfford, pay, grant, costText, buyBuilding,
     pillInterval, pillTick, servePill, autoPillTick,
-    upgradeState, buyUpgrade, hasPrestige, bLevel, clampAll,
+    upgradeState, buyUpgrade, hasPrestige, talentLv, bLevel, clampAll,
     abilityDef, abilityCooldownLeft, useAbility,
     pillCat, pillQualityCfg, pillTotal, pillCount, grantPill, rollPillQuality, rollPillOutput, consumePill, toxicDecay, difficultyCfg
   };

@@ -526,9 +526,13 @@
   function renderPermList() {
     const s = g.LS.S;
     const totalPct = Math.round((s.perm_bonus.all || 0) * 100);
-    const names = (s.prestige.bought || []).map(id => {
+    const counts = {};
+    (s.prestige.bought || []).forEach(id => { counts[id] = (counts[id] || 0) + 1; });
+    const names = Object.keys(counts).map(id => {
       const u = g.LS.BAL.prestige.upgrades.find(x => x.id === id);
-      return u ? u.name : id;
+      if (!u) return id;
+      const maxLv = u.max_lv || 1;
+      return u.name + (maxLv > 1 ? ' ' + counts[id] + '/' + maxLv + '重' : '');
     });
     const html = '<div class="perm-total">永久加成：+' + totalPct + '%</div>' +
       names.map(n => '<div class="perm-item">· ' + escapeHtml(n) + '</div>').join('');
@@ -985,7 +989,7 @@
       '</div></div>' +
       (info.elRel ? '<div class="modal-desc" style="text-align:center;color:var(--cinnabar)">' + escapeHtml(info.elRel) + '</div>' : '') +
       '<div class="modal-desc" style="text-align:center">' + escapeHtml(info.weather) + '</div>' +
-      '<div class="modal-desc" style="font-size:11px;color:var(--ink-soft)">每回合 3 点灵力，可连出多招；罡气护罩只保当回合。看对方意图再排牌。</div>' +
+      '<div class="modal-desc" style="font-size:11px;color:var(--ink-soft)">每回合行动点=自身境界+1；招式有冷却（气机未复）；罡气护罩只保当回合。看对方意图再排牌。</div>' +
       '<div style="text-align:center;margin-top:10px"><button class="btn-primary" id="battle-start" style="padding:10px 34px;font-size:16px">开 战</button> ' +
       '<button class="icon-btn" id="battle-cancel">改日再战</button></div>';
     card.querySelector('#battle-start').addEventListener('click', () => { onStart(); });
@@ -1008,7 +1012,7 @@
           ' <span class="bh-shield" id="bh-op-shield" style="display:none"></span></div></div></div>' +
       '<div id="battle-intent" class="battle-intent" style="display:none"></div>' +
       '<div id="battle-log" class="battle-log"></div>' +
-      '<div class="battle-qi">灵力 <span id="battle-qi-stars"></span></div>' +
+      '<div class="battle-qi">行动点 <span id="battle-qi-stars"></span></div>' +
       '<div id="battle-hands" class="battle-hands"></div>' +
       '<div style="text-align:center"><button class="btn-primary" id="battle-end" style="padding:8px 26px">结 束 回 合</button></div>';
     card.querySelector('#battle-end').addEventListener('click', () => { g.LS.battle.endTurn(); });
@@ -1053,8 +1057,9 @@
         '<span class="hc-cost">' + c.cost + '</span><b>' + escapeHtml(c.name) + '</b>' +
         '<span class="hc-el">' + fmtEl(c.el) + '</span>' +
         '<span class="hc-eff">' +
+          (c.cdLeft > 0 ? '气机未复·余' + c.cdLeft + '回合' :
           (c.dmg ? '杀 ' + c.dmg : '') + (c.heal ? ' 回 ' + c.heal : '') + (c.shield ? ' 护 ' + c.shield : '') +
-          (!c.dmg && !c.heal && !c.shield ? '—' : '') + '</span>' +
+          (!c.dmg && !c.heal && !c.shield ? '—' : '')) + '</span>' +
       '</button>'
     ).join('');
     box.querySelectorAll('.hand-card').forEach(btn => {
@@ -1079,6 +1084,42 @@
         : '招式被看穿，' + (info.senior ? '大师兄收剑：回去把功法练熟再来。' : '胜败乃修士常事，道心不坠即可。')) + '</div>' +
       '<div style="text-align:center;margin-top:10px"><button class="btn-primary" id="br-close">归 位</button></div>';
     card.querySelector('#br-close').addEventListener('click', removeModals);
+  }
+
+  /** 大帝九重雷劫演出：逐雷滚动结果 + 劫伤层数展示（引擎已先算好 results/survived） */
+  function playEmperorTribulation(p, results, survived, onDone) {
+    removeModals();
+    const { card, mask } = makeModal(null);
+    const failLayers = results.filter(x => !x).length;
+    card.innerHTML =
+      '<div class="modal-title" style="color:var(--cinnabar)">帝 劫 · 九 重 雷 罚</div>' +
+      '<div class="modal-desc" style="text-align:center">每重天雷通过率约 <b>' + Math.round(p * 100) + '%</b> —— 劫伤两重，形神俱灭。</div>' +
+      '<div id="emp-strip" style="min-height:150px;font-size:14px;line-height:2.1"></div>' +
+      '<div style="text-align:center;margin-top:8px"><button class="btn-primary" id="emp-ok" style="display:none;padding:8px 30px">接受天命</button></div>';
+    const strip = card.querySelector('#emp-strip');
+    let i = 0;
+    const names = ['第一重', '第二重', '第三重', '第四重', '第五重', '第六重', '第七重', '第八重', '第九重'];
+    const step = () => {
+      if (i >= results.length) {
+        const div = document.createElement('div');
+        div.style.cssText = 'text-align:center;margin-top:10px;font-size:16px;color:' + (survived ? 'var(--gold,#e8c34a)' : 'var(--cinnabar)');
+        div.textContent = survived ? '—— 九雷纳体，万道臣服，大 帝 成 就 ——' : ('—— 劫伤 ' + failLayers + ' 重，道基崩碎 ——');
+        strip.appendChild(div);
+        card.querySelector('#emp-ok').style.display = '';
+        card.querySelector('#emp-ok').addEventListener('click', () => { removeModals(); onDone(); });
+        return;
+      }
+      const ok = results[i];
+      const div = document.createElement('div');
+      div.className = 'battle-line';
+      div.style.color = ok ? 'var(--ink,#e8dcc8)' : 'var(--cinnabar)';
+      div.textContent = names[i] + '雷' + (ok ? ' —— 顶住了，道基嗡鸣不破。' : ' —— 没顶住！气血翻涌，劫伤加身（-30% 修为）。');
+      strip.appendChild(div);
+      strip.scrollTop = strip.scrollHeight;
+      i += 1;
+      setTimeout(step, 650);
+    };
+    setTimeout(step, 500);
   }
 
   /* ── 体系一览：游戏内弹窗嵌入《修炼体系一览.html》（tools/gen_codex_page.js 生成的静态页） ── */
@@ -1245,12 +1286,13 @@
     const render = () => {
       let cols = '';
       for (const kind of KINDS) {
-        const inDeck = (s.deck || []).find(id => { const c = pool.find(x => x.id === id); return c && c.kind === kind; });
+        const inDeckIds = (s.deck || []).filter(id => { const c = pool.find(x => x.id === id); return c && c.kind === kind; });
+        const inDeck = inDeckIds[0];
         let items = '';
         for (const c of pool.filter(x => x.kind === kind)) {
           const has = g.LS.battle.ownsCard(c);
           const locked = c.unlock_realm && s.realm.index < c.unlock_realm;
-          const activeNow = inDeck === c.id;
+          const activeNow = inDeckIds.indexOf(c.id) !== -1;
           if (!has) {
             items += '<div class="deck-card deck-card-locked"><b>' + escapeHtml(c.name) + '</b><span>' +
               (locked ? '境界「' + ((g.LS.BAL.realms[c.unlock_realm] || {}).name || '?') + '」解锁' : (c.price ? '坊市秘传可参悟' : '尚未参悟')) + '</span></div>';
@@ -1281,8 +1323,17 @@
         const id = btn.dataset.pick;
         const c = pool.find(x => x.id === id);
         if (!c) return;
-        s.deck = (s.deck || []).filter(did => { const d = pool.find(x => x.id === did); return !d || d.kind !== c.kind; });
-        s.deck.push(id);
+        const limits = g.LS.battle.KIND_LIMITS || {};
+        const cap = limits[c.kind] || 1;
+        let deck = (s.deck || []).slice();
+        const has = deck.indexOf(id);
+        if (has !== -1) { deck.splice(has, 1); } // 再点取消
+        else {
+          const sameKind = deck.filter(did => { const d = pool.find(x => x.id === did); return d && d.kind === c.kind; });
+          if (sameKind.length >= cap) deck.splice(deck.indexOf(sameKind[0]), 1); // 满员挤掉最早
+          deck.push(id);
+        }
+        s.deck = deck;
         sfx('click');
         render();
       }));
@@ -1391,14 +1442,15 @@
       const poisioningSoon = toxic >= (q.toxic_penalty.poisoning_threshold || 60);
       let rows = '';
       for (const p of ((g.LS.BAL.pills && g.LS.BAL.pills.pills) || [])) {
-        const total = eco.pillCount(p.id);
-        const perQ = ['凡', '灵', '珍', '仙'].map(q2 => {
+        // 按品质分行可选（v0.20：吃哪个品质自己点），无库存品质不显示
+        const qBtns = ['劣', '凡', '灵', '珍', '仙'].map(q2 => {
           const n = (s.pill_stock || {})[eco.pillStockKey ? eco.pillStockKey(p.id, q2) : p.id + '_' + q2] || 0;
-          return n ? q2 + '×' + n : '';
-        }).filter(Boolean).join(' ') || '无';
+          if (!n) return '';
+          return '<button class="icon-btn" data-pill="' + p.id + '" data-q="' + q2 + '" style="padding:2px 8px;font-size:11px;min-height:0">' + q2 + '×' + n + '</button>';
+        }).filter(Boolean).join(' ');
         rows += '<div class="rebirth-item"><div><b>' + escapeHtml(p.name) + '</b>' +
-          '<div style="font-size:11px;color:var(--ink-soft)">' + escapeHtml(p.desc) + '<br>库存：' + perQ + '</div></div>' +
-          '<button class="icon-btn" data-pill="' + p.id + '"' + (total ? '' : ' disabled') + '>服用</button></div>';
+          '<div style="font-size:11px;color:var(--ink-soft)">' + escapeHtml(p.desc) + '</div></div>' +
+          '<div style="display:flex;gap:4px;flex-wrap:wrap;justify-content:flex-end">' + (qBtns || '<span style="font-size:11px;color:var(--ink-soft)">无库存</span>') + '</div></div>';
       }
       card.innerHTML =
         '<div class="modal-title">丹 房<button class="icon-btn" id="ph-close" style="float:right;font-size:12px;padding:3px 12px">合上</button></div>' +
@@ -1412,12 +1464,8 @@
       card.querySelector('#ph-close2').addEventListener('click', removeModals);
       card.querySelectorAll('[data-pill]').forEach(btn => {
         btn.addEventListener('click', () => {
-          // 同一种丹从低品质先服
-          const order = ['凡', '灵', '珍', '仙'];
-          for (const q2 of order) {
-            const r = eco.consumePill(btn.dataset.pill, q2);
-            if (r.ok) { sfx('click'); toast(r.msg); break; }
-          }
+          const r = eco.consumePill(btn.dataset.pill, btn.dataset.q || '灵');
+          if (r.ok) { sfx('click'); toast(r.msg); }
           render();
           renderResources();
           renderAll();
@@ -1710,12 +1758,17 @@
       for (const u of bal.prestige.upgrades) {
         const st = g.LS.economy.upgradeState(u);
         const bought = st === 'bought';
+        const lv = g.LS.economy.talentLv(u.id);
+        const maxLv = u.max_lv || 1;
+        const nextCost = (u.costs && u.costs[lv]) != null ? u.costs[lv] : u.cost;
+        const lvTxt = maxLv > 1 ? '<span style="color:var(--gold,#e8c34a)">' + lv + '/' + maxLv + '重</span> ' : '';
+        const stateTxt = bought
+          ? '<span class="stamp">圆 满</span>'
+          : '<span style="font-size:12px;margin-right:6px">' + nextCost + ' 点</span>';
         rows += '<div class="rebirth-item' + (bought ? ' bought' : '') + '">' +
-          '<div><b>' + escapeHtml(u.name) + '</b><div style="font-size:11px;color:var(--ink-soft)">' + escapeHtml(u.desc) + '</div></div>' +
-          '<div>' + (bought
-            ? '<span class="stamp">已承</span>'
-            : '<span style="font-size:12px;margin-right:6px">' + u.cost + ' 点</span>') +
-          (bought ? '' : '<button class="icon-btn" data-up="' + u.id + '" ' + (st === 'ok' ? '' : 'disabled') + '>兑换</button>') + '</div></div>';
+          '<div><b>' + escapeHtml(u.name) + '</b> ' + lvTxt + '<div style="font-size:11px;color:var(--ink-soft)">' + escapeHtml(u.desc) + '</div></div>' +
+          '<div>' + stateTxt +
+          (bought ? '' : '<button class="icon-btn" data-up="' + u.id + '" ' + (st === 'ok' ? '' : 'disabled') + '>承' + (maxLv > 1 && lv > 0 ? '再承' : '悟') + '</button>') + '</div></div>';
       }
       card.innerHTML =
         '<div class="modal-title">' + bal.texts.rebirth_panel_title + '</div>' +
@@ -1825,7 +1878,7 @@
     initRefs, renderAll, renderResources, renderBuildings, renderCenter,
     renderChronicle, renderPermList, pushLog, markNewBuildings, isModalOpen, hintOnce,
     showEventModal, closeEventModal, showOfflinePopup, showBreakthroughOverlay, showFailOverlay,
-    showSettings, showRebirthPanel, showTutorial, showPillHouse, showHelpPanel, showMarket, showFriends, showDeckEditor, showSeniorPick, showCodexPage, showUpdateNotes,
+    showSettings, showRebirthPanel, showTutorial, showPillHouse, showHelpPanel, showMarket, showFriends, showDeckEditor, showSeniorPick, showCodexPage, showUpdateNotes, playEmperorTribulation,
     showBattleArena, updateBattleHP, updateBattleShields, updateBattleQi, renderBattleHands, showBattleIntent,
     showBattleScreen, battleLog, battleAppend, showBattleResult,
     toast, tweenNumber, setBgm,

@@ -100,11 +100,33 @@
       "name": "清心丹",
       "category": "cure",
       "rarity_default": "灵",
-      "desc": "药性清冽，涤荡丹毒心魔，神台复明。",
+      "desc": "清心去病，排丹毒、解负面。清心丹不挑境界、不受丹毒减半——但劣凡品药性驳杂，会反积小毒。",
       "effect": {
         "toxic_reduce": 10,
         "clear_curse": true
-      }
+      },
+      "effect_by_quality": {
+        "劣": {
+          "toxic_reduce": 10,
+          "toxic_add": 5
+        },
+        "凡": {
+          "toxic_reduce": 12,
+          "toxic_add": 2
+        },
+        "灵": {
+          "toxic_reduce": 15
+        },
+        "珍": {
+          "toxic_reduce": 25,
+          "xinmo_reduce": 5
+        },
+        "仙": {
+          "toxic_reduce": 40,
+          "xinmo_reduce": 15
+        }
+      },
+      "fit_exempt": true
     },
     {
       "id": "xisui",

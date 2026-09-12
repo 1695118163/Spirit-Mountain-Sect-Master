@@ -12,6 +12,7 @@
   function ECO() { return g.LS.economy; }
 
   function hasPrestige(id) { return S().prestige.bought.indexOf(id) !== -1; }
+  function talentLv(id) { const b = S().prestige.bought; return b ? b.filter(x => x === id).length : 0; }
 
   /* ── 解锁集合 ── */
 
@@ -31,7 +32,7 @@
     const ev = BAL().events;
     let itv = U().rand(ev.interval_base_s - ev.interval_jitter_s, ev.interval_base_s + ev.interval_jitter_s);
     itv *= realmIntervalMult();                 // 金丹被动 −10%
-    if (hasPrestige('fuyuan')) itv *= 0.85;     // 福缘 −15%
+    itv *= Math.max(0.7, 1 - 0.05 * talentLv('fuyuan'));     // 福缘 −5%/级
     return Math.max(ev.interval_min_s, itv) * 1000;
   }
 
@@ -49,7 +50,7 @@
     if (s.event_state.since_rare >= cfg.pity_no_rare) return '珍';
     const high = s.realm.index >= cfg.high_realm_index;
     const weights = Object.assign({}, high ? cfg.weights_high : cfg.weights_default);
-    if (hasPrestige('fuyuan')) weights['仙'] += 1;          // 福缘仙品权重 +1%
+    weights['仙'] += talentLv('fuyuan');          // 福缘仙品权重 +1/级
     return U().weightedPick(cfg.keys, k => weights[k]);
   }
 
@@ -181,7 +182,7 @@
       if (s.buffs.some(b => b.id === 'pill_shield' && b.ts_end > Date.now())) p = 1; // 避尘丹护体
       const hushan = (BAL().buildings.find(x => x.id === 'hushanzhen').effects || {}).neg_weight_per_level || 0.02;
       p = Math.max(p, Math.min(0.9, g.LS.economy.bLevel('hushanzhen') * Math.abs(hushan))); // 每级 +2% 净化率
-      if (g.LS.economy.hasPrestige && g.LS.economy.hasPrestige('hushenfu')) p = Math.max(p, 0.5); // 护身符：负面奇遇权重 −50%
+      if (g.LS.economy.talentLv && g.LS.economy.talentLv('hushenfu')) p = Math.max(p, Math.min(0.9, 0.15 * g.LS.economy.talentLv('hushenfu') + 0.05)); // 护身符：负面净化 20%/35%/50%（净权−15%/级）
       return p;
     }
     function rollSlots(ev) {

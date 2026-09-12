@@ -87,6 +87,20 @@ for (const b of BAL.buildings) {
 // B2 传承：逐项购买后属性差分
 // B2 传承：逐项购买后属性差分
 // 已验证生效的「id 硬编码映射」键（功能真实生效，只是不走 effect 键名通用分发）：
+// v0.20 多级天赋：效果由 talentLv 公式驱动（desc 说明），按 id 白名单豁免差分检测
+const TALENT_LV_OK = {
+  fuyuan: 'rollRarity/事件间隔 talentLv(fuyuan) 按级',
+  hushenfu: 'offlineEfficiency/负面净化 talentLv(hushenfu) 按级',
+  chushiziben: 'doRebirth 初始资本三档 capLv',
+  qianshijiyuan: 'first_event_after_rebirth 前世机缘三档',
+  tiandao_qin: 'emperorTribulation 帝劫 +4%/级',
+  shenwai_huashen: 'offlineEfficiency 化身 +3%/级',
+  wuxing: 'xiuMult 悟性 +12%/级',
+  dandao: 'pillInterval 丹道 +15%/级',
+  tuna_yaojue: '点击产量 ×1.5^级',
+  linggen_mu: 'prestigeMult 灵气 +10%/级',
+  linggen_jin: 'prestigeMult 灵石 +10%/级'
+};
 const HARDCODED_OK = {
   qi_building_mult: "prestigeMult 硬编码 linggen_mu ×1.25",
   lingshi_building_mult: "prestigeMult 硬编码 linggen_jin ×1.25",
@@ -113,10 +127,11 @@ for (const u of BAL.prestige.upgrades) {
   const before = snap();
   LS.S.prestige.bought.push(u.id);
   const after = snap();
+  const eff = u.effect || {}; // v0.20 多级天赋：效果写在 desc/公式里（talentLv 驱动），effect 键可为空
   const changed = JSON.stringify(before) !== JSON.stringify(after) ||
-    (u.effect.first_event_xian || u.effect.xian_weight_add || u.effect.interval_mult || u.effect.neg_weight_mult);
-  const effectKeys = Object.keys(u.effect || {});
-  const hardcoded = effectKeys.some(k => HARDCODED_OK[k]);
+    (eff.first_event_xian || eff.xian_weight_add || eff.interval_mult || eff.neg_weight_mult);
+  const effectKeys = Object.keys(eff);
+  const hardcoded = effectKeys.some(k => HARDCODED_OK[k]) || !!TALENT_LV_OK[u.id];
   if (changed) ok('传承「' + u.name + '」生效（数值有响应）');
   else if (hardcoded) ok('传承「' + u.name + '」生效（' + effectKeys.map(k => HARDCODED_OK[k] || k).join('；') + '）');
   else bad('传承「' + u.name + '」购买后数值无任何变化（白买）');

@@ -111,6 +111,15 @@
     if (!Array.isArray(s.chains)) s.chains = [];
     if (!Array.isArray(s.cards_owned)) s.cards_owned = (fresh.cards_owned || []).slice();
     if (!Array.isArray(s.deck)) s.deck = [];
+    // v0.20 天赋多级迁移：旧「吐纳要诀·初悟/深入」合并为 tuna_yaojue 的等级（bought 重复计数）
+    if (Array.isArray(s.prestige) === false && s.prestige && Array.isArray(s.prestige.bought)) {
+      const b = s.prestige.bought;
+      const nChuwu = b.filter(x => x === 'chuwu').length + b.filter(x => x === 'shenru').length;
+      if (nChuwu > 0) {
+        s.prestige.bought = b.filter(x => x !== 'chuwu' && x !== 'shenru');
+        for (let i = 0; i < nChuwu; i++) s.prestige.bought.push('tuna_yaojue');
+      }
+    }
     if (!s.tags || typeof s.tags !== 'object') s.tags = {};
     if (!s.buildings || typeof s.buildings !== 'object') s.buildings = {};
     if (!s.building_stalls) s.building_stalls = {};
