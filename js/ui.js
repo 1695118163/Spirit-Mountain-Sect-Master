@@ -478,7 +478,7 @@
       const rootTxt = s.spirit_root ? '　灵根·' + s.spirit_root.key + s.spirit_root.element : '';
       const xm = typeof s.xinmo === 'number' && s.xinmo > 0 ? '　<span style="color:var(--cinnabar)">心魔 ' + s.xinmo + (s.xinmo >= 85 ? '·入魔' : s.xinmo >= 60 ? '·缠身' : s.xinmo >= 30 ? '·滋生' : '') + '</span>' : '';
       const dStr = stage + rootTxt + '　道心 ' + (s.dao_heart > 0 ? '+' : '') + s.dao_heart + (tier ? ' · ' + tier.name : '') + xm;
-      if (lastStr.dao !== dStr) { refs.daoHeart.textContent = dStr; lastStr.dao = dStr; }
+      if (lastStr.dao !== dStr) { refs.daoHeart.innerHTML = dStr; lastStr.dao = dStr; } // innerHTML：心魔段带朱色 span（内容均为内部数据）
     }
     const next = bal.realms[s.realm.index + 1];
     if (next && next.need_xp) {
