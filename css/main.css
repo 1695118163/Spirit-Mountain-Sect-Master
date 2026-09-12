@@ -684,3 +684,69 @@ html.night body #version-mark { opacity: .3; }
 .update-notes { max-height:52vh; overflow-y:auto; }
 .un-line { font-size:13px; line-height:1.9; padding:7px 4px 7px 2px; border-bottom:1px dashed rgba(122,106,85,.35); color:var(--ink,#e8dcc8); }
 .un-line:last-child { border-bottom:none; }
+
+/* ═══ v0.21 批一：仙侠背景三层 + 移动端手感修复 ═══ */
+/* 全局：去除触摸高亮/长按选中/长按菜单 */
+* { -webkit-tap-highlight-color: transparent; }
+body {
+  touch-action: manipulation;
+  background:
+    radial-gradient(ellipse 90% 55% at 85% 108%, rgba(90,110,125,.34), transparent 62%),
+    radial-gradient(ellipse 80% 50% at 8% 106%, rgba(70,92,110,.30), transparent 60%),
+    linear-gradient(180deg, rgba(58,74,88,.16) 0%, rgba(96,118,132,.10) 26%, rgba(150,168,178,.16) 58%, rgba(96,116,130,.26) 100%),
+    linear-gradient(180deg, #f3ead8 0%, #efe4d0 55%, #e7dbc6 100%);
+  position: relative;
+}
+/* 远山剪影两道（左上/右中，贴边不抢正文） */
+body::before {
+  content: '';
+  position: fixed; inset: 0; z-index: -2; pointer-events: none;
+  background:
+    radial-gradient(ellipse 58% 26% at -6% 4%, rgba(52,74,92,.22), transparent 66%),
+    radial-gradient(ellipse 64% 30% at 106% 22%, rgba(58,80,98,.18), transparent 64%),
+    radial-gradient(ellipse 50% 20% at 110% 78%, rgba(48,68,86,.16), transparent 62%);
+}
+/* 云雾带两条 + 宣纸细丝纹 */
+body::after {
+  content: '';
+  position: fixed; inset: 0; z-index: -1; pointer-events: none;
+  background:
+    linear-gradient(180deg, transparent 16%, rgba(255,255,255,.10) 19%, transparent 23%),
+    linear-gradient(180deg, transparent 58%, rgba(255,255,255,.08) 61%, transparent 65%),
+    repeating-linear-gradient(45deg, rgba(120,100,70,.028) 0 1px, transparent 1px 3px);
+}
+/* 夜色主题换变量：远山改墨黑、云雾改月白 */
+html.night body {
+  background:
+    radial-gradient(ellipse 90% 55% at 85% 108%, rgba(6,10,16,.5), transparent 62%),
+    radial-gradient(ellipse 80% 50% at 8% 106%, rgba(4,8,14,.46), transparent 60%),
+    linear-gradient(180deg, rgba(2,4,8,.4) 0%, rgba(8,14,22,.28) 30%, rgba(14,22,34,.34) 100%),
+    linear-gradient(180deg, #12151c 0%, #0e1117 55%, #0a0d13 100%);
+}
+html.night body::before {
+  background:
+    radial-gradient(ellipse 58% 26% at -6% 4%, rgba(0,0,0,.4), transparent 66%),
+    radial-gradient(ellipse 64% 30% at 106% 22%, rgba(0,0,0,.34), transparent 64%),
+    radial-gradient(ellipse 50% 20% at 110% 78%, rgba(0,0,0,.3), transparent 62%);
+}
+html.night body::after {
+  background:
+    linear-gradient(180deg, transparent 16%, rgba(200,214,235,.05) 19%, transparent 23%),
+    linear-gradient(180deg, transparent 58%, rgba(200,214,235,.04) 61%, transparent 65%),
+    repeating-linear-gradient(45deg, rgba(255,255,255,.014) 0 1px, transparent 1px 3px);
+}
+/* 顶部状态卡与主面板：半透明玉白 + 黛青描边，层次分明 */
+body > .panel, #status-bar, .top-card {
+  background: rgba(248,242,228,.92) !important;
+  border: 1px solid rgba(96,116,130,.35);
+  box-shadow: 0 2px 10px rgba(40,56,70,.10);
+}
+html.night body > .panel, html.night #status-bar, html.night .top-card {
+  background: rgba(18,22,30,.92) !important;
+  border: 1px solid rgba(90,110,130,.3);
+  box-shadow: 0 2px 10px rgba(0,0,0,.4);
+}
+/* 按钮与可点元素禁长按选中 */
+button, .hand-card, .deck-card, .rebirth-item, .set-input {
+  user-select: none; -webkit-user-select: none; -webkit-touch-callout: none;
+}

@@ -108,11 +108,18 @@
     refs.btnHelp = $id('btn-help');
     refs.btnPillHouse = $id('btn-pillhouse');
     refs.btnRebirth = $id('btn-rebirth');
+    // 移动端长按菜单拦截：吐纳圆钮与面板按钮长按不再弹出系统菜单
+    document.addEventListener('contextmenu', (e) => {
+      if (e.target.closest('#btn-breath, #breath-wrap, button, .panel')) e.preventDefault();
+    });
     // 面板按钮统一事件委托（document 级）：元素被任何方式重建/替换都不会丢绑定
     document.addEventListener('click', (e) => {
-      const t = e.target.closest('#btn-market, #btn-friends, #btn-help, #btn-codex, #btn-pillhouse, #btn-settings, #btn-codexpage, #btn-trial, #btn-xinmo');
+      const t = e.target.closest('#btn-market, #btn-friends, #btn-help, #btn-codex, #btn-pillhouse, #btn-settings, #btn-codexpage, #btn-trial, #btn-xinmo, #btn-map, #btn-quest, #btn-disciple, .map-spot');
       if (!t) return;
       if (t.id === 'btn-market') showMarket();
+      else if (t.id === 'btn-map') g.LS.page.go('map');
+      else if (t.id === 'btn-quest') showQuest();
+      else if (t.id === 'btn-disciple') showDisciple();
       else if (t.id === 'btn-friends') showFriends();
       else if (t.id === 'btn-help') showHelpPanel();
       else if (t.id === 'btn-codex') showCodex();
@@ -121,6 +128,10 @@
       else if (t.id === 'btn-codexpage') showCodexPage();
       else if (t.id === 'btn-trial') showTrial();
       else if (t.id === 'btn-xinmo') showXinmo();
+      else if (t.dataset && t.dataset.spot && t.closest('.map-spot')) {
+        const spot = t.dataset.spot;
+        if (spot === 'dannfang' || spot === 'market') g.LS.page.go(spot);
+      }
     });
     refs.logList = $id('log-list');
     refs.permList = $id('perm-list');
@@ -128,6 +139,7 @@
     refs.llmDot = $id('llm-dot');
     refs.forewarn = $id('forewarn');
     refs.modalRoot = $id('modal-root');
+    registerPages();
     refs.toastRoot = $id('toast-root');
     refs.topbar = $id('topbar');
     refs.tintSeason = $id('tint-season');
@@ -1189,6 +1201,268 @@
     });
   }
 
+  /* ── 页面注册：地图 / 丹房 / 市场（page.js 路由） ── */
+  function registerPages() {
+    if (!g.LS.page || g.LS.page._registered) return;
+    g.LS.page._registered = true;
+
+    g.LS.page.register('map', { title: '灵 山 舆 图', render: () => {
+      const spots = [
+        { id: 'dannfang', name: '丹 房', x: 30, y: 38, desc: '炼丹服丹 · 丹毒调理' },
+        { id: 'market', name: '市 场', x: 62, y: 60, desc: '灵石买卖 · 散修集市' },
+        { id: 'locked1', name: '？', x: 74, y: 26, locked: true },
+        { id: 'locked2', name: '？', x: 18, y: 68, locked: true },
+        { id: 'locked3', name: '？', x: 52, y: 14, locked: true },
+        { id: 'locked4', name: '？', x: 84, y: 80, locked: true }
+      ];
+      const spotHtml = spots.map(s => s.locked
+        ? '<div class="map-spot locked" style="left:' + s.x + '%;top:' + s.y + '%"><div class="ms-icon">？</div><span>待开化</span></div>'
+        : '<button class="map-spot" data-spot="' + s.id + '" style="left:' + s.x + '%;top:' + s.y + '%"><div class="ms-icon">' + escapeHtml(s.name[0]) + '</div><span>' + escapeHtml(s.name) + '</span><i>' + escapeHtml(s.desc) + '</i></button>'
+      ).join('');
+      return '<div class="map-canvas">' +
+        '<svg viewBox="0 0 390 620" preserveAspectRatio="xMidYMid slice" class="map-svg">' +
+          '<path d="M0,120 Q80,40 160,110 T390,90 L390,0 L0,0 Z" fill="rgba(70,92,110,.18)"/>' +
+          '<path d="M0,190 Q120,90 230,170 T390,150 L390,60 L0,60 Z" fill="rgba(70,92,110,.13)"/>' +
+          '<path d="M-10,610 Q90,470 200,560 T400,520 L400,640 L-10,640 Z" fill="rgba(60,82,100,.20)"/>' +
+          '<ellipse cx="120" cy="300" rx="90" ry="16" fill="rgba(255,255,255,.10)"/>' +
+          '<ellipse cx="300" cy="420" rx="110" ry="18" fill="rgba(255,255,255,.08)"/>' +
+          '<path d="M120,240 Q160,320 130,430" stroke="rgba(120,100,70,.4)" stroke-width="2" stroke-dasharray="6 5" fill="none"/>' +
+          '<path d="M130,430 Q220,470 244,540" stroke="rgba(120,100,70,.4)" stroke-width="2" stroke-dasharray="6 5" fill="none"/>' +
+        '</svg>' + spotHtml +
+        '<div class="map-note">山径所至，皆是机缘——新去处将陆续开化。</div></div>';
+    }});
+
+    g.LS.page.register('dannfang', { title: '丹 房', render: () => {
+      // 与丹房弹窗同一套内容（服丹/丹毒条）
+      const eco = g.LS.economy;
+      const s = g.LS.S;
+      const q = eco.pillQualityCfg() || { toxic_penalty: {} };
+      const toxic = s.pill_toxic || 0;
+      const penalty = Math.min(q.toxic_penalty.cap || 0.30, Math.floor(toxic / 10) * (q.toxic_penalty.per_10_points || 0.05));
+      let rows = '';
+      for (const p of ((g.LS.BAL.pills && g.LS.BAL.pills.pills) || [])) {
+        const qBtns = ['劣', '凡', '灵', '珍', '仙'].map(q2 => {
+          const n = (s.pill_stock || {})[eco.pillStockKey ? eco.pillStockKey(p.id, q2) : p.id + '_' + q2] || 0;
+          if (!n) return '';
+          return '<button class="icon-btn" data-pill="' + p.id + '" data-q="' + q2 + '" style="padding:2px 8px;font-size:11px;min-height:0">' + q2 + '×' + n + '</button>';
+        }).filter(Boolean).join(' ');
+        rows += '<div class="rebirth-item"><div><b>' + escapeHtml(p.name) + '</b>' +
+          '<div style="font-size:11px;color:var(--ink-soft)">' + escapeHtml(p.desc) + '</div></div>' +
+          '<div style="display:flex;gap:4px;flex-wrap:wrap;justify-content:flex-end">' + (qBtns || '<span style="font-size:11px;color:var(--ink-soft)">无库存</span>') + '</div></div>';
+      }
+      return '<div class="modal-desc">丹毒 <b style="color:' + (toxic >= 30 ? 'var(--cinnabar)' : 'inherit') + '">' + Math.floor(toxic) + '</b>' +
+        '（当前产量 ' + (penalty > 0 ? '-' + Math.round(penalty * 100) + '%' : '无碍') + '）' +
+        '<br><span style="font-size:11px;color:var(--ink-soft)">丹毒随时间缓缓消散；清心丹可大幅化解；兵解转世丹毒尽去。点品质按钮即服。</span></div>' + rows;
+    },
+    mount: (root) => {
+      root.querySelectorAll('[data-pill]').forEach(btn => btn.addEventListener('click', () => {
+        const r = g.LS.economy.consumePill(btn.dataset.pill, btn.dataset.q || '灵');
+        if (r.ok) { sfx('click'); toast(r.msg); }
+        g.LS.page.refresh();
+        renderResources();
+      }));
+    }});
+
+    g.LS.page.register('market', { title: '市 场', render: () => {
+      const d = g.LS.market.renderData();
+      let html = '<div class="modal-desc">散修集市——价格随你的产业水涨船高，不会白送也不会天价。灵石 <b>' + g.LS.util.fmt(g.LS.S.resources.lingshi) + '</b></div>';
+      html += '<h3 class="panel-title" style="font-size:14px">购 买</h3>';
+      html += d.items.map(it =>
+        '<div class="rebirth-item"><div><b>' + escapeHtml(it.name) + '</b>' +
+        '<div style="font-size:11px;color:var(--ink-soft)">' + escapeHtml(it.desc) + '</div></div>' +
+        '<button class="icon-btn" data-mbuy="' + it.id + '" ' + (g.LS.S.resources.lingshi >= it.price ? '' : 'disabled') + '>' + g.LS.util.fmt(it.price) + ' 灵石</button></div>').join('');
+      html += '<h3 class="panel-title" style="font-size:14px;margin-top:12px">卖 出</h3>';
+      html += d.sellable.length ? d.sellable.map(p =>
+        '<div class="rebirth-item"><div style="font-size:12.5px">' + escapeHtml(p.name) + '</div>' +
+        '<button class="icon-btn" data-msellpill="' + p.key + '">得 ' + g.LS.util.fmt(p.gain) + ' 灵石</button></div>').join('')
+        : '<div class="modal-desc" style="font-size:11px;color:var(--ink-soft)">没有可卖的丹药。</div>';
+      html += d.gearSell.length ? d.gearSell.map(gp =>
+        '<div class="rebirth-item"><div style="font-size:12.5px">' + escapeHtml(gp.name) + '<span style="font-size:10px;color:var(--ink-soft)">（非佩戴）</span></div>' +
+        '<button class="icon-btn" data-msellgear="' + gp.kind + ':' + gp.id + '">回售 ' + g.LS.util.fmt(gp.gain) + '</button></div>').join('')
+        : '<div class="modal-desc" style="font-size:11px;color:var(--ink-soft)">没有多余的装备。</div>';
+      return html;
+    },
+    mount: (root) => {
+      root.querySelectorAll('[data-mbuy]').forEach(btn => btn.addEventListener('click', () => {
+        const r = g.LS.market.buy(btn.dataset.mbuy);
+        toast(r.msg, r.ok ? 3600 : 2200);
+        if (r.ok) { sfx('guqin'); g.LS.page.refresh(); renderResources(); }
+      }));
+      root.querySelectorAll('[data-msellpill]').forEach(btn => btn.addEventListener('click', () => {
+        const parts = btn.dataset.msellpill.split('_');
+        const q = parts[parts.length - 1];
+        const id = parts.slice(0, -1).join('_');
+        const r = g.LS.market.sellPill(id, q);
+        toast(r.msg);
+        if (r.ok) { sfx('click'); g.LS.page.refresh(); renderResources(); }
+      }));
+      root.querySelectorAll('[data-msellgear]').forEach(btn => btn.addEventListener('click', () => {
+        const [kind, id] = btn.dataset.msellgear.split(':');
+        const r = g.LS.market.sellGear(kind, id);
+        toast(r.msg);
+        if (r.ok) { sfx('click'); g.LS.page.refresh(); renderResources(); }
+      }));
+    }});
+  }
+
+  /* ── 主线面板：当前章任务 + 领奖 + 剧情 ── */
+  function showQuest() {
+    removeModals();
+    const { card } = makeModal(removeModals);
+    const render = () => {
+      const st = g.LS.quest.state();
+      const chapters = (g.LS.BAL.story || {}).chapters || [];
+      const cur = g.LS.quest.current();
+      let html = '<div class="modal-title">主 线 · 掌 门 之 路<button class="icon-btn" id="q-close" style="float:right;font-size:12px;padding:3px 12px">合 上</button></div>';
+      if (!cur) { html += '<div class="modal-desc">主线已全部完成——灵山万年，代代掌门。</div>'; }
+      else {
+        const ch = cur.chapter;
+        const cn = '一二三四五六七八九十'[ch.idx] || (ch.idx + 1);
+        html += '<div class="modal-desc"><b>第' + cn + '章 · ' + escapeHtml(ch.name.split('·')[1] || ch.name) + '</b>' +
+          '（第 ' + (st.ch + 1) + '/' + chapters.length + ' 章）<br><span style="font-size:11.5px;color:var(--ink-soft)">' + escapeHtml(ch.intro) + '</span></div>';
+        html += '<div style="margin:8px 0">';
+        for (let i = 0; i < ch.tasks.length; i++) {
+          const t = ch.tasks[i];
+          const done = i < st.idx || (i === st.idx && st.claimed);
+          const currentT = i === st.idx && !st.claimed;
+          html += '<div class="rebirth-item' + (done ? ' bought' : '') + '" style="' + (currentT ? 'border-color:var(--cinnabar)' : '') + '"><div>' +
+            '<b>' + (done ? '✓ ' : currentT ? '▸ ' : '　') + escapeHtml(t.desc) + '</b>' +
+            (t.reward && t.reward.lingshi ? '<span style="font-size:11px;color:#e8c34a">　灵石 +' + g.LS.util.fmt(t.reward.lingshi) + '</span>' : '') +
+            (done || currentT ? '<div style="font-size:11px;color:var(--ink-soft)">' + escapeHtml(t.story || '') + '</div>' : '') + '</div>' +
+            (currentT && st.claimed ? '<button class="btn-primary" id="q-claim" style="padding:5px 16px">领 奖</button>' : '') +
+            '</div>';
+        }
+        html += '</div>';
+        if (st.idx >= ch.tasks.length) {
+          html += '<div class="modal-desc" style="border:1px dashed rgba(192,57,43,.4);border-radius:8px"><b>章末</b><br>' + escapeHtml(ch.outro) + '</div>' +
+            '<div style="text-align:center"><button class="btn-primary" id="q-claim" style="padding:7px 24px">开启下一章</button></div>';
+        }
+      }
+      card.innerHTML = html;
+      const qc = card.querySelector('#q-close');
+      if (qc) qc.addEventListener('click', removeModals);
+      const cl = card.querySelector('#q-claim');
+      if (cl) cl.addEventListener('click', () => {
+        const r = g.LS.quest.claim();
+        if (r) {
+          if (r.gainText) toast(r.gainText);
+          if (r.chapter) toast('【' + r.chapter.name + '】' + r.chapter.outro, 6000);
+        }
+        render();
+        renderAll();
+      });
+    };
+    render();
+  }
+
+  /* ── 传承面板：亲传弟子 / 投喂 / 代际 ── */
+  function showDisciple() {
+    removeModals();
+    const { card } = makeModal(removeModals);
+    const render = () => {
+      const s = g.LS.S;
+      const d = s.disciple;
+      let html = '<div class="modal-title">传 承 · 掌 门 亲 传<button class="icon-btn" id="d-close" style="float:right;font-size:12px;padding:3px 12px">合 上</button></div>';
+      html += '<div class="modal-desc">第 ' + ((s.generation || 0) + 1) + ' 代掌门 · 历代传承加成：' + (s.heirloom ? Object.keys(s.heirloom).length + ' 项生效' : '尚无（转正后选定）') + '</div>';
+      if (!d || !d.recruited) {
+        html += '<div class="modal-desc">尚未收徒——推进主线「第一章·开山立派」，首位亲传弟子将叩山门。</div>';
+      } else {
+        const pct = Math.floor(d.progress || 0);
+        html += '<div class="rebirth-item"><div><b>亲传弟子</b>' + (d.agent ? '<span class="ev-badge ev-badge-buff">代理掌门</span>' : '') +
+          '<div style="font-size:11px;color:var(--ink-soft)">境界 ' + escapeHtml((g.LS.BAL.realms[d.realm] || {}).name || '练气') +
+          '（跟随掌门）· 投喂 ' + (d.fed || 0) + ' 颗</div>' +
+          '<div class="bh-hp" style="margin-top:6px"><div class="bh-fill" style="width:' + pct + '%"></div></div>' +
+          '<div style="font-size:10.5px;color:var(--ink-soft)">成熟度 ' + pct + '%/100%，每满 10% 升一小境；自动 ' + (0.02 * (s.realm.index + 1) * (d.agent ? 2 : 1) * 60).toFixed(1) + '%/分钟</div></div></div>';
+        html += '<div class="modal-desc" style="font-size:11px">投喂丹药加速成长（劣+0.5% 凡+1% 灵+2% 珍+4% 仙+8%）：</div>';
+        html += '<div style="text-align:center"><button class="btn-primary" id="d-feed" style="padding:7px 22px">投喂一颗库存丹（仙→劣优先）</button></div>';
+      }
+      if (d && d.agent) html += '<div class="modal-desc" style="margin-top:8px"><b>太上长老纪要</b><br>你已传位垂帘。弟子升至化神大圆满时，将触发「代际传承」四选一。</div>';
+      card.innerHTML = html;
+      const dc = card.querySelector('#d-close');
+      if (dc) dc.addEventListener('click', removeModals);
+      const df = card.querySelector('#d-feed');
+      if (df) df.addEventListener('click', () => {
+        const order = ['仙', '珍', '灵', '凡', '劣'];
+        const stock = s.pill_stock || {};
+        let done = null;
+        for (const q of order) {
+          for (const key of Object.keys(stock)) {
+            if (key.slice(-(q.length + 1)) === '_' + q && stock[key] > 0) {
+              done = g.LS.quest.feedDisciple(key.slice(0, key.length - q.length - 1), q);
+              break;
+            }
+          }
+          if (done && done.ok) break;
+        }
+        if (!done) done = { ok: false, msg: '丹房无丹可喂' };
+        toast(done.msg);
+        if (done.ok) { sfx('guqin'); render(); }
+      });
+    };
+    render();
+  }
+
+  /* ── 代际传承四选一（转正） ── */
+  function showGenerationChoice() {
+    removeModals();
+    const { card } = makeModal(null);
+    card.innerHTML =
+      '<div class="modal-title" style="color:var(--cinnabar)">代 际 传 承</div>' +
+      '<div class="modal-desc">代理掌门已至化神大圆满，灵山要交出去了。你以什么身份注视新一代？——结局决定下一代的起点。</div>' +
+      '<div class="senior-row">' +
+      [{ k: 'keep', n: '继续当掌门', d: '灵山不可一日无主', b: '下一代初始灵气 +20%，传承点 +10%' },
+       { k: 'elder', n: '成为太上长老', d: '垂帘听政，扶一代又一代', b: '下一代修为速度 +8%，灵根概率 +15%' },
+       { k: 'wander', n: '云游四海', d: '天地为庐，处处是山门', b: '下一代奇遇仙品 +2、传承点 +15%' },
+       { k: 'seclude', n: '闭关不出', d: '一闭关，山外已百年', b: '下一代点击产量 +15%，突破成功率 +3%' }
+      ].map(o => '<button class="senior-tier" data-gen="' + o.k + '"><b>' + o.n + '</b><span class="st-desc">' + o.d + '</span><span class="st-rel">' + o.b + '</span></button>').join('') +
+      '</div>';
+    card.querySelectorAll('[data-gen]').forEach(btn => btn.addEventListener('click', () => {
+      const k = btn.dataset.gen;
+      const s = g.LS.S;
+      s.heirloom = {
+        keep: { qi_mult: 1.2, points_mult: 1.1 },
+        elder: { xp_mult: 1.08, root_luck: 0.15 },
+        wander: { xian_weight: 2, event_freq: 0.9, points_mult: 1.15 },
+        seclude: { click_mult: 1.15, bt_add: 0.03 }
+      }[k];
+      s.generation = (s.generation || 0) + 1;
+      s.generation_chosen = false;
+      s.disciple = { recruited: true, progress: 0, realm: 0, agent: false, fed: 0 };
+      g.LS.save.save();
+      toast('【代际传承】新一代掌门继位——结局加成伴随后代一世。', 5200);
+      g.LS.realm.doRebirth(true);
+      removeModals();
+      renderAll();
+    }));
+  }
+
+  /* ── 新手引导（首次 5 步，可跳过可重看） ── */
+  function showTutorialSteps() {
+    const steps = [
+      { t: '吐 纳', d: '点击「吐纳」聚灵气；长按可持续加速——灵气是万物的根。' },
+      { t: '资 源', d: '灵气化修为（自动吞吐）→突破境界；灵石来自坊市灵田，丹药出自丹炉。' },
+      { t: '突 破', d: '修为攒满点「突破」——金丹起有雷劫，失败会走火甚至殒命，备好保命装。' },
+      { t: '丹房与地图', d: '右栏「地图」进丹房服丹、市场做买卖——地图是灵山全部去处。' },
+      { t: '主线与试炼', d: '「主线」推掌门之路拿剧情奖励；「试炼塔」练手拿掉落——化神后可与道友切磋。' }
+    ];
+    removeModals();
+    let i = 0;
+    const { card } = makeModal(null);
+    const render = () => {
+      const st = steps[i];
+      card.innerHTML =
+        '<div class="modal-title">新 手 引 导 ' + (i + 1) + '/' + steps.length + '</div>' +
+        '<div class="modal-desc"><b style="font-size:18px;letter-spacing:4px">' + st.t + '</b><br>' + st.d + '</div>' +
+        '<div style="text-align:center;margin-top:10px;display:flex;gap:8px;justify-content:center">' +
+        '<button class="icon-btn" id="tu-skip">跳 过</button>' +
+        '<button class="btn-primary" id="tu-next" style="padding:7px 22px">' + (i < steps.length - 1 ? '下一步' : '开始修行') + '</button></div>';
+      card.querySelector('#tu-skip').addEventListener('click', finish);
+      card.querySelector('#tu-next').addEventListener('click', () => { i += 1; if (i >= steps.length) finish(); else render(); });
+    };
+    const finish = () => { try { localStorage.setItem('lingshan_tutorial_done', '1'); } catch (e) {} removeModals(); };
+    render();
+  }
+
   /* ── 邪修面板：劫掠/血祭/黑市（心魔≥30 解锁） ── */
   function showXinmo() {
     removeModals();
@@ -1628,7 +1902,8 @@
   }
 
   /* ── 丹房：丹药库存一览 / 服用 / 丹毒 ── */
-  function showPillHouse() {
+  function showPillHouse() { g.LS.page.go('dannfang'); }
+  function showPillHouseModal() {
     removeModals();
     const { card } = makeModal(removeModals);
     const eco = g.LS.economy;
@@ -2076,7 +2351,7 @@
     initRefs, renderAll, renderResources, renderBuildings, renderCenter,
     renderChronicle, renderPermList, pushLog, markNewBuildings, isModalOpen, hintOnce,
     showEventModal, closeEventModal, showOfflinePopup, showBreakthroughOverlay, showFailOverlay,
-    showSettings, showRebirthPanel, showTutorial, showPillHouse, showHelpPanel, showMarket, showFriends, showDeckEditor, showSeniorPick, showCodexPage, showUpdateNotes, playEmperorTribulation, showTrial, showXinmo, showAmbushModal,
+    showSettings, showRebirthPanel, showTutorial, showPillHouse, showHelpPanel, showMarket, showFriends, showDeckEditor, showSeniorPick, showCodexPage, showUpdateNotes, playEmperorTribulation, showTrial, showXinmo, showAmbushModal, showQuest, showDisciple, showGenerationChoice, showTutorialSteps,
     showBattleArena, updateBattleHP, updateBattleShields, updateBattleQi, renderBattleHands, showBattleIntent,
     showBattleScreen, battleLog, battleAppend, showBattleResult,
     toast, tweenNumber, setBgm,

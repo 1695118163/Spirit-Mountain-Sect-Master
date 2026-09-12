@@ -42,6 +42,10 @@
             const r7 = await fetch('./data/levels.json');
             if (r7.ok) balance.levels = (await r7.json());
           } catch (e) {}
+          try {
+            const r8 = await fetch('./data/story.json');
+            if (r8.ok) balance.story = (await r8.json());
+          } catch (e) {}
           return { balance, events, chains };
         }
       }

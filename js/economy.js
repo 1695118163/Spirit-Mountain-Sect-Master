@@ -23,6 +23,8 @@
   function hasPrestige(id) { return S().prestige.bought.indexOf(id) !== -1; }
   /** 天赋等级 = bought 中出现次数（多级天赋：每级重算，甲§4陷阱①） */
   function talentLv(id) { const b = S().prestige.bought; return b ? b.filter(x => x === id).length : 0; }
+  /** 代际传承加成（四选一结局，保一世） */
+  function heirloomOf() { return S().heirloom || null; }
 
   /** 境界总乘算 = 各段 mult_passive 叠乘（realm.js 提供，Node 下防未加载直接内联兜底） */
   function realmMultSafe() {
@@ -339,7 +341,6 @@
   /* ── 传承兑换 ── */
 
   /** 天赋等级：bought 中出现次数（多级天赋，每级重算） */
-  function talentLv(id) { const b = S().prestige.bought; return b ? b.filter(x => x === id).length : 0; }
 
   function upgradeState(u) {
     const p = S().prestige;
@@ -703,6 +704,5 @@
     pillInterval, pillTick, servePill, autoPillTick,
     upgradeState, buyUpgrade, hasPrestige, talentLv, gearXpMult, xinmoAct, xinmoDecay, bLevel, clampAll,
     abilityDef, abilityCooldownLeft, useAbility,
-    pillCat, pillQualityCfg, pillTotal, pillCount, grantPill, rollPillQuality, rollPillOutput, consumePill, toxicDecay, difficultyCfg
-  };
+    pillCat, pillQualityCfg, pillTotal, pillCount, grantPill, rollPillQuality, rollPillOutput, consumePill, toxicDecay, difficultyCfg, heirloomOf,};
 })(typeof window !== 'undefined' ? window : globalThis);

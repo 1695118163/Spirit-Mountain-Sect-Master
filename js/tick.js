@@ -162,8 +162,23 @@
     advanceGame(dt, { mode: 'online' }); // 后台节流的大 dt 全额补算（隐藏期间按在线效率累计）
     stagnationTick(now);
     g.LS.events.maybeTriggerEvent(now);
+    try { if (g.LS.quest) g.LS.quest.tickDisciple(); } catch (e) {} // 弟子成长（批四）
     if (now >= nextRenderAt) {
       nextRenderAt = now + TICK_MS;
+      try {
+        if (g.LS.quest) {
+          if (g.LS.quest.poll() && g.LS.ui && g.LS.ui.toast) {
+            const cur = g.LS.quest.current();
+            if (cur && cur.type === 'task') g.LS.ui.toast('【主线】任务达成：' + cur.task.desc + '——去主线页领奖。', 4200);
+          }
+          g.LS.quest.tickDisciple();
+          const sd = g.LS.S;
+          if (sd.disciple && sd.disciple.agent && sd.disciple.realm >= 4 && !sd.generation_chosen && g.LS.ui && g.LS.ui.showGenerationChoice) {
+            sd.generation_chosen = true;
+            g.LS.ui.showGenerationChoice();
+          }
+        }
+      } catch (e) {}
       if (g.LS.ui && g.LS.ui.renderAll) g.LS.ui.renderAll();
     }
   }
