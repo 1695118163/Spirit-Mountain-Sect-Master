@@ -352,7 +352,7 @@ const server = http.createServer((req, res) => {
   });
 });
 
-server.listen(CONFIG.port, '127.0.0.1', () => {
+server.listen(CONFIG.port, '0.0.0.0', () => { // 0.0.0.0：手机同 WiFi 可访问局域网 IP
   console.log('[灵山掌门代理] 已启动 http://127.0.0.1:8787 （模型：' + (CONFIG.ark_model || '未配置') + ' / 密钥：' + (CONFIG.ark_api_key ? '已配置' : '未配置') + '）');
   if (!CONFIG.ark_model || !CONFIG.ark_api_key) {
     console.log('');
