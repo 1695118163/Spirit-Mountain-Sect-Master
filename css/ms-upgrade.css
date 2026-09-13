@@ -376,3 +376,99 @@ html.night .page-view{
 @keyframes page-out-right{to{transform:translateX(7%);opacity:0}}
 .page-body.page-in-fwd,.page-body.page-in-back{animation:none}
 .page-topbar{backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);position:sticky;top:0;z-index:5}
+/* ============================================================================
+   灵山舆图 · 重绘（v0.21.2）——参照明清古舆图画法：
+   ①山用「山峰折线」符号群（三层景深：远淡多雾/中实带皴/近景枯笔）；
+   ②水路多层叠粗细变化、山道短划珠链虚线；③淡月/罗盘/云气/朱印「舆图」填留白；
+   ④地点朱印方块（丹房/市场），「待开化」压缩为淡墨小记；
+   ⑤地图下沿卷轴承接。旧内联波浪 SVG 以 .map-svg{display:none} 退役，结构不动。
+   昼夜各一份内联 SVG（透明底，纸底由渐变承担）。替换段：css/ms-upgrade.css 的「§12 舆图」整段。
+   ============================================================================ */
+
+/* 旧波浪 SVG 与旧印章样式退役 */
+.map-canvas .map-svg{display:none}
+.map-canvas{position:relative;border-radius:var(--ms-r-l);overflow:hidden}
+
+/* 昼版舆图（透明底·墨色系） */
+.map-canvas::before{
+  content:"";position:absolute;inset:0;pointer-events:none;
+  background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 390 720' preserveAspectRatio='xMidYMid slice'><defs><filter id='mb' x='-20%' y='-20%' width='140%' height='140%'><feGaussianBlur stdDeviation='1.4'/></filter><filter id='mb2' x='-20%' y='-20%' width='140%' height='140%'><feGaussianBlur stdDeviation='.7'/></filter></defs><circle cx='322' cy='84' r='24' fill='%23f2e6cc' opacity='.55'/><circle cx='322' cy='84' r='34' fill='none' stroke='%23a6987f' stroke-width='.8' opacity='.30'/><g font-family='serif' font-size='9' fill='%237a6a55' opacity='.38'><text x='52' y='86'>北</text></g><g stroke='%237a6a55' opacity='.34' fill='none'><circle cx='62' cy='118' r='26' stroke-width='1'/><circle cx='62' cy='118' r='3' fill='%237a6a55' stroke='none' opacity='.6'/><path d='M62 92 L62 144 M36 118 L88 118' stroke-width='.8'/></g><g stroke='%238a93a0' stroke-width='1.1' fill='none' opacity='.20' filter='url(%23mb)'><path d='M-10,236 L18,196 L30,208 L52,180 L64,194 L86,168 L100,186 L122,162 L136,178 L158,154 L172,172 L196,150 L212,168 L236,146 L252,164 L276,142 L292,160 L316,140 L332,156 L356,136 L372,152 L400,132 L400,240 L-10,240 Z'/></g><g stroke='%237a6a55' stroke-width='1.5' fill='none' opacity='.32' filter='url(%23mb2)'><path d='M-10,300 L24,252 L40,268 L66,236 L82,254 L110,224 L128,244 L154,216 L172,236 L198,208 L216,228 L244,202 L262,222 L288,198 L308,218 L334,196 L352,214 L378,192 L400,206 L400,312 L-10,312 Z'/><path d='M60,262 L74,246 M120,240 L136,222 M196,226 L212,206 M268,214 L286,196' stroke-width='.9' opacity='.6'/></g><g stroke='%234a4033' stroke-width='2' fill='rgba(58,50,38,.07)' opacity='.52'><path d='M-10,430 L30,356 L48,376 L78,330 L96,352 L128,306 L148,330 L176,290 L198,314 L228,276 L252,300 L282,266 L306,290 L336,262 L360,286 L400,258 L400,440 L-10,440 Z'/></g><g stroke='%234a4033' stroke-width='1' fill='none' opacity='.30'><path d='M96,352 L88,380 M128,306 L122,336 M176,290 L172,322 M228,276 L224,308 M282,266 L278,298' stroke-dasharray='7 5'/></g><path d='M120,272 Q140,262 158,268 L162,282 Q140,290 124,284 Z' fill='none' stroke='%234a4033' stroke-width='1.2' opacity='.5'/><path d='M238,428 Q262,418 284,424 L288,438 Q262,446 242,440 Z' fill='none' stroke='%234a4033' stroke-width='1.2' opacity='.5'/><g font-family='serif' font-size='10' fill='%237a6a55' opacity='.40'><text x='132' y='252'>青莲峰</text><text x='300' y='470'>沉璧泽</text><text x='46' y='150'>北斗台</text></g><g fill='none' stroke-linecap='round'><path d='M74,486 C104,514 92,548 122,566' stroke='%234f7f9e' stroke-width='2.4' opacity='.34'/><path d='M122,566 C152,584 196,576 238,598' stroke='%234f7f9e' stroke-width='5' opacity='.30'/><path d='M238,598 C262,612 292,620 330,640' stroke='%234f7f9e' stroke-width='8.5' opacity='.26'/><path d='M74,486 C104,514 92,548 122,566' stroke='%23cfe0e8' stroke-width='.9' opacity='.5'/><path d='M122,566 C152,584 196,576 238,598' stroke='%23cfe0e8' stroke-width='1.4' opacity='.45'/></g><path d='M128,296 C160,346 196,386 234,430' fill='none' stroke='%234a4033' stroke-width='2.2' opacity='.50' stroke-linecap='round' stroke-dasharray='3 9'/><path d='M234,430 C214,486 244,520 210,560' fill='none' stroke='%234a4033' stroke-width='2' opacity='.38' stroke-linecap='round' stroke-dasharray='3 10'/><g stroke='%233a3226' stroke-width='2.4' fill='none' opacity='.26' stroke-dasharray='16 9 5 14' stroke-linecap='round'><path d='M-10,600 L36,548 L60,566 L96,522 L124,542 L156,508 L186,530 L220,500 L252,524 L286,494 L318,516 L352,490 L400,514'/></g><rect x='0' y='196' width='390' height='30' fill='%23fff6e0' opacity='.05'/><rect x='0' y='452' width='390' height='24' fill='%23fff6e0' opacity='.04'/><g transform='rotate(-4 342 622)'><rect x='322' y='600' width='42' height='46' fill='rgba(192,57,43,.10)' stroke='%23c0392b' stroke-width='2'/><text x='343' y='618' font-family='serif' font-size='13' fill='%23c0392b' text-anchor='middle' opacity='.85'>舆</text><text x='343' y='636' font-family='serif' font-size='13' fill='%23c0392b' text-anchor='middle' opacity='.85'>图</text></g></svg>");
+  background-repeat:no-repeat;background-size:cover;background-position:center;
+}
+/* 夜版舆图（深底·淡米墨线） */
+html.night .map-canvas::before{
+  background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 390 720' preserveAspectRatio='xMidYMid slice'><defs><filter id='mb' x='-20%' y='-20%' width='140%' height='140%'><feGaussianBlur stdDeviation='1.4'/></filter><filter id='mb2' x='-20%' y='-20%' width='140%' height='140%'><feGaussianBlur stdDeviation='.7'/></filter></defs><circle cx='322' cy='84' r='24' fill='%23dfe6f2' opacity='.45'/><circle cx='322' cy='84' r='34' fill='none' stroke='%238ea6bd' stroke-width='.8' opacity='.26'/><g font-family='serif' font-size='9' fill='%23d9cbb0' opacity='.30'><text x='52' y='86'>北</text></g><g stroke='%23a8bed3' opacity='.28' fill='none'><circle cx='62' cy='118' r='26' stroke-width='1'/><circle cx='62' cy='118' r='3' fill='%23a8bed3' stroke='none' opacity='.55'/><path d='M62 92 L62 144 M36 118 L88 118' stroke-width='.8'/></g><g stroke='%23a8bed3' stroke-width='1.1' fill='none' opacity='.16' filter='url(%23mb)'><path d='M-10,236 L18,196 L30,208 L52,180 L64,194 L86,168 L100,186 L122,162 L136,178 L158,154 L172,172 L196,150 L212,168 L236,146 L252,164 L276,142 L292,160 L316,140 L332,156 L356,136 L372,152 L400,132 L400,240 L-10,240 Z'/></g><g stroke='%23d9cbb0' stroke-width='1.4' fill='none' opacity='.26' filter='url(%23mb2)'><path d='M-10,300 L24,252 L40,268 L66,236 L82,254 L110,224 L128,244 L154,216 L172,236 L198,208 L216,228 L244,202 L262,222 L288,198 L308,218 L334,196 L352,214 L378,192 L400,206 L400,312 L-10,312 Z'/><path d='M60,262 L74,246 M120,240 L136,222 M196,226 L212,206 M268,214 L286,196' stroke-width='.9' opacity='.55'/></g><g stroke='%23f6ecd8' stroke-width='1.8' fill='rgba(246,236,216,.05)' opacity='.44'><path d='M-10,430 L30,356 L48,376 L78,330 L96,352 L128,306 L148,330 L176,290 L198,314 L228,276 L252,300 L282,266 L306,290 L336,262 L360,286 L400,258 L400,440 L-10,440 Z'/></g><g stroke='%23f6ecd8' stroke-width='.9' fill='none' opacity='.24'><path d='M96,352 L88,380 M128,306 L122,336 M176,290 L172,322 M228,276 L224,308 M282,266 L278,298' stroke-dasharray='7 5'/></g><path d='M120,272 Q140,262 158,268 L162,282 Q140,290 124,284 Z' fill='none' stroke='%23f6ecd8' stroke-width='1.1' opacity='.4'/><path d='M238,428 Q262,418 284,424 L288,438 Q262,446 242,440 Z' fill='none' stroke='%23f6ecd8' stroke-width='1.1' opacity='.4'/><g font-family='serif' font-size='10' fill='%23d9cbb0' opacity='.32'><text x='132' y='252'>青莲峰</text><text x='300' y='470'>沉璧泽</text><text x='46' y='150'>北斗台</text></g><g fill='none' stroke-linecap='round'><path d='M74,486 C104,514 92,548 122,566' stroke='%238fb8cf' stroke-width='2.4' opacity='.30'/><path d='M122,566 C152,584 196,576 238,598' stroke='%238fb8cf' stroke-width='5' opacity='.26'/><path d='M238,598 C262,612 292,620 330,640' stroke='%238fb8cf' stroke-width='8.5' opacity='.22'/><path d='M122,566 C152,584 196,576 238,598' stroke='%23ffffff' stroke-width='1.2' opacity='.30'/></g><path d='M128,296 C160,346 196,386 234,430' fill='none' stroke='%23f6ecd8' stroke-width='2' opacity='.42' stroke-linecap='round' stroke-dasharray='3 9'/><path d='M234,430 C214,486 244,520 210,560' fill='none' stroke='%23f6ecd8' stroke-width='1.8' opacity='.30' stroke-linecap='round' stroke-dasharray='3 10'/><g stroke='%23e8dcc8' stroke-width='2.2' fill='none' opacity='.20' stroke-dasharray='16 9 5 14' stroke-linecap='round'><path d='M-10,600 L36,548 L60,566 L96,522 L124,542 L156,508 L186,530 L220,500 L252,524 L286,494 L318,516 L352,490 L400,514'/></g><rect x='0' y='196' width='390' height='30' fill='%23ffffff' opacity='.03'/><rect x='0' y='452' width='390' height='24' fill='%23ffffff' opacity='.025'/><g transform='rotate(-4 342 622)'><rect x='322' y='600' width='42' height='46' fill='rgba(224,101,90,.12)' stroke='%23e0655a' stroke-width='2'/><text x='343' y='618' font-family='serif' font-size='13' fill='%23e0655a' text-anchor='middle' opacity='.8'>舆</text><text x='343' y='636' font-family='serif' font-size='13' fill='%23e0655a' text-anchor='middle' opacity='.8'>图</text></g></svg>");
+}
+
+/* 云气漂移带（两条极淡横带缓移，只动 transform） */
+.map-canvas .map-note::before{display:none}
+
+/* 地点：朱印方块（已开=朱砂描边纸白底；未开=淡墨小记不占版面；当前=实心朱砂+涟漪） */
+.map-spot{background:none;border:none;gap:2px}
+.map-spot .ms-icon{
+  width:30px;height:30px;border-radius:6px;
+  border:1.6px solid var(--cinnabar);
+  background:linear-gradient(180deg, var(--ms-paper-lit), var(--ms-paper-deep));
+  color:var(--cinnabar);font-size:13px;font-family:"Kaiti SC","KaiTi",serif;
+  box-shadow:var(--ms-sh-seal);
+}
+html.night .map-spot .ms-icon{
+  background:linear-gradient(180deg, #20283a, #151b25);
+  border-color:var(--ms-vermilion-lit);color:var(--ms-vermilion-lit);
+}
+.map-spot span{
+  font-size:10px;letter-spacing:.18em;color:var(--ms-ink-3);
+  background:rgba(243,234,216,.66);padding:0 4px;border-radius:3px;
+}
+html.night .map-spot span{background:rgba(14,17,23,.6);color:#d9cbb0}
+.map-spot i{font-size:9px;color:var(--ms-ink-5);font-style:normal}
+.map-spot:active .ms-icon{transform:scale(.92)}
+/* 当前所在（样式备好，待地点与玩家位置产生真实关联后由数据驱动启用） */
+.map-spot.is-here .ms-icon{background:var(--cinnabar);color:#fff6f2;border-color:var(--ms-vermilion-press)}
+.map-spot.is-here::after{
+  content:"";position:absolute;left:50%;top:14px;width:30px;height:30px;margin-left:-15px;
+  border-radius:50%;border:1px solid rgba(192,57,43,.5);
+  animation:map-ping 2.6s var(--ms-ease-soft) infinite;
+}
+@keyframes map-ping{0%{transform:scale(.6);opacity:.9}100%{transform:scale(1.9);opacity:0}}
+/* 未开化：压缩为淡墨小记，不占三行 */
+.map-spot.locked{opacity:.30;gap:0}
+.map-spot.locked .ms-icon{
+  width:16px;height:16px;border-radius:3px;font-size:9px;
+  border:1px solid var(--ms-ink-5);color:var(--ms-ink-5);
+  background:var(--ms-ink-7);box-shadow:none;
+}
+.map-spot.locked span{font-size:9px;letter-spacing:.1em;color:var(--ms-ink-5);background:none}
+html.night .map-spot.locked .ms-icon{border-color:rgba(232,220,200,.24);color:rgba(232,220,200,.24);background:rgba(232,220,200,.05)}
+html.night .map-spot.locked span{color:rgba(232,220,200,.24)}
+
+/* 地图与列表承接：下沿卷轴（天杆+卷身），note 文字居卷上 */
+.map-canvas::after{
+  content:"";position:absolute;left:-2%;right:-2%;bottom:-6px;height:26px;
+  background:linear-gradient(180deg, var(--ms-paper-deep) 0%, var(--ms-paper) 30%, var(--ms-paper-deep) 100%);
+  border-top:1px solid var(--ms-dai-2);
+  box-shadow:0 -4px 10px rgba(58,50,38,.08), 0 2px 6px rgba(58,50,38,.14), inset 0 1px 0 rgba(255,255,255,.5);
+  border-radius:4px;
+}
+html.night .map-canvas::after{
+  background:linear-gradient(180deg, #1c2432 0%, #12171f 30%, #1c2432 100%);
+  border-top:1px solid rgba(142,166,189,.32);
+  box-shadow:0 -4px 10px rgba(0,0,0,.3), 0 2px 6px rgba(0,0,0,.4), inset 0 1px 0 rgba(255,255,255,.06);
+}
+.map-note{
+  position:absolute;left:0;right:0;bottom:0;height:24px;line-height:24px;
+  font-size:10px;color:var(--ms-ink-4);text-align:center;margin:0;z-index:2;
+  letter-spacing:.14em;
+}
+
+/* 云气：地图上两条极淡漂移带（transform 循环，与全屏云雾同手法） */
+.map-canvas .map-mist{position:absolute;pointer-events:none}
+.map-canvas::before{z-index:0}
+.map-spot{z-index:2}
+.map-note{z-index:3}
+
+/* ── 画布高度（批二丢失段补回）：撑满视口减顶栏 ── */
+.map-canvas{height:calc(100vh - 110px);min-height:470px}
+
+/* ── 地点印章定位（批二丢失段补回）：绝对定位按画布百分比落位 ── */
+.map-spot{position:absolute;transform:translate(-50%,-50%)}

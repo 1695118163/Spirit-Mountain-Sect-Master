@@ -1226,7 +1226,7 @@
           '<path d="M120,240 Q160,320 130,430" stroke="rgba(120,100,70,.4)" stroke-width="2" stroke-dasharray="6 5" fill="none"/>' +
           '<path d="M130,430 Q220,470 244,540" stroke="rgba(120,100,70,.4)" stroke-width="2" stroke-dasharray="6 5" fill="none"/>' +
         '</svg>' + spotHtml +
-        '<div class="map-note">山径所至，皆是机缘——新去处将陆续开化。</div></div>';
+        '<div class="map-note">─── 山径所至，皆是机缘 ───</div></div>';
     }});
 
     g.LS.page.register('dannfang', { title: '丹 房', render: () => {
