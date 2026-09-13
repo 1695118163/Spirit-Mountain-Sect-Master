@@ -1058,7 +1058,7 @@
       '</div></div>' +
       (info.elRel ? '<div class="modal-desc" style="text-align:center;color:var(--cinnabar)">' + escapeHtml(info.elRel) + '</div>' : '') +
       '<div class="modal-desc" style="text-align:center">' + escapeHtml(info.weather) + '</div>' +
-      '<div class="modal-desc" style="font-size:11px;color:var(--ink-soft)">行动点=自身境界+1，决定你驭得起多重的招（练气只驭 1 费，境界越高越能催动重手）；每回合抽 3 张、只出一招；罡气护罩只保当回合。看对方意图再决断。</div>' +
+      '<div class="modal-desc" style="font-size:11px;color:var(--ink-soft)">行动点=自身境界+1：出招按招式所需点数扣减，用光了点「调息 · 让招」回满（代价是白让一手）；每回合抽 3 张、只出一招；罡气护罩只保当回合。</div>' +
       '<div style="text-align:center;margin-top:10px"><button class="btn-primary" id="battle-start" style="padding:10px 34px;font-size:16px">开 战</button> ' +
       '<button class="icon-btn" id="battle-cancel">改日再战</button></div>';
     card.querySelector('#battle-start').addEventListener('click', () => { onStart(); });
@@ -1081,9 +1081,11 @@
           ' <span class="bh-shield" id="bh-op-shield" style="display:none"></span></div></div></div>' +
       '<div id="battle-intent" class="battle-intent is-empty"></div>' +
       '<div id="battle-stage" class="battle-stage"></div>' +
-      '<div class="battle-qi">行动点 <span id="battle-qi-stars"></span><span class="battle-qi-note">可驭之招的强度上限</span></div>' +
+      '<div class="battle-qi">行动点 <span id="battle-qi-stars"></span><span class="battle-qi-note">出招消耗 · 调息回满</span></div>' +
+      '<div class="battle-note">手牌 · 点一张打出（每回合限一张）</div>' +
       '<div id="battle-hands" class="battle-hands"></div>' +
-      '<div style="text-align:center"><button class="btn-primary" id="battle-end" title="本回合不出招，把回合让给对方">调 息 · 让 招</button></div>';
+      '<div style="text-align:center"><button class="btn-primary" id="battle-end" title="不出招，行动点回满——对方趁机出手">调 息 · 让 招</button>' +
+        '<div class="battle-note">不出招 · 行动点回满，本回合让给对方</div></div>';
     card.querySelector('#battle-end').addEventListener('click', () => { g.LS.battle.endTurn(); });
     // 舞台：两位小人上场（演出层 battle_fx.js）
     const stage = document.getElementById('battle-stage');
@@ -1091,6 +1093,37 @@
       g.LS.battleFx.mount(stage, { my: { dao: my.dao, el: my.element }, op: { dao: op.dao, el: op.element } });
       setTimeout(() => { if (g.LS.battleFx) g.LS.battleFx.kick(); }, 80);
     }
+  }
+
+  /* 首次进斗法的一次性说明：点「知道了」回调开打（此后不再弹，标记在 seen_hints.battle_guide） */
+  function showBattleGuide(onOk) {
+    const card = document.querySelector('.modal-card');
+    if (!card) { onOk(); return; }
+    const gd = document.createElement('div');
+    gd.className = 'battle-guide';
+    gd.innerHTML =
+      '<div class="bg-title">斗 法 须 知</div>' +
+      '<ul class="bg-list">' +
+        '<li>每回合从卡组抽 <b>3 张</b>招，只能出其中 <b>一张</b>。</li>' +
+        '<li>出招消耗 <b>行动点</b>（= 自身境界 + 1）；用光了点「调息 · 让招」回满，代价是白让一手。</li>' +
+        '<li>对方头顶的<b>意图</b>就是他这一手要出的招——据此决定攻还是守。</li>' +
+        '<li>罡气护罩只保当回合；气血尽者判负。</li>' +
+      '</ul>' +
+      '<div class="bg-sub">界 面 怎 么 看</div>' +
+      '<ul class="bg-list bg-list-2">' +
+        '<li>顶上两条血条：左是你、右是对方；名字旁那个「罡气 N」是只保当回合的护罩。</li>' +
+        '<li>血条下方那行横条：<b>对方意图</b>——他这一手要出什么招，据此决定攻守。</li>' +
+        '<li>中间方框：<b>对战舞台</b>，招式、护罩、伤害数字都在这里演。</li>' +
+        '<li>「行动点」一行：亮着的点就是你还剩的行动点，出招按费用扣。</li>' +
+        '<li>「<b>手牌</b>」一栏：三张招，点其中一张打出去（每回合限一张）。</li>' +
+        '<li>最下「<b>调息 · 让招</b>」：不出招，把行动点回满，本回合让给对方。</li>' +
+      '</ul>' +
+      '<div style="text-align:center;margin-top:16px"><button class="btn-primary" id="bg-ok" style="padding:9px 34px">知 道 了</button></div>';
+    card.appendChild(gd);
+    gd.querySelector('#bg-ok').addEventListener('click', function () {
+      if (gd.parentNode) gd.parentNode.removeChild(gd);
+      onOk();
+    });
   }
 
   /* 舞台化（2026-09-13）：原来的逐行文字战报换成小人对战+飘字，
@@ -1822,7 +1855,7 @@
           const canBuy = !has && s.resources.lingshi >= (c.price || 0);
           rows += '<div class="rebirth-item"><div><b>' + escapeHtml(c.name) + '</b>' +
             '<span class="ev-badge ev-badge-buff">' + (KIND_NAME[c.kind] || c.kind) + (c.el && c.el !== 'root' ? '·' + escapeHtml(c.el) : '') + '</span>' +
-            '<div style="font-size:11px;color:var(--ink-soft)">' + escapeHtml(c.desc) + '（' + c.cost + ' 灵力' +
+            '<div style="font-size:11px;color:var(--ink-soft)">' + escapeHtml(c.desc) + '（' + c.cost + ' 行动点' +
             (c.dmg ? ' 杀' : '') + (c.shield ? ' 护' + c.shield : '') + (c.heal ? ' 回' + c.heal : '') + (c.dmg ? ' ' + c.dmg : '') + '）</div></div>' +
             '<div>' + (has ? '<span class="stamp">已 参 悟</span>'
               : '<button class="icon-btn" data-buycard="' + c.id + '" ' + (canBuy ? '' : 'disabled') + '>' + g.LS.util.fmt(c.price) + ' 灵石</button>') + '</div></div>';
@@ -1943,7 +1976,7 @@
               (locked ? '境界「' + ((g.LS.BAL.realms[c.unlock_realm] || {}).name || '?') + '」解锁' : (c.price ? '坊市秘传可参悟' : '尚未参悟')) + '</span></div>';
           } else {
             items += '<button class="deck-card' + (activeNow ? ' deck-card-on' : '') + '" data-pick="' + c.id + '">' +
-              '<b>' + escapeHtml(c.name) + '</b><span>' + c.cost + '灵力 ' +
+              '<b>' + escapeHtml(c.name) + '</b><span>' + c.cost + '行动点 ' +
               (c.dmg ? '杀' + c.dmg : '') + (c.shield ? '护' + c.shield : '') + (c.heal ? '回' + c.heal : '') +
               (c.el ? ' · ' + fmtEl(c.el) : (c.weapon ? ' · 随武器' : '')) + '</span></button>';
           }
@@ -2535,7 +2568,7 @@
     renderChronicle, renderPermList, pushLog, markNewBuildings, isModalOpen, hintOnce,
     showEventModal, closeEventModal, showOfflinePopup, showBreakthroughOverlay, showFailOverlay,
     showSettings, showRebirthPanel, showTutorial, showPillHouse, showHelpPanel, showMarket, showFriends, showDeckEditor, showSeniorPick, showCodexPage, showUpdateNotes, playEmperorTribulation, showTrial, showXinmo, showAmbushModal, showQuest, showDisciple, showGenerationChoice, showTutorialSteps,
-    showBattleArena, updateBattleHP, updateBattleShields, updateBattleQi, renderBattleHands, showBattleIntent,
+    showBattleArena, showBattleGuide, updateBattleHP, updateBattleShields, updateBattleQi, renderBattleHands, showBattleIntent,
     showBattleScreen, battleLog, battleAppend, showBattleResult,
     toast, tweenNumber, setBgm,
     setLLMStatus, setForewarn, updateBuffBar, drawBg, sfx, playTribulation,

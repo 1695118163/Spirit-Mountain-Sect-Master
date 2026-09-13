@@ -619,6 +619,29 @@ html.night .auto-toggle:hover{background:rgba(20,26,36,.45)}
 [data-tip]:has([data-tip]:hover)::after{content:none}    /* 行内按钮（选丹/丹房）自带提示优先，不同时弹两个 */
 #topbar{z-index:20}                                      /* 顶栏抬到面板(1)之上、弹窗(40)之下：否则向下弹的提示被下面的卡片盖住 */
 
+/* 首次进入斗法的一次性须知（覆盖在斗法面板上，点「知道了」关闭） */
+.battle-guide{position:absolute;inset:0;z-index:6;display:flex;flex-direction:column;justify-content:center;
+  padding:26px 30px;border-radius:inherit;
+  background:linear-gradient(180deg,rgba(253,248,236,.97),rgba(246,238,222,.98));
+  box-shadow:inset 0 0 40px rgba(58,50,38,.10);
+  animation:fadeIn .22s ease-out}
+html.night .battle-guide{background:linear-gradient(180deg,rgba(26,32,44,.97),rgba(16,20,28,.98))}
+.battle-guide .bg-title{text-align:center;font-size:19px;letter-spacing:.34em;color:var(--cinnabar,#c0392b);
+  margin-bottom:14px;font-weight:700}
+.battle-guide .bg-list{margin:0;padding:0 0 0 4px;list-style:none}
+.battle-guide .bg-list li{position:relative;padding-left:18px;margin-bottom:10px;font-size:13px;line-height:1.85;
+  color:var(--ms-ink-deep)}
+html.night .battle-guide .bg-list li{color:#d9cbb0}
+.battle-guide .bg-list li::before{content:"○";position:absolute;left:0;top:0;color:var(--cinnabar,#c0392b);font-size:11px}
+.battle-guide .bg-list b{color:var(--cinnabar,#c0392b)}
+.battle-guide .bg-sub{margin:14px 0 8px;padding-top:10px;border-top:1px dashed var(--ms-dai-3);
+  font-size:11.5px;letter-spacing:.24em;color:var(--ms-ink-4)}
+html.night .battle-guide .bg-sub{color:rgba(233,224,204,.5)}
+.battle-guide .bg-list-2 li{font-size:12px;margin-bottom:7px;line-height:1.7}
+/* 斗法面板上的常驻小字（按钮/区域的用途） */
+.battle-note{text-align:center;font-size:11px;color:var(--ms-ink-4);letter-spacing:.06em;margin:2px 0 6px}
+html.night .battle-note{color:rgba(233,224,204,.45)}
+
 /* ── §11c 斗法舞台：文字战报 → 两个小人对战（2026-09-13） ──────────────────
    方框沿用原 #battle-log 尺寸（高 132px），内里改为对战舞台：
    左我方、右对方各一修仙风卡通小人（道袍/发髻/飞剑），出招有起手与冲刺、
@@ -1069,6 +1092,38 @@ html.night .bfx-stage::before{opacity:.55}
   background:#bfe8f4;box-shadow:0 0 6px 2px rgba(160,220,240,.6);opacity:0;
   animation:spring-drop 1.2s ease-out forwards}
 @keyframes spring-drop{0%{opacity:0;transform:translate(0,0) scale(.6)}25%{opacity:.95}100%{opacity:0;transform:translate(var(--sx),var(--sy)) scale(1)}}
+/* 御剑术：五剑绕身 → 齐射（用户指定） */
+.bfx-swordring{position:absolute;left:50%;top:48%;width:132px;height:132px;margin:-66px 0 0 -66px;pointer-events:none;
+  animation:swordring-spin 1s linear infinite}
+@keyframes swordring-spin{0%{transform:rotate(0)}100%{transform:rotate(360deg)}}
+.bfx-swordring i{position:absolute;left:50%;top:50%;width:9px;height:40px;margin:-20px 0 0 -4.5px;
+  background:linear-gradient(180deg,#ffffff,#a8cbe4 55%,#6888a2);
+  clip-path:polygon(50% 0,74% 20%,74% 100%,26% 100%,26% 20%);
+  box-shadow:0 0 11px 3px rgba(185,225,255,.8)}
+.bfx-swordring.fired i{animation:sword-fire .42s ease-out forwards}
+@keyframes sword-fire{0%{opacity:1}100%{opacity:0;transform:rotate(var(--rot)) translateY(-118px) rotate(90deg) scale(.7)}}
+/* 齐射的飞剑 */
+.proj-swordblade{width:36px;height:36px;margin:-18px 0 0 -18px}
+.proj-swordblade .sw{position:absolute;left:14.5px;top:1px;width:7px;height:34px;transform:rotate(90deg);
+  background:linear-gradient(180deg,#ffffff,#a8cbe4 58%,#6888a2);
+  clip-path:polygon(50% 0,74% 20%,74% 100%,26% 100%,26% 20%);
+  box-shadow:0 0 11px 4px rgba(190,228,255,.85)}
+/* 御剑术：五剑绕身 → 齐射（用户指定） */
+.bfx-swordring{position:absolute;left:50%;top:48%;width:132px;height:132px;margin:-66px 0 0 -66px;pointer-events:none;
+  animation:swordring-spin 1s linear infinite}
+@keyframes swordring-spin{0%{transform:rotate(0)}100%{transform:rotate(360deg)}}
+.bfx-swordring i{position:absolute;left:50%;top:50%;width:9px;height:40px;margin:-20px 0 0 -4.5px;
+  background:linear-gradient(180deg,#ffffff,#a8cbe4 55%,#6888a2);
+  clip-path:polygon(50% 0,74% 20%,74% 100%,26% 100%,26% 20%);
+  box-shadow:0 0 11px 3px rgba(185,225,255,.8)}
+.bfx-swordring.fired i{animation:sword-fire .42s ease-out forwards}
+@keyframes sword-fire{0%{opacity:1}100%{opacity:0;transform:rotate(var(--rot)) translateY(-118px) rotate(90deg) scale(.7)}}
+/* 齐射的飞剑 */
+.proj-swordblade{width:36px;height:36px;margin:-18px 0 0 -18px}
+.proj-swordblade .sw{position:absolute;left:14.5px;top:1px;width:7px;height:34px;transform:rotate(90deg);
+  background:linear-gradient(180deg,#ffffff,#a8cbe4 58%,#6888a2);
+  clip-path:polygon(50% 0,74% 20%,74% 100%,26% 100%,26% 20%);
+  box-shadow:0 0 11px 4px rgba(190,228,255,.85)}
 /* 星辰指：星芒贯穿光束 */
 .bfx-starshot{position:absolute;width:130px;height:4px;margin:-2px 0 0 -130px;border-radius:2px;transform-origin:100% 50%;
   background:linear-gradient(90deg,transparent,rgba(255,250,222,.95));

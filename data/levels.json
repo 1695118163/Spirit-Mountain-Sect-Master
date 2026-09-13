@@ -183,7 +183,7 @@
           "kind": "mob",
           "hpMult": 1.0,
           "mob_pool_hint": "食气貘",
-          "teach": "元婴期行动点至 4——一回合只出一招，挑哪一招就是胜负手。",
+          "teach": "元婴期行动点至 4——出招要花行动点，用光了记得调息回满再上重手。",
           "drop": { "lingshi_seconds": 600, "gear_chance": 0.3, "pill_chance": 0.5 }
         },
         {

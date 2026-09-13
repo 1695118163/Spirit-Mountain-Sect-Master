@@ -35,6 +35,7 @@
     canghaitun: 'whirlpool',      // 沧海吞：吞噬漩涡
     hunyuanyiqi: 'chaos',         // 混元一气：气旋爆
     taiqing_zaohua: 'lotus',      // 太清造化：青莲 + 生命光雨
+    yujianshu: 'swordring',       // 御剑术：五剑绕身 1s 再齐射（用户指定）
     // 守式：每张一套（护体罡气走通用罡气护罩）
     jinzhongzhao: 'bell', tiebushan: 'ironbody', xuanwu_zhenyue: 'xuanwu',
     jingang_buhuai: 'sutra', zhoutian_xingdou: 'starmap', guixigong: 'turtle'
@@ -173,6 +174,8 @@
       d.innerHTML = '<i class="fb-blade"></i>';
     } else if (k === 'starfingers') {
       d.innerHTML = '<i class="sf-ray"></i><i class="sf-ray v"></i><i class="sf-core"></i>';
+    } else if (k === 'swordblade') {
+      d.innerHTML = '<i class="sw"></i>';
     } else if (k === 'skyfire' || k === 'prairiefire') {
       d.innerHTML = '<i class="fire-core"></i><i class="fire-tail"></i><i class="fire-spark"></i>';
     } else if (k === 'whirlpool') {
@@ -305,6 +308,22 @@
         ang = Math.PI * 2 * i / 9;
         dist = 24 + Math.random() * 20;
         sparkAt(at, 'sp-thunder', Math.cos(ang) * dist, Math.sin(ang) * dist, i * 20);
+      }
+    } else if (k === 'swordring') {
+      // 五剑齐至：交错斩痕 + 火星
+      for (i = 0; i < 3; i++) {
+        var sl2 = document.createElement('div');
+        sl2.className = 'bfx-slash';
+        sl2.style.left = at.x + 'px'; sl2.style.top = at.y + 'px';
+        sl2.style.transform = 'rotate(' + (28 + i * 26) + 'deg)';
+        sl2.style.animationDelay = (i * 60) + 'ms';
+        layer.appendChild(sl2);
+        (function (n) { setTimeout(function () { if (n.parentNode) n.parentNode.removeChild(n); }, 560); })(sl2);
+      }
+      for (i = 0; i < 10; i++) {
+        ang = -0.6 + (Math.random() - 0.5) * 0.7;
+        dist = 24 + Math.random() * 26;
+        sparkAt(at, 'sp-metal', Math.cos(ang) * dist * (i % 2 ? 1 : -1), Math.sin(ang) * dist, i * 18);
       }
     } else if (k === 'flyingblade') {
       // 刀气贯穿 + 血线
@@ -631,7 +650,7 @@
   }
 
   /* ── 演出一次出招 ─────────────────────────────────── */
-  function play(side, card, events, done) {
+  function play(side, card, events, done, onHit) {
     if (!box || !myEl || !opEl) { if (done) done(); return; }
     var me = sideEl(side), foe = foeSide(side);
     var dmgEvent = null, healEvent = null, shieldEvent = null;
@@ -650,12 +669,48 @@
 
     var steps = [];
     steps.push(function () { return wait(300); });   // 起手
+    var ringNode = null;
     if (dmgEvent) {
-      steps.push(function () {                        // 飞影
-        var from = centerOf(side), to = centerOf(foe);
-        spawnFx(fx, { x: from.x + (side === 'my' ? 20 : -20), y: from.y }, to, 420);
-        return wait(430);
-      });
+      if (fx === 'swordring') {
+        steps.push(function () {                      // 起剑：五剑绕身
+          var host = sideEl(side);
+          if (host) {
+            ringNode = document.createElement('div');
+            ringNode.className = 'bfx-swordring';
+            for (var si2 = 0; si2 < 5; si2++) {
+              var swd = document.createElement('i');
+              swd.style.setProperty('--rot', (si2 * 72) + 'deg');
+              swd.style.transform = 'rotate(' + (si2 * 72) + 'deg) translateY(-54px) rotate(90deg)';
+              ringNode.appendChild(swd);
+            }
+            host.appendChild(ringNode);
+          }
+          return wait(1000);                          // 绕足 1 秒
+        });
+        steps.push(function () {                      // 齐射
+          var from2 = centerOf(side), to2 = centerOf(foe);
+          if (ringNode) { cls(ringNode, 'fired', true); }
+          for (var qi2 = 0; qi2 < 5; qi2++) {
+            (function (n2) {
+              setTimeout(function () {
+                if (!layer) return;
+                spawnFx('swordblade', { x: from2.x + (side === 'my' ? 16 : -16), y: from2.y - 22 + n2 * 11 }, to2, 340);
+              }, n2 * 45);
+            })(qi2);
+          }
+          if (ringNode) {
+            (function (n) { setTimeout(function () { if (n.parentNode) n.parentNode.removeChild(n); }, 460); })(ringNode);
+            ringNode = null;
+          }
+          return wait(420);
+        });
+      } else {
+        steps.push(function () {                      // 飞影
+          var from = centerOf(side), to = centerOf(foe);
+          spawnFx(fx, { x: from.x + (side === 'my' ? 20 : -20), y: from.y }, to, 420);
+          return wait(430);
+        });
+      }
       steps.push(function () {                        // 命中
         var to = centerOf(foe);
         impact(fx, to, dmgEvent.dealt >= 25);
@@ -667,6 +722,7 @@
         else if (dmgEvent.elMult < 1) float(foe, '被 克', 'tag-weak');
         if (dmgEvent.pierce) float(foe, '破 罡', 'tag');
         if (dmgEvent.steal) float(side, '+' + dmgEvent.steal, 'heal');
+        if (onHit) onHit();            // 打到身上这一刻，才让血条/罡气跟着变
         return wait(320);
       });
     }
@@ -707,12 +763,14 @@
         return wait(520);
       }
       healGlow(side, healEvent.amount);
+      if (onHit) onHit();
       return wait(340);
     });
     if (shieldEvent) steps.push(function () {
       var gkey = fxOf(card, el);
       if (GUARD_FX[gkey]) guardCast(gkey, side);   // 守式各自动画（护体罡气＝通用罡气护罩）
       float(side, '+' + shieldEvent.amount, 'shield');
+      if (onHit) onHit();
       return wait(620);
     });
     if (!dmgEvent && !healEvent && !shieldEvent) steps.push(function () { float(side, '调 息', 'tag-weak'); return wait(300); });

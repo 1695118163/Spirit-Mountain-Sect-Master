@@ -1,6 +1,6 @@
 /**
  * battle.js v3 —— 斗法引擎（杀戮尖塔式回合制选牌）：
- *  - 行动点 = 境界 + 1，不再是每回合的灵力池，而是「可驭招式的费用上限」：每回合从卡组抽 3 张，只抽买得起的招；
+ *  - 行动点 = 境界 + 1：每回合从卡组抽 3 张，出招按招式费用扣点，点用光后靠「调息 · 让招」回满（代价是白让一手）；
  *    出一招即把回合交给对方（一回合仅此一招）；护盾只保当回合；对方 AI 先亮「意图」再出手，玩家据此决断；
  *  - 五行克制 ×1.25 / 被克 ×0.85，天时（雨助水行/雪寒）微调，丹毒每回合自伤；
  *  - 大师兄「凌云子」（金丹）为内置人机陪练；好友影子斗法由影子 AI 代打（通用卡组）。
@@ -125,7 +125,8 @@
     const t = (bal.cultivation.techniques || []).find(x => x.id === s.equip.technique);
     const sharp = w ? w.sharp : 5;
     const rootMult = g.LS.state.spiritRootMult ? g.LS.state.spiritRootMult() : 1;
-    const hpMax = Math.round((80 + realm * 45 + sharp * 0.8) * Math.min(1.3, rootMult));
+    // 气血整体下调 60%（2026-09-13 用户口径：一回合只出一招后，原血量让战斗过长）
+    const hpMax = Math.round((80 + realm * 45 + sharp * 0.8) * 0.4 * Math.min(1.3, rootMult));
     // 出战卡组（8 槽）＝ 抽牌池；每回合从池中抽 3 张（见 drawHand），行动点是「可驭招式上限」
     const deckPool = resolveDeck()
       .filter(c => !c.unlock_realm || realm >= c.unlock_realm)
@@ -144,11 +145,12 @@
     };
   }
 
-  /** 大师兄三档（用户口径：正常修炼都能打败，只是难易与收益不同） */
+  /** 大师兄三档（2026-09-13 重定：以当前基础气血为「正常」，同门论道＝1.0 基准）
+      难度靠三件事叠加：气血倍率 / 气血境界偏移 / 补招概率（follow）*/
   const SENIOR_TIERS = {
-    easy:  { key: 'easy',  label: '师弟切磋', offset: -1, hpMult: 0.85, follow: 0.35, dmgAdd: 0, desc: '低你一境的师弟陪练——稳，胜负手筋基本不亏。' },
-    equal: { key: 'equal', label: '同门论道', offset: 0,  hpMult: 1.2, follow: 0.65, dmgAdd: 0, desc: '与你同境的同门——有来有回，看意图排牌可稳占上风。' },
-    hard:  { key: 'hard',  label: '师兄指教', offset: +1, hpMult: 1.6, follow: 0.8, dmgAdd: 2, desc: '高你一境的师兄——凶险，胜则论道积分更多，以下克上可留名碑林。' }
+    easy:  { key: 'easy',  label: '师弟切磋', offset: -1, hpMult: 0.7,  follow: 0.35, dmgAdd: 0, desc: '低你一境的师弟陪练——气血七成，稳，胜负手筋基本不亏。' },
+    equal: { key: 'equal', label: '同门论道', offset: 0,  hpMult: 1.0,  follow: 0.65, dmgAdd: 0, desc: '与你同境的同门——气血相当，有来有回，看意图出招可稳占上风。' },
+    hard:  { key: 'hard',  label: '师兄指教', offset: +1, hpMult: 1.35, follow: 0.8, dmgAdd: 2, desc: '高你一境的师兄——气血多三成半，凶险；胜则论道积分更多，以下克上可留名碑林。' }
   };
 
   /** 对方战斗单位：大师兄（按档位：境界偏移/气血倍率/补招概率/招式加成）或好友影子（通用卡组） */
@@ -163,7 +165,7 @@
     const realm = isSenior ? Math.max(0, Math.min(9, S().realm.index + off)) : (card ? card.realm : 0);
     const w = card ? (bal.cultivation.weapons || []).find(x => x.id === card.weapon) : null;
     const sharp = w ? w.sharp : 5;
-    const base = 80 + realm * 45 + sharp * 0.8;
+    const base = (80 + realm * 45 + sharp * 0.8) * 0.4;   // 气血整体下调 60%（2026-09-13）
     const hpMax = isSenior ? Math.round(base * tierCfg.hpMult) : Math.round(base);
     const t = card ? (bal.cultivation.techniques || []).find(x => x.id === card.technique) : null;
     const realmName = (bal.realms[realm] || {}).name || '?';
@@ -270,6 +272,11 @@
   /* ── AI 拟人策略 + 杀戮尖塔式意图预告 ── */
   function rollIntent(op) {
     const moves = op.hand;
+    // 行动点不够任何一招：对方也靠调息回满（与玩家同一套规则）
+    if (!moves.some(m => (m.cost || 0) <= op.qi)) {
+      op.qi = op.qiMax + (op.apBonus || 0);
+      op.apBonus = 0;
+    }
     // AI 与玩家同规则：意图招必须本回合行动点买得起、且不在 CD（否则退而选 0 费调息）
     const affordable = moves.filter(m => (m.cost || 0) <= op.qi && (m.cd || 0) === 0 || (m.cost || 0) <= op.qi && m.cdLeft <= 0);
     const usable = affordable.filter(m => (m.cd || 0) === 0 || m.cdLeft <= 0);
@@ -356,7 +363,7 @@
     op.element = spec.element || null;
     op.qiMax = op.realm + 1;
     op.qi = op.qiMax;
-    const base = 80 + op.realm * 45 + 5 * 0.8;
+    const base = (80 + op.realm * 45 + 5 * 0.8) * 0.4;   // 气血整体下调 60%（2026-09-13）
     op.hpMax = Math.round(base * (spec.hpMult || 1));
     op.hp = op.hpMax;
     op.hand = (spec.moves || []).map(m => Object.assign({}, m, {
@@ -382,7 +389,7 @@
     op.element = spec.element || null;
     op.qiMax = op.realm + 1;
     op.qi = op.qiMax;
-    const base = 80 + op.realm * 45 + 5 * 0.8;
+    const base = (80 + op.realm * 45 + 5 * 0.8) * 0.4;   // 气血整体下调 60%（2026-09-13）
     op.hpMax = Math.round(base * (spec.hpMult || 1));
     op.hp = op.hpMax;
     op.hand = (spec.moves || []).map(m => Object.assign({}, m, {
@@ -429,16 +436,29 @@
     if (!a) return;
     g.LS.ui.showBattleScreen(a.my, a.op);
     syncUI();
-    g.LS.ui.battleLog('斗法开始——' + a.my.dao + ' 对 ' + a.op.dao + (a.mode === 'senior' ? '（大师兄指教）' : '') + '！');
+    var startLine = '斗法开始——' + a.my.dao + ' 对 ' + a.op.dao + (a.mode === 'senior' ? '（大师兄指教）' : '') + '！';
+    // 头一回踏进斗法：先把规矩讲一遍，点「知道了」才开打；此后不再弹（记在 seen_hints）
+    if (!S().seen_hints) S().seen_hints = {};
+    if (!S().seen_hints.battle_guide && g.LS.ui.showBattleGuide) {
+      g.LS.ui.showBattleGuide(function () {
+        // 点过「知道了」才算看过：半路关掉弹窗（等于没打），下次进来还会讲一遍
+        S().seen_hints.battle_guide = 1;
+        g.LS.save.save();
+        g.LS.ui.battleLog(startLine);
+        startTurn();
+      });
+      return;
+    }
+    g.LS.ui.battleLog(startLine);
     startTurn();
   }
 
-  /* ── 抽牌（2026-09-13 用户口径）：行动点不再是每回合的灵力池，
-     而是「这一境界能驭多强的招」——每回合从卡组抽 3 张，且只抽费用不超过行动点的招。
-     AP=境界+1，故练气只能驭 1 费招，随境界解锁 2/3/4… 费的重手。 ── */
+  /* ── 抽牌：行动点是「出招要付的代价」，上限=境界+1，用点靠「调息」回满。
+     每回合从卡组抽 3 张，且只抽【当前余点】付得起的招——点耗光就抽不到贵招，只能调息。
+     故练气（AP 1）只能使 1 费招，随境界解锁 2/3/4… 费的重手。 ── */
   const DRAW_N = 3;
   function drawHand(unit, n) {
-    const ap = unit.qiMax || 1;
+    const ap = Math.max(0, unit.qi || 0);   // 按当前行动点抽牌：点耗光了就抽不到贵招
     const pool = (unit.deckPool || []).filter(c => (c.cost || 0) <= ap && (c._cdLeft || 0) <= 0);
     const bag = pool.slice();
     const picked = [];
@@ -451,19 +471,17 @@
     return picked;
   }
 
-  /** 回合开始：行动点回满、罡气归零、重抽手牌、AI 亮意图、丹毒结算 */
+  /** 回合开始：罡气归零、重抽手牌、AI 亮意图、丹毒结算（行动点不自动回满，靠调息） */
   function startTurn() {
     const a = active;
     if (!a) return;
     a.round += 1;
-    a.my.qi = a.my.qiMax + (a.my.apBonus || 0); // 龟息功等「下回合行功更盛」
-    a.my.apBonus = 0;
+    // 行动点不再每回合自动回满：出招按费用扣，用光了靠「调息 · 让招」恢复（用户口径 2026-09-13）
+    if (a.round === 1) a.my.qi = a.my.qiMax;
     a.my.shield = 0;
     (a.my.deckPool || []).forEach(c => { if (c._cdLeft > 0) c._cdLeft -= 1; }); // 招式 CD 流转
     drawHand(a.my, DRAW_N);
-    a.op.qi = a.op.qiMax + (a.op.apBonus || 0);
-    a.op.apBonus = 0;
-    rollIntent(a.op);
+    rollIntent(a.op);   // 敌方行动点也不自动回满，不够时由 rollIntent 让它调息
     const evs = [];
     if (a.my.toxic >= 10) {
       const dot = Math.min(12, Math.floor(a.my.toxic / 10) * 3);
@@ -475,7 +493,7 @@
     if (a.my.hp <= 0) { fallIfDead('my'); finish(false, []); return; }
     // 卡组里全是境界压不住的招：提示一次，别让玩家干看着
     if (a.round === 1 && (a.my.hand || []).length && !a.my.hand.some(c => (c.cost || 0) <= a.my.qi)) {
-      g.LS.ui.toast('境界未至——卡组里的招式眼下都压不住，先调息，或去整备卡组换几式低阶的。', 4600);
+      g.LS.ui.toast('行动点不足——手头的招都使不动了，先点「调息 · 让招」把行动点回满。', 4600);
     }
     g.LS.ui.showBattleIntent(intentText(a.op));
     if (a.op.intent && g.LS.battleFx) g.LS.battleFx.intent('op', a.op.intent);
@@ -488,9 +506,10 @@
     if (!a || a.busy) return;
     const card = a.my.hand[idx];
     if (!card) return;
-    if (a.my.qi < (card.cost || 0)) { g.LS.ui.toast('境界未至——此招需 ' + (card.cost || 0) + ' 点行动点方压得住'); return; }
+    if (a.my.qi < (card.cost || 0)) { g.LS.ui.toast('行动点不足——此招需 ' + (card.cost || 0) + ' 点，先「调息 · 让招」回满'); return; }
     if ((card._cdLeft || 0) > 0) return;
     a.busy = true;
+    a.my.qi -= card.cost || 0;   // 出招消耗行动点（用光了得靠「调息」回满）
     if (card.cd) card._cdLeft = card.cd + 1; // 出招进 CD（下回合 startTurn -1 抵消）
     if (card.ap_next) a.my.apBonus = (a.my.apBonus || 0) + card.ap_next; // 下回合行功更盛
     const evs = [];
@@ -500,20 +519,26 @@
     if (card.ap_drain) { a.op.apBonus = (a.op.apBonus || 0) - card.ap_drain; evs.push({ type: 'note', side: 'op', text: '青藤缠身——' + a.op.dao + '下回合约少一分行功。' }); }
     if (!card.dmg && !card.heal && !card.shield) evs.push({ type: 'note', side: 'my', text: a.my.dao + '运功调整气息。' });
     logEvents(evs);
-    syncUI();
+    syncUI({ skipHP: true });   // 手牌/行动点立刻更新；血条等打到身上
     const after = () => {
       a.busy = false;
+      syncHP();
       if (a.op.hp <= 0) { fallIfDead('op'); finish(true, []); return; }
       opTurn(); // 一招既出，回合交给对方
     };
-    if (g.LS.battleFx) g.LS.battleFx.play('my', card, evs, after);
+    if (g.LS.battleFx) g.LS.battleFx.play('my', card, evs, after, syncHP);
     else setTimeout(after, 420);
   }
 
-  /** 玩家点「调 息」：本回合不出招，直接让给对方 */
+  /** 玩家点「调 息」：不出招，行动点回满——代价是白让一手给对方 */
   function endTurn() {
     const a = active;
     if (!a || a.busy) return;
+    a.my.qi = a.my.qiMax + (a.my.apBonus || 0);
+    a.my.apBonus = 0;
+    logEvents([{ text: a.my.dao + '盘膝调息，行动点复满。' }]);
+    if (g.LS.battleFx) g.LS.battleFx.float('my', '调 息', 'shield');
+    syncUI();
     opTurn();
   }
 
@@ -526,6 +551,7 @@
     a.op.shield = 0; // 对方回合开始先散旧罡气，出招再凝新罩
     const evs = [];
     if (it) {
+      a.op.qi -= it.cost || 0;   // 对方出招同样消耗行动点
       if (it.dmg) evs.push(applyHit(a.op, a.my, it, false));
       if (it.heal) evs.push(applyHeal(a.op, it.heal, it.name, false));
       if (it.shield) evs.push(applyShield(a.op, it.shield, it.name, false, { thorns_pct: it.thorns_pct || 0, block_heal: it.block_heal || 0 }));
@@ -539,26 +565,28 @@
     }
     logEvents(evs);
     g.LS.ui.showBattleIntent('');
-    syncUI();
+    syncUI({ skipHP: true });   // 对方这一手打到我身上时再掉血
     const after = () => {
       a.busy = false;
+      syncHP();
       if (a.my.hp <= 0) { fallIfDead('my'); finish(false, []); return; }
       if (a.op.hp <= 0) { fallIfDead('op'); finish(true, []); return; }
-      // 天道裁定（乙§2）：12 回合未分胜负，按剩余气血百分比判，防双龟流与 AI 卡壳死局
-      if (a.round >= 12) {
+      // 天道裁定（乙§2）：8 回合未分胜负，按剩余气血百分比判，防双龟流与 AI 卡壳死局
+      if (a.round >= 8) {
         const myPct = a.my.hp / a.my.hpMax, opPct = a.op.hp / a.op.hpMax;
-        const line = '十二回合已满，天道裁定：' + (myPct > opPct ? a.my.dao + '气机更完足，判胜！' : (myPct < opPct ? a.op.dao + '气机更完足，判胜。' : '气机相当，挑战方让半招——判负。'));
+        const line = '八回合已满，天道裁定：' + (myPct > opPct ? a.my.dao + '气机更完足，判胜！' : (myPct < opPct ? a.op.dao + '气机更完足，判胜。' : '气机相当，挑战方让半招——判负。'));
         logEvents([{ text: line }]);
         finish(myPct > opPct, []);
         return;
       }
       setTimeout(startTurn, 260);
     };
-    if (g.LS.battleFx) g.LS.battleFx.play('op', it || { name: '调息' }, evs, after);
+    if (g.LS.battleFx) g.LS.battleFx.play('op', it || { name: '调息' }, evs, after, syncHP);
     else setTimeout(after, 420);
   }
 
-  function syncUI() {
+  /** 只刷「气血 / 罡气」——出招时延后到招式打到身上那一刻再调（用户口径 2026-09-13） */
+  function syncHP() {
     const a = active;
     if (!a) return;
     g.LS.ui.updateBattleHP(Math.max(0, Math.ceil(a.my.hp)), a.my.hpMax, Math.max(0, Math.ceil(a.op.hp)), a.op.hpMax);
@@ -568,6 +596,12 @@
       g.LS.battleFx.setShield('my', a.my.shield);
       g.LS.battleFx.setShield('op', a.op.shield);
     }
+  }
+
+  function syncUI(opts) {
+    const a = active;
+    if (!a) return;
+    if (!(opts && opts.skipHP)) syncHP();   // 出招流程里传 {skipHP:true}，改由演出命中时刷
     g.LS.ui.updateBattleQi(a.my.qi, a.my.qiMax);
     g.LS.ui.renderBattleHands((a.my.hand || []).map((c, i) => ({
       idx: i, name: c.name, cost: c.cost || 0, desc: c.desc || '',
@@ -581,6 +615,7 @@
   function finish(win, lines) {
     const a = active;
     if (!a) return;
+    syncHP();   // 收尾时血条归位（最后一击可能没走完整演出）
     const diff = Math.max(0, (a.op.realm || 0) - S().realm.index);
     const cfg = CUL().battle || {};
     let honor = 0;
