@@ -481,3 +481,96 @@ html.night .map-canvas::after{
 /* ── 弹窗层级：视图路由（900）之上，战斗/面板弹窗在任何页面都可见 ── */
 .modal-mask{z-index:1200 !important}
 #toast-root{z-index:1500 !important}
+
+/* ============================================================================
+   突破爆发特效（v0.21.2）——把「整屏闪一下」换成「从吐纳钮向外扩散的一次爆发」
+   触发：body.is-holding（屏息压暗 0.5s）→ body.is-breaking（炸亮 0.46s + 泥金尾巴）
+   位置：替换 css/main.css 中 #breakthrough-overlay 的 fadeIn 硬切（该硬切已由 ui.js 时序取代）
+   时间轴例外说明：突破为高光时刻，特效 0.46~0.52s 超出常规 0.12~0.35s 规范，其余交互动效不变
+   ============================================================================ */
+/* 屏息前置拍：整屏轻压暗（body::after 复用为特效层，常态隐藏） */
+body.is-holding::after{
+  content:"";position:fixed;inset:0;z-index:1150;pointer-events:none;
+  background:rgba(36,31,24,.24);
+  animation:ms-hold .5s linear 1;
+}
+html.night body.is-holding::after{background:rgba(0,0,0,.34)}
+@keyframes ms-hold{from{opacity:0}to{opacity:1}}
+
+/* 炸亮：光核 + 双道硬色标扩散环 + 三层错位墨爆，screen 增亮，飞白 mask，单次扩散 */
+body.is-breaking::after{
+  content:"";position:fixed;inset:0;z-index:1150;pointer-events:none;overflow:hidden;
+  mix-blend-mode:screen;
+  background:
+    /* 墨爆三层：错位小圆叠出不规则边界 */
+    radial-gradient(circle 210px at 47% 41%, rgba(58,50,38,.30) 0%, rgba(58,50,38,.12) 46%, transparent 68%),
+    radial-gradient(circle 168px at 54% 47%, rgba(74,64,51,.24) 0%, rgba(74,64,51,.10) 48%, transparent 66%),
+    radial-gradient(circle 132px at 44% 52%, rgba(36,31,24,.20) 0%, transparent 58%),
+    /* 扩散双环：硬色标成环（外环泥金，内环朱砂） */
+    radial-gradient(circle at 50% 50%, transparent 41.2%, rgba(232,195,74,.48) 42.0%, rgba(232,195,74,.10) 44.2%, transparent 46.2%),
+    radial-gradient(circle at 50% 50%, transparent 30.2%, rgba(192,57,43,.42) 31.0%, rgba(192,57,43,.08) 34.0%, transparent 36.5%),
+    /* 朱砂光核：亮纸白芯 → 朱砂 → 淡朱砂 → 透明 */
+    radial-gradient(circle at 50% 50%, var(--ms-paper-lit) 0%, rgba(253,248,236,.92) 8%, rgba(212,86,74,.66) 15%, rgba(192,57,43,.30) 26%, rgba(192,57,43,.10) 40%, transparent 55%);
+  -webkit-mask-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='300' height='300'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.55' numOctaves='3'/><feColorMatrix type='saturate' values='0'/><feComponentTransfer><feFuncA type='linear' slope='1.6' intercept='-0.18'/></feComponentTransfer></filter><rect width='300' height='300' filter='url(%23n)'/></svg>");
+  mask-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='300' height='300'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.55' numOctaves='3'/><feColorMatrix type='saturate' values='0'/><feComponentTransfer><feFuncA type='linear' slope='1.6' intercept='-0.18'/></feComponentTransfer></filter><rect width='300' height='300' filter='url(%23n)'/></svg>");
+  -webkit-mask-size:240px;mask-size:240px;
+  transform-origin:50% 52%;
+  animation:ms-burst .46s cubic-bezier(.34,1.4,.64,1) 1 forwards;
+}
+html.night body.is-breaking::after{
+  background:
+    radial-gradient(circle 210px at 47% 41%, rgba(232,220,200,.20) 0%, rgba(232,220,200,.08) 46%, transparent 68%),
+    radial-gradient(circle 168px at 54% 47%, rgba(232,220,200,.14) 0%, transparent 66%),
+    radial-gradient(circle 132px at 44% 52%, rgba(0,0,0,.34) 0%, transparent 58%),
+    radial-gradient(circle at 50% 50%, transparent 41.2%, rgba(243,217,138,.44) 42.0%, rgba(243,217,138,.10) 44.2%, transparent 46.2%),
+    radial-gradient(circle at 50% 50%, transparent 30.2%, rgba(224,101,90,.40) 31.0%, rgba(224,101,90,.08) 34.0%, transparent 36.5%),
+    radial-gradient(circle at 50% 50%, var(--ms-paper-lit) 0%, rgba(253,248,236,.90) 8%, rgba(224,101,90,.62) 15%, rgba(224,101,90,.28) 26%, rgba(224,101,90,.10) 40%, transparent 55%);
+}
+@keyframes ms-burst{
+  0%{opacity:0;transform:scale(.18)}
+  12%{opacity:1}
+  46%{opacity:.95;transform:scale(1)}
+  100%{opacity:0;transform:scale(1.58)}
+}
+/* 泥金尾巴：三粒金点缓沉 */
+body.is-breaking::before{
+  content:"";position:fixed;inset:0;z-index:1149;pointer-events:none;
+  background:
+    radial-gradient(circle 3px at 44% 50%, var(--ms-gold-lit) 0%, transparent 100%),
+    radial-gradient(circle 2.4px at 52% 47%, var(--ms-gold-lit) 0%, transparent 100%),
+    radial-gradient(circle 2px at 48% 53%, var(--ms-gold) 0%, transparent 100%);
+  animation:ms-gold-dust 1.15s var(--ms-ease-soft) .3s 1 forwards;
+  opacity:0;
+}
+@keyframes ms-gold-dust{
+  0%{opacity:.95;transform:translateY(0)}
+  100%{opacity:0;transform:translateY(52px)}
+}
+/* 按钮同步：蓄力 .93 → 弹 1.12 → 回 1；突破钮金圈扩散 */
+body.is-holding #btn-breath{transform:scale(.93) !important;animation:none !important}
+body.is-holding #btn-break{transform:scale(.96)}
+body.is-breaking #btn-breath{animation:ms-btn-surge .52s cubic-bezier(.34,1.56,.64,1) 1 !important}
+@keyframes ms-btn-surge{0%{transform:scale(.93)}38%{transform:scale(1.12)}100%{transform:scale(1)}}
+body.is-breaking #btn-break{animation:ms-break-ring .52s var(--ms-ease) 1}
+@keyframes ms-break-ring{
+  0%{box-shadow:var(--ms-sh-gold)}
+  40%{box-shadow:var(--ms-sh-gold), 0 0 0 14px rgba(232,195,74,.18), 0 0 46px var(--ms-gold-ghost)}
+  100%{box-shadow:var(--ms-sh-gold), 0 0 0 26px rgba(232,195,74,0)}
+}
+/* 安全：单次触发由 JS 类的加/移保证；断残留兜底 */
+body:not(.is-breaking)::after,body:not(.is-breaking)::before{animation:none;opacity:0}
+body:not(.is-holding)::after{animation:none}
+/* 过场画面本身：取消旧 fadeIn 硬切，改为爆发尾段柔和显影 */
+#breakthrough-overlay{animation:bt-overlay-in .5s var(--ms-ease-soft) .12s 1}
+@keyframes bt-overlay-in{from{opacity:0}to{opacity:1}}
+/* 降级：关闪烁与位移，只留一次静态纸白浅光 */
+@media (prefers-reduced-motion:reduce){
+  body.is-holding::after,body.is-breaking::before{animation:none;opacity:0}
+  body.is-breaking::after{
+    animation:none;transform:none;opacity:.18;mix-blend-mode:normal;
+    background:radial-gradient(circle at 50% 50%, var(--ms-paper-lit) 0%, rgba(192,57,43,.16) 30%, transparent 60%);
+    -webkit-mask-image:none;mask-image:none;
+  }
+  body.is-breaking #btn-breath,body.is-breaking #btn-break{animation:none}
+  #breakthrough-overlay{animation:none}
+}

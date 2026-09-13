@@ -700,6 +700,20 @@
   function showBreakthroughOverlay(text, gainText, realmIdx) {
     sfx('bell');
     if (g.LS.ui.sfx) sfx('drum'); // A5 鼓点：钟鸣里垫一声低沉下扫
+    // 突破爆发（v0.21.2）：屏息压暗 0.48s → 一次炸亮（CSS 见 ms-upgrade.css「突破爆发特效」，单次不连闪）
+    try {
+      const B = document.body;
+      B.classList.remove('is-holding', 'is-breaking'); // 防连触叠加残留
+      B.classList.add('is-holding');
+      setTimeout(() => {
+        B.classList.remove('is-holding');
+        B.classList.add('is-breaking');
+        setTimeout(() => B.classList.remove('is-breaking'), 1400);
+      }, 480);
+      setTimeout(() => {
+        B.appendChild(ov);
+      }, 500); // 过场画面在炸亮瞬间出现，压暗拍期间保持原画面
+    } catch (e) {}
     const ov = document.createElement('div');
     ov.id = 'breakthrough-overlay';
     for (let i = 0; i < 5; i++) {
@@ -752,7 +766,7 @@
     hint.className = 'bt-hint';
     hint.textContent = '点击任意处继续';
     ov.appendChild(hint);
-    document.body.appendChild(ov);
+    if (!ov.parentNode) document.body.appendChild(ov); // 时序：突破爆发炸亮瞬间才挂载
     const close = () => { ov.remove(); renderAll(); };
     ov.addEventListener('click', close); // 用户要求：过场画面点一下才关，不自动消失（动画照常播完，看完再点）
   }
