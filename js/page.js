@@ -103,29 +103,32 @@
     else location.hash = target;
   }
 
-  /** 返回上一页：优先栈回退（hash 历史），没有则回首页 */
+  /** 返回上一页：站内栈有下层才 history.back()（手机返回手势同款）；
+   *  栈底（如直链进入/刷新后）退无可退 → 回首页，绝不退出去白屏 */
   function back() {
-    if (current) history.back();
+    if (navStack.length > 1 && current) history.back();
     else home();
   }
 
   function home() {
+    navStack.length = 0;
     // 「返回首页」= 清栈直达（不走 history.back 的逐层回退）；手机返回手势才是逐层
     if (location.hash && location.hash !== '#/home') location.hash = '#/home';
     else hideCurrent();
   }
 
   /** hash 变化 → 方向判定（按访问序）+ 显示目标视图 */
-  const visitOrder = ['home'];
+  const navStack = []; // 页面 id 栈（不含首页）：栈底=最早打开的页
   function onHash() {
     const id = (location.hash || '#/home').replace(/^#\//, '') || 'home';
-    if (id === 'home' || !registry[id]) { hideCurrent(); return; }
+    if (id === 'home' || !registry[id]) { navStack.length = 0; hideCurrent(); return; }
     if (id === current) return;
-    const curIdx = visitOrder.indexOf(current || 'home');
-    const tgtIdx = visitOrder.indexOf(id);
+    // 方向判定：目标在栈中倒数第二位 = 浏览器返回键弹栈；否则视为前进压栈
+    const at = navStack.indexOf(id);
     let dir = 'fwd';
-    if (tgtIdx !== -1 && curIdx !== -1 && tgtIdx < curIdx) dir = 'back';
-    if (tgtIdx === -1) visitOrder.push(id);
+    if (at !== -1 && at === navStack.length - 2) { dir = 'back'; navStack.pop(); }
+    else if (at === -1) navStack.push(id);
+    else navStack.splice(at, 1); // 回到栈中更早的页（跳栈）：摘除其后的项
     show(id, dir);
   }
 
@@ -134,7 +137,7 @@
   window.addEventListener('hashchange', onHash);
   if ((location.hash || '').indexOf('#/') === 0 && location.hash !== '#/home') {
     const id = location.hash.replace(/^#\//, '');
-    setTimeout(() => { if (registry[id]) { visitOrder.push(id); show(id, 'fwd'); } }, 0);
+    setTimeout(() => { if (registry[id]) { navStack.push(id); show(id, 'fwd'); } }, 0);
   }
 
   g.LS.page = { register, go, back, home, refresh, pageId };
