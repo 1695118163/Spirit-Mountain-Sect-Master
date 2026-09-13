@@ -1079,7 +1079,7 @@
         '<div class="bh-hp"><div class="bh-fill op" id="bh-op" style="width:100%"></div></div>' +
         '<div class="bc-line">气血 <span id="bh-op-num">' + Math.ceil(op.hp) + '</span> / ' + op.hpMax +
           ' <span class="bh-shield" id="bh-op-shield" style="display:none"></span></div></div></div>' +
-      '<div id="battle-intent" class="battle-intent" style="display:none"></div>' +
+      '<div id="battle-intent" class="battle-intent is-empty"></div>' +
       '<div id="battle-stage" class="battle-stage"></div>' +
       '<div class="battle-qi">行动点 <span id="battle-qi-stars"></span><span class="battle-qi-note">可驭之招的强度上限</span></div>' +
       '<div id="battle-hands" class="battle-hands"></div>' +
@@ -1143,11 +1143,13 @@
       btn.addEventListener('click', () => { g.LS.battle.playCard(Number(btn.dataset.idx)); });
     });
   }
+  /* 意图横幅始终占着那一行（空时 visibility:hidden 而非 display:none）：
+     否则回合切换时横幅整行消失，弹窗是 flex 居中的，卡片高度一变整块内容就上下弹一次。*/
   function showBattleIntent(text) {
     const box = document.getElementById('battle-intent');
     if (!box) return;
-    if (!text) { box.style.display = 'none'; return; }
-    box.style.display = '';
+    if (!text) { box.classList.add('is-empty'); box.textContent = ''; return; }
+    box.classList.remove('is-empty');
     box.textContent = text;
   }
   function showBattleResult(win, info) {

@@ -66,7 +66,11 @@
     const els = ['金', '木', '土', '水', '火'];
     const el = els[Math.floor(Math.random() * els.length)];
     const pool = ((g.LS.BAL.cultivation || {}).battle_cards || {}).my_cards || [];
-    const candidates = pool.filter(c => (c.unlock_realm || 0) <= realmNum && (c.price || c.default || c.unlock_realm)); // 战斗牌（含基础默认牌）
+    // 敌人行动点 = 自身境界+1：只抽它驭得起的招，否则意图池会空转（打出「意图：undefined」）
+    const apCap = realmNum + 1;
+    const inRange = c => (c.unlock_realm || 0) <= realmNum && (c.price || c.default || c.unlock_realm);
+    let candidates = pool.filter(c => inRange(c) && (c.cost || 0) <= apCap);
+    if (!candidates.length) candidates = pool.filter(inRange); // 极端情况兜底：别把池子清空
     const moves = [];
     const n = 4 + Math.floor(Math.random() * 2);
     const shuffled = candidates.slice().sort(() => Math.random() - 0.5);

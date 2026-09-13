@@ -290,17 +290,20 @@
       else pick = big || pickAny(pool, 'dmg');
     }
     pick = pick || pickAny(pool, 'dmg');
+    // 池子彻底空（一条买得起的招都没有）：给一条 0 费调息，别让意图变成 undefined
+    if (!pick) pick = { name: '调息', cost: 0, dmg: 0, shield: 0, heal: 0 };
     op.hand.forEach(m => { if (m.cd && m !== pick && m.cdLeft > 0) m.cdLeft -= 1; });
     if (pick && pick.cd) pick.cdLeft = pick.cd + 1;
     op.intent = Object.assign({}, pick);
   }
   function pickAny(pool, key) {
     const hits = pool.filter(m => m[key]);
-    return hits.length ? hits[Math.floor(Math.random() * hits.length)] : pool[0];
+    return hits.length ? hits[Math.floor(Math.random() * hits.length)] : (pool[0] || null);
   }
   function intentText(op) {
     const it = op.intent;
     if (!it) return '';
+    if (!it.name) it.name = '调息'; // 名字缺失时兜底，不吐 undefined
     if (it.dmg) {
       let el = it.el === 'root' ? op.element : it.el;
       const m = elementMult(el, active.my.element);
@@ -560,6 +563,11 @@
     if (!a) return;
     g.LS.ui.updateBattleHP(Math.max(0, Math.ceil(a.my.hp)), a.my.hpMax, Math.max(0, Math.ceil(a.op.hp)), a.op.hpMax);
     g.LS.ui.updateBattleShields(a.my.shield, a.op.shield);
+    // 舞台护罩跟着罡气走：>0 起罩、减少时涟漪、归零碎裂
+    if (g.LS.battleFx && g.LS.battleFx.setShield) {
+      g.LS.battleFx.setShield('my', a.my.shield);
+      g.LS.battleFx.setShield('op', a.op.shield);
+    }
     g.LS.ui.updateBattleQi(a.my.qi, a.my.qiMax);
     g.LS.ui.renderBattleHands((a.my.hand || []).map((c, i) => ({
       idx: i, name: c.name, cost: c.cost || 0, desc: c.desc || '',
