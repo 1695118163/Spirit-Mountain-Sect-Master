@@ -1,112 +1,140 @@
 /**
- * page.js v2 —— 页面切换制路由（转场升级版）：
- *  - 真 hash 路由：#/map #/dannfang #/market #/quest #/disciple——浏览器/手机返回键直接可用；
- *  - 转场：前进=新页从右滑入，返回=从左滑回（0.26s），不再是「同页滑动」的观感；
- *  - 栈驱动方向判断；「返回首页」清栈回 #/home。
+ * page.js v3 —— 整屏视图制路由（View 常驻）：
+ *  - 每页一个常驻 .page-view（首次进入创建，之后只切 display），切走不销毁 →
+ *    滚动位置/表单/浏览状态天然保留，「返回上一页」即恢复原样；
+ *  - 真 hash 路由：#/map #/dannfang #/market… 手机返回手势/浏览器返回键等效「返回上一页」；
+ *  - 转场：前进=新页右滑入、旧页左滑淡出；返回=反向（0.2s，transform/opacity）；
+ *  - 首页 = body 本身（无覆盖层时），回首页即关覆盖层，首页滚动位置天然保留；
+ *  - 各视图内部自滚动（.page-view overflow-y:auto），视图之间绝不连滚。
  */
 (function (g) { 'use strict';
   g.LS = g.LS || {};
 
-  const registry = {};
-  let current = null;          // 当前页 id（null=首页）
-  let animating = false;
-  let suppressHash = false;    // 程序内跳转时防止 hashchange 重复渲染
+  const registry = {};      // id -> { title, render(), mount?(viewEl) }
+  const views = {};         // id -> 常驻视图 DOM
+  let current = null;       // 当前显示的视图 id（null=首页）
+  let switching = false;
 
   function register(id, def) { registry[id] = def; }
 
-  function shellHTML(id, inner) {
-    const def = registry[id] || {};
-    return '<div class="page-topbar">' +
-      '<button class="icon-btn" data-nav="home">返回首页</button>' +
-      '<b class="page-title">' + (def.title || id) + '</b>' +
-      '<button class="icon-btn" data-nav="back">返回上一页</button></div>' +
-      '<div class="page-body">' + inner + '</div>';
+  /** 确保视图 DOM 存在（只建一次；重建内容用 refresh） */
+  function ensureView(id) {
+    if (views[id]) return views[id];
+    const root = document.getElementById('page-root');
+    if (!root) return null;
+    const def = registry[id];
+    const el = document.createElement('div');
+    el.className = 'page-view';
+    el.dataset.view = id;
+    el.innerHTML =
+      '<div class="page-topbar">' +
+        '<button class="icon-btn" data-nav="home">返回首页</button>' +
+        '<b class="page-title">' + (def.title || id) + '</b>' +
+        '<button class="icon-btn" data-nav="back">返回上一页</button></div>' +
+      '<div class="page-body">' + (def.render ? def.render() : '') + '</div>';
+    root.appendChild(el);
+    el.querySelectorAll('[data-nav]').forEach(b => b.addEventListener('click', () => {
+      if (b.dataset.nav === 'home') home(); else back();
+    }));
+    if (def.mount) def.mount(el);
+    views[id] = el;
+    return el;
   }
 
-  /** 渲染某页（dir: 'fwd' 前进滑入 | 'back' 返回滑入 | 'none' 无动画刷新） */
-  function render(id, dir) {
+  /** 重填某视图内容（页面内操作后由页面主动调；保留 DOM 与滚动框架） */
+  function refresh(id) {
+    const id2 = id || current;
+    if (!id2 || !views[id2] || !registry[id2]) return;
+    const body = views[id2].querySelector('.page-body');
+    if (!body) return;
+    const keep = body.scrollTop;
+    body.innerHTML = registry[id2].render ? registry[id2].render() : '';
+    body.scrollTop = keep;
+    views[id2].querySelectorAll('[data-nav]').forEach(b => b.addEventListener('click', () => {
+      if (b.dataset.nav === 'home') home(); else back();
+    }));
+    if (registry[id2].mount) registry[id2].mount(views[id2]);
+  }
+
+  /** 显示目标视图并转场（dir: fwd/back） */
+  function show(id, dir) {
     const root = document.getElementById('page-root');
     if (!root) return;
-    const def = registry[id];
-    if (!def) { close(); return; }
-    current = id;
-    root.innerHTML = shellHTML(id, def.render());
+    const el = ensureView(id);
+    if (!el) return;
+    const prev = current ? views[current] : null;
     root.classList.add('open');
-    root.scrollTop = 0;
-    const body = root.querySelector('.page-body');
-    if (body && dir !== 'none' && !animating) {
-      animating = true;
-      body.classList.add(dir === 'back' ? 'page-in-back' : 'page-in-fwd');
-      body.addEventListener('animationend', () => { body.classList.remove('page-in-fwd', 'page-in-back'); animating = false; }, { once: true });
+    el.classList.add('open');
+    el.style.display = '';
+    if (!switching && prev && prev !== el) {
+      switching = true;
+      prev.classList.add(dir === 'back' ? 'page-out-right' : 'page-out-left');
+      el.classList.add(dir === 'back' ? 'page-in-back' : 'page-in-fwd');
+      const done = () => {
+        prev.classList.remove('page-out-left', 'page-out-right', 'open');
+        prev.style.display = 'none';
+        el.classList.remove('page-in-fwd', 'page-in-back');
+        switching = false;
+      };
+      let fired = false;
+      const once = () => { if (fired) return; fired = true; done(); };
+      el.addEventListener('animationend', once, { once: true });
+      setTimeout(once, 300); // 动画被 reduced-motion 等截断时的兜底
+    } else if (prev && prev !== el) {
+      prev.classList.remove('open');
+      prev.style.display = 'none';
     }
-    root.querySelectorAll('[data-nav]').forEach(b => b.addEventListener('click', () => {
-      if (b.dataset.nav === 'home') home();
-      else back();
-    }));
-    if (def.mount) def.mount(root);
+    current = id;
+    if (dir !== 'back' || true) { /* 进入视图回到顶部仅首次创建时；常驻视图保留原滚动 */ }
   }
 
-  function close() {
+  function hideCurrent() {
+    if (current && views[current]) views[current].style.display = 'none';
     current = null;
     const root = document.getElementById('page-root');
-    if (root) { root.classList.remove('open'); root.innerHTML = ''; }
+    if (root) root.classList.remove('open');
   }
 
-  /** 打开页面：写 hash，转场交给 hashchange */
+  /** 打开页面：写 hash（转场在 hashchange 里做）；hash 已在目标值时（如刷新/回首页后再进同页）直接渲染 */
   function go(id) {
     if (id === current) return;
-    suppressHash = false;
-    location.hash = '#/' + id;
+    const target = '#/' + id;
+    if (location.hash === target) onHash();
+    else location.hash = target;
   }
 
+  /** 返回上一页：优先栈回退（hash 历史），没有则回首页 */
   function back() {
-    if (current && location.hash !== '#/home' && location.hash !== '') history.back();
+    if (current) history.back();
     else home();
   }
 
   function home() {
-    suppressHash = false;
+    // 「返回首页」= 清栈直达（不走 history.back 的逐层回退）；手机返回手势才是逐层
     if (location.hash && location.hash !== '#/home') location.hash = '#/home';
-    else { current = null; close(); }
+    else hideCurrent();
   }
 
-  /** hash 变化 → 判断方向并渲染 */
-  function onHash() {
-    if (suppressHash) { suppressHash = false; return; }
-    const id = (location.hash || '#/home').replace(/^#\//, '') || 'home';
-    if (id === 'home') { current = null; close(); return; }
-    if (!registry[id]) { current = null; close(); return; }
-    if (id === current) return;
-    // 方向：回退到栈中已存在的页=back；新页=fwd。用 history.length 变化不可靠，
-    // 简化：维护一个访问序数组，出现序号<当前=回退。
-    const dir = visitOrder.indexOf(id) !== -1 && visitOrder.indexOf(id) < visitOrder.indexOf(current || 'home') ? 'back' : 'fwd';
-    if (visitOrder.indexOf(id) === -1) visitOrder.push(id);
-    render(id, dir);
-  }
-
+  /** hash 变化 → 方向判定（按访问序）+ 显示目标视图 */
   const visitOrder = ['home'];
-
-  /** 页面内操作后刷新当前页（不播转场） */
-  function refresh() {
-    if (current && registry[current]) {
-      const root = document.getElementById('page-root');
-      if (!root) return;
-      root.innerHTML = shellHTML(current, registry[current].render());
-      root.scrollTop = 0;
-      root.querySelectorAll('[data-nav]').forEach(b => b.addEventListener('click', () => {
-        if (b.dataset.nav === 'home') home(); else back();
-      }));
-      if (registry[current].mount) registry[current].mount(root);
-    }
+  function onHash() {
+    const id = (location.hash || '#/home').replace(/^#\//, '') || 'home';
+    if (id === 'home' || !registry[id]) { hideCurrent(); return; }
+    if (id === current) return;
+    const curIdx = visitOrder.indexOf(current || 'home');
+    const tgtIdx = visitOrder.indexOf(id);
+    let dir = 'fwd';
+    if (tgtIdx !== -1 && curIdx !== -1 && tgtIdx < curIdx) dir = 'back';
+    if (tgtIdx === -1) visitOrder.push(id);
+    show(id, dir);
   }
 
   function pageId() { return current; }
 
   window.addEventListener('hashchange', onHash);
-  // 启动时若 URL 已带页 hash（刷新/分享链接），直接落到该页
   if ((location.hash || '').indexOf('#/') === 0 && location.hash !== '#/home') {
     const id = location.hash.replace(/^#\//, '');
-    setTimeout(() => { if (registry[id]) render(id, 'fwd'); }, 0);
+    setTimeout(() => { if (registry[id]) { visitOrder.push(id); show(id, 'fwd'); } }, 0);
   }
 
   g.LS.page = { register, go, back, home, refresh, pageId };

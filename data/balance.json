@@ -1055,7 +1055,7 @@
       "key": "ganji",
       "name": "赶集",
       "desc": "差人下山张罗，奇遇提前上门",
-      "cooldown_s": 600,
+      "cooldown_s": 300,
       "next_event_in_s": 30
     }
   },

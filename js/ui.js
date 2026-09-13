@@ -183,9 +183,8 @@
       showBreakthroughPanel(next);
     });
     refs.btnPill.addEventListener('click', () => {
-      if (g.LS.economy.servePill()) { sfx('guqin'); toast('丹药入腹，灵机鼓荡（60 秒 ×2）'); }
-      else toast('暂时无法服丹（无丹药或冷却中）');
-      renderAll();
+      // 用户反馈：吃丹要能自己挑——顶栏「服丹」改为进丹房页按品质选
+      g.LS.page.go('dannfang');
     });
     // 面板按钮已统一走 document 事件委托（见上方），此处不再单绑以免双触发
     refs.btnRebirth.addEventListener('click', () => {

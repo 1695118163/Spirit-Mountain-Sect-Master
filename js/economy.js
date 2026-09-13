@@ -255,6 +255,8 @@
     if (!canAfford(cost)) return false;
     pay(cost);
     S().buildings[bId] = bLevel(bId) + 1;
+    // 升级坊市：赶集冷却立即刷新（用户提议「升级刷新」）
+    if (bId === 'fangshi' && S().ability_cd) delete S().ability_cd.ganji;
     if (g.LS.ui && g.LS.ui.renderBuildings) g.LS.ui.renderBuildings();
     if (g.LS.save && g.LS.save.save) g.LS.save.save();
     return true;

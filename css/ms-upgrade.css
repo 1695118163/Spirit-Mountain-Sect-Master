@@ -350,10 +350,29 @@ html.night #page-root.open{background:linear-gradient(180deg, #131a26 0%, #0e111
 #dao-heart span{white-space:nowrap}
 
 /* ── 页面转场：前进从右滑入 / 返回从左滑回（真页面切换感） ── */
-#page-root.open{animation:page-root-in .26s var(--ms-ease) 1}
-@keyframes page-root-in{from{opacity:0}to{opacity:1}}
-.page-body.page-in-fwd{animation:page-in-fwd .26s var(--ms-ease) 1}
-.page-body.page-in-back{animation:page-in-back .26s var(--ms-ease) 1}
-@keyframes page-in-fwd{from{transform:translateX(7%);opacity:0}to{transform:none;opacity:1}}
-@keyframes page-in-back{from{transform:translateX(-7%);opacity:0}to{transform:none;opacity:1}}
-.page-topbar{backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px)}
+/* v3 视图常驻制：每页一个 .page-view，切走 display:none 保留状态 */
+#page-root{display:none;position:fixed;inset:0;z-index:900;overflow:hidden}
+#page-root.open{display:block;overflow:hidden;padding:0;background:var(--paper)}
+.page-view{
+  position:absolute;inset:0;overflow-y:auto;-webkit-overflow-scrolling:touch;
+  padding:0 10px 30px;display:none;
+  background:
+    radial-gradient(120% 60% at 50% 0%, var(--ms-glow) 0%, transparent 55%),
+    linear-gradient(180deg, var(--ms-paper-warm) 0%, var(--ms-paper) 46%, var(--ms-paper-deep) 100%);
+}
+html.night .page-view{
+  background:
+    radial-gradient(120% 60% at 50% 0%, rgba(96,124,166,.20) 0%, transparent 55%),
+    linear-gradient(180deg, #131a26 0%, #0e1117 52%, #0a0d13 100%);
+}
+.page-view.open{display:block}
+.page-view.page-in-fwd{animation:page-in-fwd .2s var(--ms-ease) 1}
+.page-view.page-in-back{animation:page-in-back .2s var(--ms-ease) 1}
+.page-view.page-out-left{animation:page-out-left .2s var(--ms-ease) 1 forwards}
+.page-view.page-out-right{animation:page-out-right .2s var(--ms-ease) 1 forwards}
+@keyframes page-in-fwd{from{transform:translateX(9%);opacity:0}to{transform:none;opacity:1}}
+@keyframes page-in-back{from{transform:translateX(-9%);opacity:0}to{transform:none;opacity:1}}
+@keyframes page-out-left{to{transform:translateX(-7%);opacity:0}}
+@keyframes page-out-right{to{transform:translateX(7%);opacity:0}}
+.page-body.page-in-fwd,.page-body.page-in-back{animation:none}
+.page-topbar{backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);position:sticky;top:0;z-index:5}
