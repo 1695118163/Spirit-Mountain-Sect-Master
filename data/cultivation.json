@@ -856,7 +856,7 @@
         "name": "周天运转",
         "cost": 1,
         "dmg": 0,
-        "heal": 12,
+        "heal": 16,
         "default": true,
         "desc": "周天行气，回复气血。"
       },
@@ -866,7 +866,7 @@
         "name": "春回诀",
         "cost": 2,
         "dmg": 0,
-        "heal": 20,
+        "heal": 26,
         "price": 1000,
         "desc": "春风化雨，伤势速愈。"
       },
@@ -1123,11 +1123,11 @@
         "name": "玉髓丹方",
         "cost": 4,
         "dmg": 0,
-        "heal": 32,
+        "heal": 40,
         "cd": 1,
         "unlock_realm": 3,
         "price": 30000,
-        "desc": "元婴解锁：玉髓入药炼方，四费回气三十二。"
+        "desc": "元婴解锁：玉髓入药炼方，四费回气四十。"
       },
       {
         "id": "taiqing_zaohua",
@@ -1135,11 +1135,11 @@
         "name": "太清造化",
         "cost": 9,
         "dmg": 0,
-        "heal": 70,
+        "heal": 80,
         "cd": 4,
         "unlock_realm": 8,
         "price": 200000000,
-        "desc": "渡劫解锁：太清造化之术，九费回气七十。"
+        "desc": "渡劫解锁：太清造化之术，九费回气八十。"
       }
     ],
     "ai_cards": {
@@ -1173,7 +1173,7 @@
           },
           {
             "name": "运气调息",
-            "cost": 0,
+            "cost": 1,
             "dmg": 0,
             "heal": 10
           }
@@ -1202,9 +1202,9 @@
         },
         {
           "name": "调息回气",
-          "cost": 0,
+          "cost": 1,
           "dmg": 0,
-          "heal": 9
+          "heal": 12
         }
       ],
       "trial_bosses": [
@@ -1218,33 +1218,33 @@
             {
               "name": "撕裂爪",
               "cost": 1,
-              "dmg": 8,
+              "dmg": 13,
               "el": "木"
             },
             {
               "name": "噬灵啖",
               "cost": 2,
-              "dmg": 12,
+              "dmg": 22,
               "el": "木"
             },
             {
               "name": "坚毛倒竖",
               "cost": 1,
               "dmg": 0,
-              "shield": 6
+              "shield": 15
             },
             {
               "name": "灵息狂啸",
               "cost": 3,
-              "dmg": 18,
+              "dmg": 34,
               "el": "木",
               "cd": 2
             },
             {
               "name": "舐创",
-              "cost": 0,
+              "cost": 1,
               "dmg": 0,
-              "heal": 6
+              "heal": 15
             }
           ]
         },
@@ -1258,33 +1258,33 @@
             {
               "name": "烈风刀",
               "cost": 1,
-              "dmg": 12,
+              "dmg": 13,
               "el": "火"
             },
             {
               "name": "撩火",
               "cost": 2,
-              "dmg": 16,
+              "dmg": 22,
               "el": "火"
             },
             {
               "name": "赤霞盾",
               "cost": 1,
               "dmg": 0,
-              "shield": 10
+              "shield": 15
             },
             {
               "name": "火龙咆哮",
               "cost": 3,
-              "dmg": 22,
+              "dmg": 34,
               "el": "火",
               "cd": 2
             },
             {
               "name": "狂性",
-              "cost": 0,
+              "cost": 1,
               "dmg": 0,
-              "heal": 10
+              "heal": 15
             }
           ]
         },
@@ -1298,33 +1298,33 @@
             {
               "name": "白骨刺",
               "cost": 1,
-              "dmg": 14,
+              "dmg": 13,
               "el": "金"
             },
             {
               "name": "尸气弹",
               "cost": 2,
-              "dmg": 18,
+              "dmg": 22,
               "el": "金"
             },
             {
               "name": "骨盾横陈",
               "cost": 1,
               "dmg": 0,
-              "shield": 12
+              "shield": 15
             },
             {
               "name": "白骨葬天槌",
               "cost": 3,
-              "dmg": 26,
+              "dmg": 34,
               "el": "金",
               "cd": 2
             },
             {
               "name": "食髓",
-              "cost": 0,
+              "cost": 1,
               "dmg": 0,
-              "heal": 12
+              "heal": 15
             }
           ]
         },
@@ -1338,13 +1338,13 @@
             {
               "name": "蛛丝鞭",
               "cost": 1,
-              "dmg": 17,
+              "dmg": 13,
               "el": "水"
             },
             {
               "name": "蚀月毒涎",
               "cost": 2,
-              "dmg": 23,
+              "dmg": 22,
               "el": "水"
             },
             {
@@ -1356,13 +1356,13 @@
             {
               "name": "万丝噬心阵",
               "cost": 3,
-              "dmg": 33,
+              "dmg": 34,
               "el": "水",
               "cd": 3
             },
             {
               "name": "吸精续脉",
-              "cost": 0,
+              "cost": 1,
               "dmg": 0,
               "heal": 15
             }
@@ -1378,33 +1378,33 @@
             {
               "name": "裂地锤",
               "cost": 1,
-              "dmg": 21,
+              "dmg": 13,
               "el": "土"
             },
             {
               "name": "崩山肘",
               "cost": 2,
-              "dmg": 29,
+              "dmg": 22,
               "el": "土"
             },
             {
               "name": "蛮皮罡",
               "cost": 1,
               "dmg": 0,
-              "shield": 19
+              "shield": 15
             },
             {
               "name": "断岳神镇压",
               "cost": 3,
-              "dmg": 42,
+              "dmg": 34,
               "el": "土",
               "cd": 3
             },
             {
               "name": "蛮血沸腾",
-              "cost": 0,
+              "cost": 1,
               "dmg": 0,
-              "heal": 18
+              "heal": 15
             }
           ]
         },
@@ -1418,33 +1418,33 @@
             {
               "name": "血爪撕天",
               "cost": 1,
-              "dmg": 26,
+              "dmg": 13,
               "el": "火"
             },
             {
               "name": "罗刹焰舞",
               "cost": 2,
-              "dmg": 36,
+              "dmg": 22,
               "el": "火"
             },
             {
               "name": "血煞红绡",
               "cost": 1,
               "dmg": 0,
-              "shield": 23
+              "shield": 15
             },
             {
               "name": "血海滔天戮",
               "cost": 3,
-              "dmg": 52,
+              "dmg": 34,
               "el": "火",
               "cd": 3
             },
             {
               "name": "饮血回元",
-              "cost": 0,
+              "cost": 1,
               "dmg": 0,
-              "heal": 22
+              "heal": 15
             }
           ]
         },
@@ -1458,33 +1458,33 @@
             {
               "name": "螯钳剪",
               "cost": 1,
-              "dmg": 32,
+              "dmg": 13,
               "el": "金"
             },
             {
               "name": "铁甲冲撞",
               "cost": 2,
-              "dmg": 44,
+              "dmg": 22,
               "el": "金"
             },
             {
               "name": "玄铁蟹壳",
               "cost": 1,
               "dmg": 0,
-              "shield": 28
+              "shield": 15
             },
             {
               "name": "横行天下斩",
               "cost": 3,
-              "dmg": 63,
+              "dmg": 34,
               "el": "金",
               "cd": 3
             },
             {
               "name": "吐纳月华",
-              "cost": 0,
+              "cost": 1,
               "dmg": 0,
-              "heal": 26
+              "heal": 15
             }
           ]
         },
@@ -1498,33 +1498,33 @@
             {
               "name": "蛟尾横扫",
               "cost": 1,
-              "dmg": 40,
+              "dmg": 13,
               "el": "水"
             },
             {
               "name": "寒潭冰刺",
               "cost": 2,
-              "dmg": 54,
+              "dmg": 22,
               "el": "水"
             },
             {
               "name": "玄冰蛟鳞",
               "cost": 1,
               "dmg": 0,
-              "shield": 34
+              "shield": 15
             },
             {
               "name": "寒潭蛟龙啸",
               "cost": 3,
-              "dmg": 78,
+              "dmg": 34,
               "el": "水",
               "cd": 4
             },
             {
               "name": "潜渊养息",
-              "cost": 0,
+              "cost": 1,
               "dmg": 0,
-              "heal": 30
+              "heal": 15
             }
           ]
         },
@@ -1538,33 +1538,33 @@
             {
               "name": "夜行神火",
               "cost": 1,
-              "dmg": 50,
+              "dmg": 13,
               "el": "火"
             },
             {
               "name": "摄魂灯焰",
               "cost": 2,
-              "dmg": 66,
+              "dmg": 22,
               "el": "火"
             },
             {
               "name": "夜幕垂帘",
               "cost": 1,
               "dmg": 0,
-              "shield": 41
+              "shield": 15
             },
             {
               "name": "夜游千灯烬",
               "cost": 3,
-              "dmg": 92,
+              "dmg": 34,
               "el": "火",
               "cd": 4
             },
             {
               "name": "更鼓还魂",
-              "cost": 0,
+              "cost": 1,
               "dmg": 0,
-              "heal": 34
+              "heal": 15
             }
           ]
         },
@@ -1578,33 +1578,33 @@
             {
               "name": "鼎镇压岳",
               "cost": 1,
-              "dmg": 62,
+              "dmg": 13,
               "el": "土"
             },
             {
               "name": "混元罡风",
               "cost": 2,
-              "dmg": 80,
+              "dmg": 22,
               "el": "土"
             },
             {
               "name": "万钧鼎壁",
               "cost": 1,
               "dmg": 0,
-              "shield": 48
+              "shield": 15
             },
             {
               "name": "混元一炁崩",
               "cost": 3,
-              "dmg": 108,
+              "dmg": 34,
               "el": "土",
               "cd": 4
             },
             {
               "name": "鼎中天地",
-              "cost": 0,
+              "cost": 1,
               "dmg": 0,
-              "heal": 38
+              "heal": 15
             }
           ]
         }
@@ -1620,25 +1620,25 @@
             {
               "name": "镇墓钺",
               "cost": 4,
-              "dmg": 105,
+              "dmg": 39,
               "el": "土"
             },
             {
               "name": "幽冥碑击",
               "cost": 5,
-              "dmg": 118,
+              "dmg": 50,
               "el": "土"
             },
             {
               "name": "万墓朝宗",
               "cost": 7,
-              "dmg": 140,
+              "dmg": 76,
               "el": "土"
             },
             {
               "name": "镇墓大阵·殓",
               "cost": 9,
-              "dmg": 178,
+              "dmg": 115,
               "el": "土",
               "cd": 4
             },
@@ -1646,13 +1646,13 @@
               "name": "玄碑壁",
               "cost": 5,
               "dmg": 0,
-              "shield": 55
+              "shield": 40
             },
             {
               "name": "殓魂还土",
               "cost": 4,
               "dmg": 0,
-              "heal": 45
+              "heal": 38
             }
           ]
         },
@@ -1666,25 +1666,25 @@
             {
               "name": "天角裂空斩",
               "cost": 4,
-              "dmg": 108,
+              "dmg": 39,
               "el": "金"
             },
             {
               "name": "星芒贯日",
               "cost": 5,
-              "dmg": 122,
+              "dmg": 50,
               "el": "金"
             },
             {
               "name": "摘星断岳",
               "cost": 7,
-              "dmg": 145,
+              "dmg": 76,
               "el": "金"
             },
             {
               "name": "天角断穹击",
               "cost": 9,
-              "dmg": 180,
+              "dmg": 115,
               "el": "金",
               "cd": 4
             },
@@ -1692,13 +1692,13 @@
               "name": "角宿星铠",
               "cost": 4,
               "dmg": 0,
-              "shield": 48
+              "shield": 36
             },
             {
               "name": "星辉回照",
               "cost": 4,
               "dmg": 0,
-              "heal": 42
+              "heal": 38
             }
           ]
         },
@@ -1712,25 +1712,25 @@
             {
               "name": "残念一指",
               "cost": 4,
-              "dmg": 110,
+              "dmg": 39,
               "el": "root"
             },
             {
               "name": "帝威压世",
               "cost": 5,
-              "dmg": 125,
+              "dmg": 50,
               "el": "root"
             },
             {
               "name": "万道归流",
               "cost": 7,
-              "dmg": 148,
+              "dmg": 76,
               "el": "root"
             },
             {
               "name": "一念成劫",
               "cost": 9,
-              "dmg": 180,
+              "dmg": 115,
               "el": "root",
               "cd": 4
             },
@@ -1738,13 +1738,13 @@
               "name": "大帝残躯",
               "cost": 5,
               "dmg": 0,
-              "shield": 52
+              "shield": 40
             },
             {
               "name": "念起回天",
               "cost": 4,
               "dmg": 0,
-              "heal": 48
+              "heal": 38
             }
           ]
         }
