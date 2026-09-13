@@ -1449,104 +1449,63 @@
     return { ok: true, win };
   }
 
-  /* ── 主线面板：当前章任务 + 领奖 + 剧情 ── */
+  /* ── 主线面板 v2：欠账补领制——全部章节平铺，达标即可领，独立领奖钮 ── */
   function showQuest() {
     removeModals();
     const { card } = makeModal(removeModals);
+    const chapters = (g.LS.BAL.story || {}).chapters || [];
     const render = () => {
-      const st = g.LS.quest.state();
-      const chapters = (g.LS.BAL.story || {}).chapters || [];
-      const cur = g.LS.quest.current();
+      const T = g.LS.quest;
+      let firstOpen = true;
       let html = '<div class="modal-title">主 线 · 掌 门 之 路<button class="icon-btn" id="q-close" style="float:right;font-size:12px;padding:3px 12px">合 上</button></div>';
-      if (!cur) { html += '<div class="modal-desc">主线已全部完成——灵山万年，代代掌门。</div>'; }
-      else {
-        const ch = cur.chapter;
-        html += '<div class="modal-desc"><b>' + escapeHtml(ch.name.split('·')[0] || ch.name) + ' · ' + escapeHtml(ch.name.split('·')[1] || '') + '</b>' +
-          '（第 ' + (st.ch + 1) + '/' + chapters.length + ' 章）<br><span style="font-size:11.5px;color:var(--ink-soft)">' + escapeHtml(ch.intro) + '</span></div>';
-        html += '<div style="margin:8px 0">';
+      html += '<div class="modal-desc" style="font-size:11px;color:var(--ink-soft)">达标即可领，可跳可欠——任何时候回来都不丢奖励。</div>';
+      for (let c = 0; c < chapters.length; c++) {
+        const ch = chapters[c];
+        const prog = T.chapterProgress(c);
+        const claimables = ch.tasks.filter((t, i) => T.taskState(c, i) === 'claimable').length;
+        const isOpen = claimables > 0 || (firstOpen && c === 0 && prog.claimed === 0) || (claimables === 0 && prog.claimed === prog.total && firstOpen && c === 0);
+        if (claimables > 0 && firstOpen) firstOpen = false;
+        html += '<div class="quest-ch" data-ch="' + c + '" style="margin:8px 0"><div class="quest-ch-hd" data-toggle="' + c + '" style="display:flex;align-items:center;gap:8px;cursor:pointer;padding:6px 2px">' +
+          '<b style="font-size:13.5px;color:' + (prog.allClaimed ? 'var(--ms-ink-4,#7a6a55)' : 'var(--ink,#3a3226)') + '">' + escapeHtml(ch.name) + '</b>' +
+          '<span style="font-size:11px;color:var(--ms-ink-4,#a6987f)">' + prog.claimed + '/' + prog.total + '</span>' +
+          (claimables ? '<span class="ev-badge" style="color:var(--cinnabar);border-color:var(--cinnabar)">可领 ×' + claimables + '</span>' : '') +
+          (prog.allClaimed ? '<span style="font-size:11px;color:var(--ms-ink-5,#a6987f)">✓ 已完成</span>' : '') +
+          '<span style="margin-left:auto;font-size:10px;color:var(--ms-ink-5,#a6987f)">' + (isOpen ? '收起 ▴' : '展开 ▾') + '</span></div>';
+        html += '<div class="quest-ch-bd" style="display:' + (isOpen ? '' : 'none') + '">';
+        if (isOpen) html += '<div class="modal-desc" style="font-size:11.5px;color:var(--ink-soft)">' + escapeHtml(ch.intro) + '</div>';
         for (let i = 0; i < ch.tasks.length; i++) {
           const t = ch.tasks[i];
-          const claimable = i === st.idx && st.claimed > 0; // 达成待领奖：✓ + 领奖钮就在条目右侧
-          const done = i < st.idx || claimable;
-          const currentT = i === st.idx && !st.claimed;
-          html += '<div class="rebirth-item' + (done ? ' bought' : '') + '" style="' + (claimable ? 'border-color:var(--gold);box-shadow:0 0 10px rgba(232,195,74,.25)' : currentT ? 'border-color:var(--cinnabar)' : '') + '"><div>' +
-            '<b>' + (done ? '✓ ' : currentT ? '▸ ' : '　') + escapeHtml(t.desc) + '</b>' +
+          const stt = T.taskState(c, i);
+          const done = stt === 'claimed';
+          const ok = stt === 'claimable';
+          html += '<div class="rebirth-item' + (done ? ' bought' : '') + '" style="' + (ok ? 'border-color:var(--gold);box-shadow:0 0 10px rgba(232,195,74,.25)' : '') + '"><div>' +
+            '<b>' + (done ? '✓ ' : ok ? '◆ ' : '▸ ') + escapeHtml(t.desc) + '</b>' +
             (t.reward && t.reward.lingshi ? '<span style="font-size:11px;color:#e8c34a">　灵石 +' + g.LS.util.fmt(t.reward.lingshi) + '</span>' : '') +
-            (done || currentT ? '<div style="font-size:11px;color:var(--ink-soft)">' + escapeHtml(t.story || '') + '</div>' : '') + '</div>' +
-            (claimable ? '<button class="btn-primary" id="q-claim" style="padding:5px 16px;animation:ms-breath 2.3s var(--ms-ease-soft) infinite">领 奖</button>' : '') +
+            (stt !== 'progress' ? '<div style="font-size:11px;color:var(--ink-soft)">' + escapeHtml(t.story || '') + '</div>' : '') + '</div>' +
+            (ok ? '<button class="btn-primary" data-claim="' + c + '_' + i + '" style="padding:5px 16px;animation:ms-breath 2.3s var(--ms-ease-soft) infinite">领 奖</button>' : done ? '<span class="stamp">已 领</span>' : '') +
             '</div>';
         }
-        html += '</div>';
-        if (st.idx >= ch.tasks.length) {
-          html += '<div class="modal-desc" style="border:1px dashed rgba(192,57,43,.4);border-radius:8px"><b>章末</b><br>' + escapeHtml(ch.outro) + '</div>' +
-            '<div style="text-align:center"><button class="btn-primary" id="q-claim" style="padding:7px 24px">开启下一章</button></div>';
-        }
+        if (isOpen && prog.allClaimed) html += '<div class="modal-desc" style="border:1px dashed rgba(192,57,43,.4);border-radius:8px"><b>章末</b><br>' + escapeHtml(ch.outro) + '</div>';
+        html += '</div></div>';
       }
+      html += '<div style="text-align:center;margin-top:8px"><button class="icon-btn" id="q-close">合 上</button></div>';
       card.innerHTML = html;
-      const qc = card.querySelector('#q-close');
-      if (qc) qc.addEventListener('click', removeModals);
-      const cl = card.querySelector('#q-claim');
-      if (cl) cl.addEventListener('click', () => {
-        const r = g.LS.quest.claim();
+      card.querySelector('#q-close').addEventListener('click', removeModals);
+      card.querySelectorAll('[data-toggle]').forEach(hd => hd.addEventListener('click', () => {
+        const bd = hd.parentElement.querySelector('.quest-ch-bd');
+        bd.style.display = bd.style.display === 'none' ? '' : 'none';
+        hd.querySelector('span:last-child').textContent = bd.style.display === 'none' ? '展开 ▾' : '收起 ▴';
+      }));
+      card.querySelectorAll('[data-claim]').forEach(btn => btn.addEventListener('click', () => {
+        const [c, i] = btn.dataset.claim.split('_').map(Number);
+        const r = g.LS.quest.claim(c, i);
         if (r) {
           if (r.gainText) toast(r.gainText);
-          if (r.chapter) toast('【' + r.chapter.name + '】' + r.chapter.outro, 6000);
+          if (r.chapter && r.chapter.outro) toast('【' + r.chapter.name + '】' + r.chapter.outro, 5000);
         }
-        // 自定义背景乐：IDB 存 Blob（刷新保留），优先于合成古琴
-    const idbOpen = () => new Promise((res) => {
-      const rq = indexedDB.open('lingshan_bgm', 1);
-      rq.onupgradeneeded = () => rq.result.createObjectStore('f');
-      rq.onsuccess = () => res(rq.result);
-      rq.onerror = () => res(null);
-    });
-    const idbSet = async (blob) => { const db = await idbOpen(); if (!db) return null; return new Promise((res) => { const tx = db.transaction('f', 'readwrite'); tx.objectStore('f').put(blob, 'bgm'); tx.oncomplete = () => res(true); }); };
-    const idbGet = async () => { const db = await idbOpen(); if (!db) return null; return new Promise((res) => { const rq = db.transaction('f').objectStore('f').get('bgm'); rq.onsuccess = () => res(rq.result || null); }); };
-    const idbDel = async () => { const db = await idbOpen(); if (!db) return; db.transaction('f', 'readwrite').objectStore('f').delete('bgm'); };
-    const setCustomBgm = (on) => {
-      s.settings.custom_music = on;
-      g.LS.save.save();
-      if (on) {
-        idbGet().then((blob) => {
-          if (!blob) { toast('尚未导入音乐文件'); s.settings.custom_music = false; g.LS.save.save(); return; }
-          setBgm(false);
-          if (!window.__customAudio) window.__customAudio = new Audio();
-          if (window.__customAudio.src !== URL.createObjectURL) window.__customAudio.src = URL.createObjectURL(blob);
-          window.__customAudio.loop = true;
-          window.__customAudio.volume = 0.5;
-          window.__customAudio.play().catch(() => {});
-          const cb = document.getElementById('set-music'); if (cb) cb.checked = false;
-          toast('自定义背景乐播放中');
-        });
-      } else {
-        if (window.__customAudio) window.__customAudio.pause();
-        if (s.settings.music) setBgm(true);
-      }
-    };
-    const fileInput = card.querySelector('#set-bgm-file');
-    if (fileInput) fileInput.addEventListener('change', async () => {
-      const f = fileInput.files[0];
-      if (!f) return;
-      await idbSet(f);
-      s.settings.custom_music = true;
-      g.LS.save.save();
-      const cm = card.querySelector('#set-custom-music'); if (cm) cm.checked = true;
-      setCustomBgm(true);
-      toast('已导入「' + f.name + '」作为背景乐');
-    });
-    const cmBox = card.querySelector('#set-custom-music');
-    if (cmBox) cmBox.addEventListener('change', () => setCustomBgm(cmBox.checked));
-    const bgmClear = card.querySelector('#set-bgm-clear');
-    if (bgmClear) bgmClear.addEventListener('click', async () => {
-      await idbDel();
-      s.settings.custom_music = false;
-      g.LS.save.save();
-      setCustomBgm(false);
-      toast('已清除自定义背景乐');
-      render();
-    });
-    render();
+        render();
         renderAll();
-      });
+      }));
     };
     render();
   }

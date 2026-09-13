@@ -168,8 +168,7 @@
       try {
         if (g.LS.quest) {
           if (g.LS.quest.poll() && g.LS.ui && g.LS.ui.toast) {
-            const cur = g.LS.quest.current();
-            if (cur && cur.type === 'task') g.LS.ui.toast('【主线】任务达成：' + cur.task.desc + '——去主线页领奖。', 4200);
+            g.LS.ui.toast('【主线】有奖励可领——右栏「主 线」红点亮了。', 3600);
           }
           g.LS.quest.tickDisciple();
           const sd = g.LS.S;
