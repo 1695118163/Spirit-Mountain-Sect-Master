@@ -28,6 +28,13 @@
   let audioCtx = null;
 
   function $id(id) { return document.getElementById(id); }
+  // 心魔阶段标签（滋生/缠身/入魔）：阈值与名称取 balance.xinmo.thresholds，与 #dao-heart 小字同源
+  function xinmoStage(v) {
+    const ths = (g.LS.BAL && g.LS.BAL.xinmo && g.LS.BAL.xinmo.thresholds) || [];
+    let hit = null;
+    for (const t of ths) if (v >= t.min) hit = t;
+    return hit ? String(hit.name).replace('心魔', '') : '';
+  }
   function fmtSafe(v) { return (g.LS.util && g.LS.util.fmt) ? g.LS.util.fmt(v) : String(Math.floor(v || 0)); }
 
   /* ── WebAudio 合成音效（零素材） ── */
@@ -270,8 +277,9 @@
     const eco = g.LS.economy;
     for (const res in refs.resRows) {
       const r = refs.resRows[res];
-      // 丹药行显示细分库存总数（各品类丹药之和）
-      const v = res === 'danyao' && eco.pillTotal ? eco.pillTotal() : (s.resources[res] || 0);
+      // 丹药行显示细分库存总数（各品类丹药之和）；心魔行显示心境计量（0~100，非资源产量）
+      const v = res === 'xinmo' ? (s.xinmo || 0)
+        : (res === 'danyao' && eco.pillTotal ? eco.pillTotal() : (s.resources[res] || 0));
       const str = fmtSafe(v);
       if (lastStr['v_' + res] !== str) {
         if (lastStr['v_' + res] !== undefined) {
@@ -282,8 +290,8 @@
         r.val.textContent = str;
         lastStr['v_' + res] = str;
       }
-      const rate = eco.computePerSecond(res);
-      const rStr = rate > 0 ? fmtSafe(rate) + '/秒' : '';
+      const rate = res === 'xinmo' ? 0 : eco.computePerSecond(res);
+      const rStr = res === 'xinmo' ? xinmoStage(s.xinmo || 0) : (rate > 0 ? fmtSafe(rate) + '/秒' : '');
       if (lastStr['r_' + res] !== rStr) { r.rate.textContent = rStr; lastStr['r_' + res] = rStr; }
     }
     checkHints(); // 概念即遇即讲

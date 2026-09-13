@@ -611,3 +611,8 @@ html.night .auto-toggle:hover{background:rgba(20,26,36,.45)}
 @media (max-width:1100px){
   #center{padding-top:62px}
 }
+
+/* ── 顶栏资源行悬停释义（新手速查，2026-09-13） ── */
+#res-bar .res-row::after{left:0;transform:none}          /* 左对齐展开：最左的"灵气"行居中会被 body 的 overflow:hidden 截掉 */
+[data-tip]:has([data-tip]:hover)::after{content:none}    /* 行内按钮（选丹/丹房）自带提示优先，不同时弹两个 */
+#topbar{z-index:20}                                      /* 顶栏抬到面板(1)之上、弹窗(40)之下：否则向下弹的提示被下面的卡片盖住 */
