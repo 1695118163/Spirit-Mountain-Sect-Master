@@ -1466,13 +1466,14 @@
         html += '<div style="margin:8px 0">';
         for (let i = 0; i < ch.tasks.length; i++) {
           const t = ch.tasks[i];
-          const done = i < st.idx || (i === st.idx && st.claimed);
+          const claimable = i === st.idx && st.claimed > 0; // 达成待领奖：✓ + 领奖钮就在条目右侧
+          const done = i < st.idx || claimable;
           const currentT = i === st.idx && !st.claimed;
-          html += '<div class="rebirth-item' + (done ? ' bought' : '') + '" style="' + (currentT ? 'border-color:var(--cinnabar)' : '') + '"><div>' +
+          html += '<div class="rebirth-item' + (done ? ' bought' : '') + '" style="' + (claimable ? 'border-color:var(--gold);box-shadow:0 0 10px rgba(232,195,74,.25)' : currentT ? 'border-color:var(--cinnabar)' : '') + '"><div>' +
             '<b>' + (done ? '✓ ' : currentT ? '▸ ' : '　') + escapeHtml(t.desc) + '</b>' +
             (t.reward && t.reward.lingshi ? '<span style="font-size:11px;color:#e8c34a">　灵石 +' + g.LS.util.fmt(t.reward.lingshi) + '</span>' : '') +
             (done || currentT ? '<div style="font-size:11px;color:var(--ink-soft)">' + escapeHtml(t.story || '') + '</div>' : '') + '</div>' +
-            (currentT && st.claimed ? '<button class="btn-primary" id="q-claim" style="padding:5px 16px">领 奖</button>' : '') +
+            (claimable ? '<button class="btn-primary" id="q-claim" style="padding:5px 16px;animation:ms-breath 2.3s var(--ms-ease-soft) infinite">领 奖</button>' : '') +
             '</div>';
         }
         html += '</div>';
