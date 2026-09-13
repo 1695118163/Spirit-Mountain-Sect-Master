@@ -1461,8 +1461,7 @@
       if (!cur) { html += '<div class="modal-desc">主线已全部完成——灵山万年，代代掌门。</div>'; }
       else {
         const ch = cur.chapter;
-        const cn = '一二三四五六七八九十'[ch.idx] || (ch.idx + 1);
-        html += '<div class="modal-desc"><b>第' + cn + '章 · ' + escapeHtml(ch.name.split('·')[1] || ch.name) + '</b>' +
+        html += '<div class="modal-desc"><b>' + escapeHtml(ch.name.split('·')[0] || ch.name) + ' · ' + escapeHtml(ch.name.split('·')[1] || '') + '</b>' +
           '（第 ' + (st.ch + 1) + '/' + chapters.length + ' 章）<br><span style="font-size:11.5px;color:var(--ink-soft)">' + escapeHtml(ch.intro) + '</span></div>';
         html += '<div style="margin:8px 0">';
         for (let i = 0; i < ch.tasks.length; i++) {
@@ -2537,6 +2536,10 @@
 
   /* ── 总渲染 ── */
   function renderAll() {
+    try {
+      const qd = document.getElementById('quest-dot');
+      if (qd) qd.style.display = (g.LS.quest && g.LS.quest.state().claimed > 0) ? '' : 'none'; // 主线可领奖红点
+    } catch (e) {}
     if (!g.LS.S || !g.LS.BAL) return;
     renderResources();
     renderBuildings();
