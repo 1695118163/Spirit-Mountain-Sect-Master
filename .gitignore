@@ -3,3 +3,6 @@ config.json
 backups/
 *.log
 node_modules/
+*.zip
+Thumbs.db
+.DS_Store
