@@ -2498,7 +2498,7 @@
   function renderAll() {
     try {
       const qd = document.getElementById('quest-dot');
-      if (qd) qd.style.display = (g.LS.quest && g.LS.quest.state().claimed > 0) ? '' : 'none'; // 主线可领奖红点
+      if (qd) qd.style.display = (g.LS.quest && g.LS.quest.hasClaimable()) ? '' : 'none'; // 主线可领奖红点（补领制）
     } catch (e) {}
     if (!g.LS.S || !g.LS.BAL) return;
     renderResources();

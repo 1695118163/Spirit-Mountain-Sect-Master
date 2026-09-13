@@ -167,9 +167,7 @@
       nextRenderAt = now + TICK_MS;
       try {
         if (g.LS.quest) {
-          if (g.LS.quest.poll() && g.LS.ui && g.LS.ui.toast) {
-            g.LS.ui.toast('【主线】有奖励可领——右栏「主 线」红点亮了。', 3600);
-          }
+          /* 主线可领奖由右栏红点常亮指引（不弹 toast 刷屏） */
           g.LS.quest.tickDisciple();
           const sd = g.LS.S;
           if (sd.disciple && sd.disciple.agent && sd.disciple.realm >= 4 && !sd.generation_chosen && g.LS.ui && g.LS.ui.showGenerationChoice) {
