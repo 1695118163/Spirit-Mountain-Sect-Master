@@ -616,3 +616,140 @@ html.night .auto-toggle:hover{background:rgba(20,26,36,.45)}
 #res-bar .res-row::after{left:0;transform:none}          /* 左对齐展开：最左的"灵气"行居中会被 body 的 overflow:hidden 截掉 */
 [data-tip]:has([data-tip]:hover)::after{content:none}    /* 行内按钮（选丹/丹房）自带提示优先，不同时弹两个 */
 #topbar{z-index:20}                                      /* 顶栏抬到面板(1)之上、弹窗(40)之下：否则向下弹的提示被下面的卡片盖住 */
+
+/* ── §11c 斗法舞台：文字战报 → 两个小人对战（2026-09-13） ──────────────────
+   方框沿用原 #battle-log 尺寸（高 132px），内里改为对战舞台：
+   左我方、右对方各一修仙风卡通小人（道袍/发髻/飞剑），出招有起手与冲刺、
+   命中对方有受击抖动、伤害以飘字呈现，招式按五行出不同飞影与爆点。 */
+.battle-stage{
+  position:relative;height:196px;overflow:hidden;margin-bottom:8px;
+  border:1px solid var(--ms-dai-3);border-radius:var(--ms-r-m);
+  background:linear-gradient(180deg,var(--ms-ink-7),transparent);
+}
+html.night .battle-stage{background:linear-gradient(180deg,rgba(0,0,0,.38),transparent)}
+.bfx-stage{position:absolute;inset:0}
+/* 水墨远山：让两位小人有"站在山中"的层次 */
+.bfx-stage::before{
+  content:"";position:absolute;left:-3%;right:-3%;bottom:26px;height:96px;pointer-events:none;
+  background:
+    radial-gradient(58% 100% at 20% 100%,rgba(95,113,131,.34),transparent 72%),
+    radial-gradient(52% 100% at 52% 100%,rgba(95,113,131,.22),transparent 74%),
+    radial-gradient(60% 100% at 82% 100%,rgba(95,113,131,.30),transparent 72%),
+    linear-gradient(180deg,transparent 60%,rgba(95,113,131,.08) 100%);
+  filter:blur(1.2px);
+  }
+html.night .bfx-stage::before{opacity:.55}
+.bfx-ground{
+  position:absolute;left:4%;right:4%;bottom:22px;height:2px;
+  background:linear-gradient(90deg,transparent,rgba(95,113,131,.5),transparent);
+}
+.bfx-fighter{
+  position:absolute;bottom:10px;width:82px;height:133px;
+  transition:transform var(--ms-t-slow) var(--ms-ease);
+  will-change:transform;
+}
+.bfx-side-my{left:11%}
+.bfx-side-op{right:11%}
+.bfx-body{display:block;overflow:visible;animation:bfx-breathe 2.8s ease-in-out infinite;transform-origin:50% 100%}
+.bfx-side-op .bfx-body{animation-delay:-1.2s}
+@keyframes bfx-breathe{0%,100%{transform:translateY(0)}50%{transform:translateY(-2.5px)}}
+.bfx-aura{animation:bfx-pulse 2.4s ease-in-out infinite}
+@keyframes bfx-pulse{0%,100%{opacity:.10}50%{opacity:.24}}
+/* 出手：向对方冲刺一步 */
+.bfx-fighter.bfx-lunge.bfx-side-my{transform:translateX(30px) scale(1.04)}
+.bfx-fighter.bfx-lunge.bfx-side-op{transform:translateX(-30px) scale(1.04)}
+.bfx-fighter.bfx-cast{transform:translateY(-4px) scale(1.05)}
+/* 受击：抖动 + 红光一闪 */
+.bfx-fighter.bfx-hurt .bfx-body{animation:bfx-shake .42s ease}
+@keyframes bfx-shake{
+  0%,100%{transform:translateX(0)}
+  18%{transform:translateX(-4px) rotate(-3.5deg)}
+  40%{transform:translateX(4px) rotate(3deg)}
+  65%{transform:translateX(-2px) rotate(-1.5deg)}
+}
+.bfx-fighter.bfx-hurt::after{
+  content:"";position:absolute;inset:-4px;border-radius:50%;pointer-events:none;
+  background:radial-gradient(circle at 50% 42%,rgba(200,60,40,.42),transparent 68%);
+  animation:bfx-flash .42s ease-out;
+}
+@keyframes bfx-flash{0%{opacity:0}25%{opacity:1}100%{opacity:0}}
+.bfx-fighter.bfx-hurt-strong::after{background:radial-gradient(circle at 50% 42%,rgba(226,86,74,.62),transparent 70%)}
+/* 受击后退半步（各自朝远离对手的方向） */
+.bfx-fighter.bfx-hurt.bfx-side-my{transform:translateX(-9px)}
+.bfx-fighter.bfx-hurt.bfx-side-op{transform:translateX(9px)}
+/* 蓄势（对方亮意图时的一次轻抖） */
+.bfx-fighter.bfx-ready .bfx-body{animation:bfx-ready .7s ease-in-out}
+@keyframes bfx-ready{0%,100%{transform:translateY(0)}35%{transform:translateY(-3px) scale(1.03)}70%{transform:translateY(1px)}}
+/* 落败倒下 */
+.bfx-fighter.bfx-down{transform:rotate(76deg) translateY(8px);opacity:.5;transform-origin:50% 94%;transition:transform .6s ease-in,opacity .6s ease-in}
+/* 招式飞影 */
+.bfx-fx{position:absolute;inset:0;pointer-events:none}
+.bfx-proj::after{content:"";position:absolute;inset:-3px;border-radius:inherit;background:inherit;filter:blur(7px);opacity:.75}
+.bfx-proj{
+  position:absolute;width:28px;height:28px;margin:-14px 0 0 -14px;border-radius:50%;
+  animation-name:bfx-fly;animation-fill-mode:forwards;
+  animation-timing-function:cubic-bezier(.36,.03,.9,.62);
+}
+@keyframes bfx-fly{
+  0%{transform:translate(0,0) scale(.45);opacity:.25}
+  55%{opacity:1}
+  100%{transform:translate(var(--fx-to-x),var(--fx-to-y)) scale(1.15);opacity:1}
+}
+.fx-fire{background:radial-gradient(circle,#ffe0a8,#e2603a 55%,transparent 74%);box-shadow:0 0 14px 6px rgba(226,96,58,.42)}
+.fx-water{background:radial-gradient(circle,#d6ecff,#3f7fb5 60%,transparent 76%);box-shadow:0 0 12px 5px rgba(63,127,181,.38)}
+.fx-wood{background:radial-gradient(circle,#dcf3bd,#4f8f52 60%,transparent 76%);box-shadow:0 0 12px 5px rgba(79,143,82,.36)}
+.fx-metal{background:linear-gradient(135deg,#fff8d6,#c9a133);border-radius:4px;box-shadow:0 0 12px 4px rgba(201,161,51,.48)}
+.fx-earth{background:radial-gradient(circle,#e6d1a6,#8a6b41 60%,transparent 76%);box-shadow:0 0 10px 4px rgba(138,107,65,.36)}
+.fx-qi{background:radial-gradient(circle,#ffffff,#c9b98a 60%,transparent 76%);box-shadow:0 0 12px 5px rgba(233,216,176,.45)}
+/* 命中爆点 */
+.bfx-spark{position:absolute;width:6px;height:6px;border-radius:50%;animation:bfx-spark .6s ease-out forwards}
+@keyframes bfx-spark{0%{transform:translate(0,0) scale(1);opacity:1}100%{transform:translate(var(--sx),var(--sy)) scale(.3);opacity:0}}
+.bfx-spark.fx-fire{background:#ffca7a}
+.bfx-spark.fx-water{background:#bcdcf5}
+.bfx-spark.fx-wood{background:#b6dfa0}
+.bfx-spark.fx-metal{background:#ffe9a8}
+.bfx-spark.fx-earth{background:#dcc79c}
+.bfx-spark.fx-qi{background:#fff4dd}
+/* 护罩 / 回气光晕 */
+.bfx-shield{
+  position:absolute;inset:-2px;border-radius:50%;pointer-events:none;
+  border:2px solid rgba(232,195,74,.85);
+  background:radial-gradient(circle at 50% 50%,rgba(232,195,74,.20),transparent 70%);
+  box-shadow:0 0 18px 4px rgba(232,195,74,.35);animation:bfx-shield 1.1s ease-out forwards;
+}
+@keyframes bfx-shield{0%{opacity:0;transform:scale(.6)}22%{opacity:1;transform:scale(1.02)}100%{opacity:0;transform:scale(1.06)}}
+.bfx-heal{
+  position:absolute;inset:-6px;border-radius:50%;pointer-events:none;
+  background:radial-gradient(circle at 50% 60%,rgba(127,209,138,.42),transparent 68%);
+  animation:bfx-heal 1s ease-out forwards;
+}
+@keyframes bfx-heal{0%{opacity:0;transform:translateY(8px) scale(.8)}30%{opacity:1}100%{opacity:0;transform:translateY(-14px) scale(1.05)}}
+/* 飘字 */
+.bfx-floats{position:absolute;inset:0;pointer-events:none}
+.bfx-float{
+  position:absolute;bottom:126px;transform:translateX(-50%);
+  font-weight:700;font-size:20px;line-height:1;white-space:nowrap;
+  text-shadow:0 1px 3px rgba(0,0,0,.55);
+  animation:bfx-rise 1.35s ease-out forwards;
+}
+@keyframes bfx-rise{
+  0%{transform:translate(-50%,8px) scale(.75);opacity:0}
+  16%{transform:translate(-50%,0) scale(1.08);opacity:1}
+  70%{opacity:1}
+  100%{transform:translate(-50%,-30px) scale(1);opacity:0}
+}
+.bfx-float-dmg{color:#e2564a}
+.bfx-float-crit{color:#ffcf5c;font-size:22px}
+.bfx-float-block{color:#9fb6c9}
+.bfx-float-heal{color:#7fd18a}
+.bfx-float-shield{color:#e8c34a}
+.bfx-float-poison{color:#a97fd1}
+.bfx-float-tag{font-size:11.5px;color:#f0dca0;bottom:150px;letter-spacing:.14em}
+.bfx-float-tag-weak{font-size:11.5px;color:#b9c6d4;bottom:150px;letter-spacing:.14em}
+/* 两侧名签 */
+.bfx-name{position:absolute;bottom:5px;font-size:10px;color:var(--ms-ink-4);letter-spacing:.08em;max-width:44%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+html.night .bfx-name{color:rgba(233,224,204,.45)}
+.bfx-name-my{left:14px}
+.bfx-name-op{right:14px}
+/* 舞台内不滚动；窄屏缩一档 */
+@media (max-width:480px){.battle-stage{height:168px}.bfx-fighter{width:66px;height:107px}.bfx-float{font-size:17px;bottom:108px}.bfx-float-tag,.bfx-float-tag-weak{bottom:116px}.bfx-stage::before{bottom:22px;height:74px}.bfx-ground{bottom:18px}}

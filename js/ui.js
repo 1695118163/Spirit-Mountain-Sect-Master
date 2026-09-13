@@ -1058,7 +1058,7 @@
       '</div></div>' +
       (info.elRel ? '<div class="modal-desc" style="text-align:center;color:var(--cinnabar)">' + escapeHtml(info.elRel) + '</div>' : '') +
       '<div class="modal-desc" style="text-align:center">' + escapeHtml(info.weather) + '</div>' +
-      '<div class="modal-desc" style="font-size:11px;color:var(--ink-soft)">每回合行动点=自身境界+1；招式有冷却（气机未复）；罡气护罩只保当回合。看对方意图再排牌。</div>' +
+      '<div class="modal-desc" style="font-size:11px;color:var(--ink-soft)">行动点=自身境界+1，决定你驭得起多重的招（练气只驭 1 费，境界越高越能催动重手）；每回合抽 3 张、只出一招；罡气护罩只保当回合。看对方意图再决断。</div>' +
       '<div style="text-align:center;margin-top:10px"><button class="btn-primary" id="battle-start" style="padding:10px 34px;font-size:16px">开 战</button> ' +
       '<button class="icon-btn" id="battle-cancel">改日再战</button></div>';
     card.querySelector('#battle-start').addEventListener('click', () => { onStart(); });
@@ -1080,17 +1080,25 @@
         '<div class="bc-line">气血 <span id="bh-op-num">' + Math.ceil(op.hp) + '</span> / ' + op.hpMax +
           ' <span class="bh-shield" id="bh-op-shield" style="display:none"></span></div></div></div>' +
       '<div id="battle-intent" class="battle-intent" style="display:none"></div>' +
-      '<div id="battle-log" class="battle-log"></div>' +
-      '<div class="battle-qi">行动点 <span id="battle-qi-stars"></span></div>' +
+      '<div id="battle-stage" class="battle-stage"></div>' +
+      '<div class="battle-qi">行动点 <span id="battle-qi-stars"></span><span class="battle-qi-note">可驭之招的强度上限</span></div>' +
       '<div id="battle-hands" class="battle-hands"></div>' +
-      '<div style="text-align:center"><button class="btn-primary" id="battle-end" style="padding:8px 26px">结 束 回 合</button></div>';
+      '<div style="text-align:center"><button class="btn-primary" id="battle-end" title="本回合不出招，把回合让给对方">调 息 · 让 招</button></div>';
     card.querySelector('#battle-end').addEventListener('click', () => { g.LS.battle.endTurn(); });
+    // 舞台：两位小人上场（演出层 battle_fx.js）
+    const stage = document.getElementById('battle-stage');
+    if (stage && g.LS.battleFx) {
+      g.LS.battleFx.mount(stage, { my: { dao: my.dao, el: my.element }, op: { dao: op.dao, el: op.element } });
+      setTimeout(() => { if (g.LS.battleFx) g.LS.battleFx.kick(); }, 80);
+    }
   }
 
+  /* 舞台化（2026-09-13）：原来的逐行文字战报换成小人对战+飘字，
+     这里只留内存缓冲（调试与兜底），不再往界面写文字行。 */
+  const battleBuf = [];
   function battleLog(text) {
-    const log = document.getElementById('battle-log');
-    if (!log) return;
-    log.insertBefore(Object.assign(document.createElement('div'), { className: 'codex-chain battle-line', textContent: text }), log.firstChild);
+    battleBuf.push(text);
+    if (battleBuf.length > 300) battleBuf.shift();
   }
   function battleAppend(lines) {
     for (let i = lines.length - 1; i >= 0; i--) battleLog(lines[i]);

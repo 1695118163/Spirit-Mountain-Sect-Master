@@ -63,7 +63,7 @@
           "kind": "mob",
           "hpMult": 1.45,
           "mob_pool_hint": "噬灵兽",
-          "teach": "斗法手册·四：敌方大招用后有气机空窗——趁虚倾泻所有行动点。",
+          "teach": "斗法手册·四：敌方大招用后有气机空窗——趁虚递上一记重手。",
           "drop": { "lingshi_seconds": 600, "gear_chance": 0.3, "pill_chance": 0.5 }
         },
         {
@@ -87,7 +87,7 @@
           "kind": "mob",
           "hpMult": 1.0,
           "mob_pool_hint": "落魄剑客",
-          "teach": "筑基期每回合 2 点行动点——一回合两动，连招从此开始。",
+          "teach": "筑基期行动点至 2——2 费招式从此驭得起。",
           "drop": { "lingshi_seconds": 600, "gear_chance": 0.3, "pill_chance": 0.5 }
         },
         {
@@ -95,7 +95,7 @@
           "kind": "mob",
           "hpMult": 1.15,
           "mob_pool_hint": "疯道人",
-          "teach": "行动点有富余时用低费填充牌补针——卡组均值费用决定真空期质量。",
+          "teach": "卡组费用别堆太高——买不起的招抽不到，可用招式池才是真手牌。",
           "drop": { "lingshi_seconds": 600, "gear_chance": 0.3, "pill_chance": 0.5 }
         },
         {
@@ -103,7 +103,7 @@
           "kind": "mob",
           "hpMult": 1.3,
           "mob_pool_hint": "魔道修士",
-          "teach": "手牌要攻守兼备：双动时代，纯攻卡组会被一套反打带走。",
+          "teach": "卡组要攻守兼备：一回合只出一招，纯攻卡组会被一套反打带走。",
           "drop": { "lingshi_seconds": 600, "gear_chance": 0.3, "pill_chance": 0.5 }
         },
         {
@@ -111,7 +111,7 @@
           "kind": "mob",
           "hpMult": 1.45,
           "mob_pool_hint": "尸傀",
-          "teach": "敌方也会连招了——见它连续两动的意图，提前凝盾。",
+          "teach": "敌方招式渐重——看意图估伤害，提前凝盾或先手压血。",
           "drop": { "lingshi_seconds": 600, "gear_chance": 0.3, "pill_chance": 0.5 }
         },
         {
@@ -119,7 +119,7 @@
           "kind": "boss",
           "hpMult": 1.6,
           "mob_pool_hint": null,
-          "teach": "Boss战：双动连招压血线，CD大招留到它换招的空档。",
+          "teach": "Boss战：CD 大招留到它罡气未凝的那一回合。",
           "drop": { "lingshi_seconds": 600, "gear_chance": 0.3, "pill_chance": 0.5 }
         }
       ]
@@ -135,7 +135,7 @@
           "kind": "mob",
           "hpMult": 1.0,
           "mob_pool_hint": "蛊修",
-          "teach": "金丹期行动点至 3——四类牌一回合可全出。",
+          "teach": "金丹期行动点至 3——3 费重手入得牌序。",
           "drop": { "lingshi_seconds": 600, "gear_chance": 0.3, "pill_chance": 0.5 }
         },
         {
@@ -183,7 +183,7 @@
           "kind": "mob",
           "hpMult": 1.0,
           "mob_pool_hint": "食气貘",
-          "teach": "元婴期行动点至 4——出手顺序比出手数量更重要。",
+          "teach": "元婴期行动点至 4——一回合只出一招，挑哪一招就是胜负手。",
           "drop": { "lingshi_seconds": 600, "gear_chance": 0.3, "pill_chance": 0.5 }
         },
         {
@@ -207,7 +207,7 @@
           "kind": "mob",
           "hpMult": 1.45,
           "mob_pool_hint": "铁背蟹将",
-          "teach": "试着把伤害灌进同一回合：克行大招接连招，一回合打崩阵脚。",
+          "teach": "克行大招自带 ×1.25——对上属性正是它的用武之地。",
           "drop": { "lingshi_seconds": 600, "gear_chance": 0.3, "pill_chance": 0.5 }
         },
         {
