@@ -130,7 +130,7 @@
       else if (t.id === 'btn-xinmo') showXinmo();
       else if (t.dataset && t.dataset.spot && t.closest('.map-spot')) {
         const spot = t.dataset.spot;
-        if (spot === 'dannfang' || spot === 'market') g.LS.page.go(spot);
+        if (['dannfang', 'market', 'arena'].indexOf(spot) !== -1) g.LS.page.go(spot);
       }
     });
     refs.logList = $id('log-list');
@@ -1207,6 +1207,7 @@
       const spots = [
         { id: 'dannfang', name: '丹 房', x: 30, y: 38, desc: '炼丹服丹 · 丹毒调理' },
         { id: 'market', name: '市 场', x: 62, y: 60, desc: '灵石买卖 · 散修集市' },
+        { id: 'arena', name: '擂 台', x: 55, y: 30, desc: '论道切磋 · 以武会友' },
         { id: 'locked1', name: '？', x: 74, y: 26, locked: true },
         { id: 'locked2', name: '？', x: 18, y: 68, locked: true },
         { id: 'locked3', name: '？', x: 52, y: 14, locked: true },
@@ -1260,6 +1261,41 @@
       }));
     }});
 
+    g.LS.page.register('arena', { title: '擂 台', render: () => {
+      const s = g.LS.S;
+      const ranks = (g.LS.BAL.battle || {}).ranks || [];
+      let rank = ranks[0] || { name: '凡品' };
+      for (const r of ranks) if ((s.honor || 0) >= r.min) rank = r;
+      const rec = s.record || { win: 0, lose: 0 };
+      let html = '<div class="modal-desc" style="text-align:center">论道积分 <b>' + (s.honor || 0) + '</b> · 段位 <b style="color:var(--cinnabar)">' + escapeHtml(rank.name) + '</b> · 战绩 ' + rec.win + ' 胜 ' + rec.lose + ' 负</div>';
+      const tiers = g.LS.battle.SENIOR_TIERS;
+      html += '<h3 class="panel-title" style="font-size:14px">挑战大师兄（人机陪练）</h3>';
+      html += '<div class="senior-row">' + Object.values(tiers).map(t => {
+        const oppIdx = Math.max(0, Math.min(9, s.realm.index + t.offset));
+        const rel = t.offset === 0 ? '与你同境' : (t.offset < 0 ? '低你一境' : '高你一境');
+        return '<button class="senior-tier" data-tier="' + t.key + '"><b>' + escapeHtml(t.label) + '</b>' +
+          '<span class="st-rel">凌云子 · ' + escapeHtml((g.LS.BAL.realms[oppIdx] || {}).name || '?') + '境（' + rel + '）</span>' +
+          '<span class="st-desc">' + escapeHtml(t.desc) + '</span></button>';
+      }).join('') + '</div>';
+      const fr = s.friends || [];
+      html += '<h3 class="panel-title" style="font-size:14px;margin-top:14px">道友切磋（化神起）</h3>';
+      html += fr.length ? fr.map((f, i) =>
+        '<div class="rebirth-item"><div><b>' + escapeHtml(f.dao || '无名道友') + '</b>' +
+        '<div style="font-size:11px;color:var(--ink-soft)">境界 ' + escapeHtml(f.realmName || '?') + ' · 战绩 ' + (f.myWin || 0) + ' 胜 ' + (f.myLose || 0) + ' 负</div></div>' +
+        '<button class="btn-primary" data-arena-fight="' + i + '" style="padding:4px 12px">斗 法</button></div>').join('')
+        : '<div class="modal-desc" style="font-size:11px;color:var(--ink-soft)">还没有道友——去道友录交换名片。</div>';
+      return html;
+    },
+    mount: (root) => {
+      root.querySelectorAll('[data-tier]').forEach(btn => btn.addEventListener('click', () => {
+        removeModals();
+        g.LS.battle.challengeSenior(btn.dataset.tier);
+      }));
+      root.querySelectorAll('[data-arena-fight]').forEach(btn => btn.addEventListener('click', () => {
+        const f = (g.LS.S.friends || [])[Number(btn.dataset.arenaFight)];
+        if (f) { removeModals(); g.LS.battle.prepareBattle(f); }
+      }));
+    }});
     g.LS.page.register('market', { title: '市 场', render: () => {
       const d = g.LS.market.renderData();
       let html = '<div class="modal-desc">散修集市——价格随你的产业水涨船高，不会白送也不会天价。灵石 <b>' + g.LS.util.fmt(g.LS.S.resources.lingshi) + '</b></div>';
@@ -1832,7 +1868,7 @@
         '<div class="modal-desc">添加好友（粘贴对方名片）：</div>' +
         '<textarea class="set-textarea" id="fr-paste" placeholder="粘贴对方名片码"></textarea>' +
         '<div class="set-row"><button class="btn-primary" id="fr-add" style="padding:6px 16px">添加好友</button></div>' +
-        '<div class="set-row" style="justify-content:center;gap:8px"><button class="btn-primary" id="fr-duel-senior" style="padding:6px 16px">挑战大师兄</button><button class="icon-btn" id="fr-deck" style="padding:6px 12px">整备卡组</button><button class="icon-btn" id="fr-duel-join" style="padding:6px 12px;display:none">加入约战</button></div>' +
+        '<div class="set-row" style="justify-content:center;gap:8px"><button class="btn-primary" id="fr-arena" style="padding:6px 16px">擂 台</button><button class="icon-btn" id="fr-deck" style="padding:6px 12px">整备卡组</button></div>' +
         '<div class="set-row" id="fr-join-row" style="display:none"><input class="set-input" id="fr-room-code" placeholder="输入房间码" style="flex:1"></div>' +
         '<h3 class="panel-title">道友录（' + fr.length + '）</h3><div class="modal-desc">论道积分 ' + (s.honor || 0) + ' · 段位 <b>' + (function(){ const ranks=(g.LS.BAL.battle||{}).ranks||[]; let cur=ranks[0]||{name:'凡品'}; for(const r of ranks){ if((s.honor||0)>=r.min) cur=r; } return cur.name; })() + '</b></div>' + rows +
         '<div style="text-align:center;margin-top:10px"><button class="icon-btn" id="fr-close2">合上</button></div>';
@@ -1867,10 +1903,10 @@
           if (f) { removeModals(); g.LS.battle.prepareBattle(f); }
         });
       });
-      // 挑战大师兄：先选档位（师弟/同门/师兄）
-      card.querySelector('#fr-duel-senior').addEventListener('click', () => {
+      // 擂台：与地图擂台同达（斗法总入口）
+      card.querySelector('#fr-arena').addEventListener('click', () => {
         removeModals();
-        showSeniorPick();
+        g.LS.page.go('arena');
       });
       // 整备卡组（四类各带一张，皇室战争式构筑）
       card.querySelector('#fr-deck').addEventListener('click', () => {

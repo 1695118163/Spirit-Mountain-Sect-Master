@@ -477,3 +477,7 @@ html.night .map-canvas::after{
 .page-view[data-view="map"]{overflow:hidden}
 .page-view[data-view="map"] .page-body{padding-bottom:8px}
 /* 实验禁用：active 缩放疑似触发 hit-test 穿透 */
+
+/* ── 弹窗层级：视图路由（900）之上，战斗/面板弹窗在任何页面都可见 ── */
+.modal-mask{z-index:1200 !important}
+#toast-root{z-index:1500 !important}
