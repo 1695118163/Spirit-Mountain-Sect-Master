@@ -299,13 +299,14 @@
   }
 
   /* ── 对阵牌 ── */
+  const SHADOW_CFG = { offset: 0, hpMult: 1, follow: 0.55, dmgAdd: 0 }; // 好友影子档（无 tier 概念，v3 参数补位）
   function prepareBattle(friend) {
     if (active) return;
     // 竞技门槛（乙§7）：化神以下禁与道友切磋（大师兄/试炼塔不限）
     if (S().realm.index < 4) { g.LS.ui.toast('化神方可与道友切磋——此前请以大师兄与试炼塔磨砺招式。'); return; }
     if (!friend.card) { g.LS.ui.toast('这位道友还没有递过名片'); return; }
     const my = buildMe();
-    const op = buildOp(friend, false);
+    const op = buildOp(friend, false, SHADOW_CFG);
     active = { my, op, friend, weather: currentWeatherMod(), round: 0, mode: 'shadow' };
     openArena();
   }

@@ -44,6 +44,7 @@
       weapons_owned: [],
       techniques_owned: [],
       xinmo: 0,
+      auto_breath: false,
       mainquest: { ch: 0, idx: 0, claimed: 0, done: false },
       disciple: null,
       generation: 0,
