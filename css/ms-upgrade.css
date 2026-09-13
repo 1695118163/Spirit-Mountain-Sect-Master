@@ -390,13 +390,13 @@ html.night .page-view{
 .map-canvas{position:relative;border-radius:var(--ms-r-l);overflow:hidden}
 
 /* 昼版舆图（透明底·墨色系） */
-.map-canvas::before{
+.map-canvas::before,#map-mini::before{
   content:"";position:absolute;inset:0;pointer-events:none;
   background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 390 720' preserveAspectRatio='xMidYMid slice'><defs><filter id='mb' x='-20%' y='-20%' width='140%' height='140%'><feGaussianBlur stdDeviation='1.4'/></filter><filter id='mb2' x='-20%' y='-20%' width='140%' height='140%'><feGaussianBlur stdDeviation='.7'/></filter></defs><circle cx='322' cy='84' r='24' fill='%23f2e6cc' opacity='.55'/><circle cx='322' cy='84' r='34' fill='none' stroke='%23a6987f' stroke-width='.8' opacity='.30'/><g font-family='serif' font-size='9' fill='%237a6a55' opacity='.38'><text x='52' y='86'>北</text></g><g stroke='%237a6a55' opacity='.34' fill='none'><circle cx='62' cy='118' r='26' stroke-width='1'/><circle cx='62' cy='118' r='3' fill='%237a6a55' stroke='none' opacity='.6'/><path d='M62 92 L62 144 M36 118 L88 118' stroke-width='.8'/></g><g stroke='%238a93a0' stroke-width='1.1' fill='none' opacity='.20' filter='url(%23mb)'><path d='M-10,236 L18,196 L30,208 L52,180 L64,194 L86,168 L100,186 L122,162 L136,178 L158,154 L172,172 L196,150 L212,168 L236,146 L252,164 L276,142 L292,160 L316,140 L332,156 L356,136 L372,152 L400,132 L400,240 L-10,240 Z'/></g><g stroke='%237a6a55' stroke-width='1.5' fill='none' opacity='.32' filter='url(%23mb2)'><path d='M-10,300 L24,252 L40,268 L66,236 L82,254 L110,224 L128,244 L154,216 L172,236 L198,208 L216,228 L244,202 L262,222 L288,198 L308,218 L334,196 L352,214 L378,192 L400,206 L400,312 L-10,312 Z'/><path d='M60,262 L74,246 M120,240 L136,222 M196,226 L212,206 M268,214 L286,196' stroke-width='.9' opacity='.6'/></g><g stroke='%234a4033' stroke-width='2' fill='rgba(58,50,38,.07)' opacity='.52'><path d='M-10,430 L30,356 L48,376 L78,330 L96,352 L128,306 L148,330 L176,290 L198,314 L228,276 L252,300 L282,266 L306,290 L336,262 L360,286 L400,258 L400,440 L-10,440 Z'/></g><g stroke='%234a4033' stroke-width='1' fill='none' opacity='.30'><path d='M96,352 L88,380 M128,306 L122,336 M176,290 L172,322 M228,276 L224,308 M282,266 L278,298' stroke-dasharray='7 5'/></g><path d='M120,272 Q140,262 158,268 L162,282 Q140,290 124,284 Z' fill='none' stroke='%234a4033' stroke-width='1.2' opacity='.5'/><path d='M238,428 Q262,418 284,424 L288,438 Q262,446 242,440 Z' fill='none' stroke='%234a4033' stroke-width='1.2' opacity='.5'/><g font-family='serif' font-size='10' fill='%237a6a55' opacity='.40'><text x='132' y='252'>青莲峰</text><text x='300' y='470'>沉璧泽</text><text x='46' y='150'>北斗台</text></g><g fill='none' stroke-linecap='round'><path d='M74,486 C104,514 92,548 122,566' stroke='%234f7f9e' stroke-width='2.4' opacity='.34'/><path d='M122,566 C152,584 196,576 238,598' stroke='%234f7f9e' stroke-width='5' opacity='.30'/><path d='M238,598 C262,612 292,620 330,640' stroke='%234f7f9e' stroke-width='8.5' opacity='.26'/><path d='M74,486 C104,514 92,548 122,566' stroke='%23cfe0e8' stroke-width='.9' opacity='.5'/><path d='M122,566 C152,584 196,576 238,598' stroke='%23cfe0e8' stroke-width='1.4' opacity='.45'/></g><path d='M128,296 C160,346 196,386 234,430' fill='none' stroke='%234a4033' stroke-width='2.2' opacity='.50' stroke-linecap='round' stroke-dasharray='3 9'/><path d='M234,430 C214,486 244,520 210,560' fill='none' stroke='%234a4033' stroke-width='2' opacity='.38' stroke-linecap='round' stroke-dasharray='3 10'/><g stroke='%233a3226' stroke-width='2.4' fill='none' opacity='.26' stroke-dasharray='16 9 5 14' stroke-linecap='round'><path d='M-10,600 L36,548 L60,566 L96,522 L124,542 L156,508 L186,530 L220,500 L252,524 L286,494 L318,516 L352,490 L400,514'/></g><rect x='0' y='196' width='390' height='30' fill='%23fff6e0' opacity='.05'/><rect x='0' y='452' width='390' height='24' fill='%23fff6e0' opacity='.04'/><g transform='rotate(-4 342 622)'><rect x='322' y='600' width='42' height='46' fill='rgba(192,57,43,.10)' stroke='%23c0392b' stroke-width='2'/><text x='343' y='618' font-family='serif' font-size='13' fill='%23c0392b' text-anchor='middle' opacity='.85'>舆</text><text x='343' y='636' font-family='serif' font-size='13' fill='%23c0392b' text-anchor='middle' opacity='.85'>图</text></g></svg>");
   background-repeat:no-repeat;background-size:cover;background-position:center;
 }
 /* 夜版舆图（深底·淡米墨线） */
-html.night .map-canvas::before{
+html.night .map-canvas::before,html.night #map-mini::before{
   background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 390 720' preserveAspectRatio='xMidYMid slice'><defs><filter id='mb' x='-20%' y='-20%' width='140%' height='140%'><feGaussianBlur stdDeviation='1.4'/></filter><filter id='mb2' x='-20%' y='-20%' width='140%' height='140%'><feGaussianBlur stdDeviation='.7'/></filter></defs><circle cx='322' cy='84' r='24' fill='%23dfe6f2' opacity='.45'/><circle cx='322' cy='84' r='34' fill='none' stroke='%238ea6bd' stroke-width='.8' opacity='.26'/><g font-family='serif' font-size='9' fill='%23d9cbb0' opacity='.30'><text x='52' y='86'>北</text></g><g stroke='%23a8bed3' opacity='.28' fill='none'><circle cx='62' cy='118' r='26' stroke-width='1'/><circle cx='62' cy='118' r='3' fill='%23a8bed3' stroke='none' opacity='.55'/><path d='M62 92 L62 144 M36 118 L88 118' stroke-width='.8'/></g><g stroke='%23a8bed3' stroke-width='1.1' fill='none' opacity='.16' filter='url(%23mb)'><path d='M-10,236 L18,196 L30,208 L52,180 L64,194 L86,168 L100,186 L122,162 L136,178 L158,154 L172,172 L196,150 L212,168 L236,146 L252,164 L276,142 L292,160 L316,140 L332,156 L356,136 L372,152 L400,132 L400,240 L-10,240 Z'/></g><g stroke='%23d9cbb0' stroke-width='1.4' fill='none' opacity='.26' filter='url(%23mb2)'><path d='M-10,300 L24,252 L40,268 L66,236 L82,254 L110,224 L128,244 L154,216 L172,236 L198,208 L216,228 L244,202 L262,222 L288,198 L308,218 L334,196 L352,214 L378,192 L400,206 L400,312 L-10,312 Z'/><path d='M60,262 L74,246 M120,240 L136,222 M196,226 L212,206 M268,214 L286,196' stroke-width='.9' opacity='.55'/></g><g stroke='%23f6ecd8' stroke-width='1.8' fill='rgba(246,236,216,.05)' opacity='.44'><path d='M-10,430 L30,356 L48,376 L78,330 L96,352 L128,306 L148,330 L176,290 L198,314 L228,276 L252,300 L282,266 L306,290 L336,262 L360,286 L400,258 L400,440 L-10,440 Z'/></g><g stroke='%23f6ecd8' stroke-width='.9' fill='none' opacity='.24'><path d='M96,352 L88,380 M128,306 L122,336 M176,290 L172,322 M228,276 L224,308 M282,266 L278,298' stroke-dasharray='7 5'/></g><path d='M120,272 Q140,262 158,268 L162,282 Q140,290 124,284 Z' fill='none' stroke='%23f6ecd8' stroke-width='1.1' opacity='.4'/><path d='M238,428 Q262,418 284,424 L288,438 Q262,446 242,440 Z' fill='none' stroke='%23f6ecd8' stroke-width='1.1' opacity='.4'/><g font-family='serif' font-size='10' fill='%23d9cbb0' opacity='.32'><text x='132' y='252'>青莲峰</text><text x='300' y='470'>沉璧泽</text><text x='46' y='150'>北斗台</text></g><g fill='none' stroke-linecap='round'><path d='M74,486 C104,514 92,548 122,566' stroke='%238fb8cf' stroke-width='2.4' opacity='.30'/><path d='M122,566 C152,584 196,576 238,598' stroke='%238fb8cf' stroke-width='5' opacity='.26'/><path d='M238,598 C262,612 292,620 330,640' stroke='%238fb8cf' stroke-width='8.5' opacity='.22'/><path d='M122,566 C152,584 196,576 238,598' stroke='%23ffffff' stroke-width='1.2' opacity='.30'/></g><path d='M128,296 C160,346 196,386 234,430' fill='none' stroke='%23f6ecd8' stroke-width='2' opacity='.42' stroke-linecap='round' stroke-dasharray='3 9'/><path d='M234,430 C214,486 244,520 210,560' fill='none' stroke='%23f6ecd8' stroke-width='1.8' opacity='.30' stroke-linecap='round' stroke-dasharray='3 10'/><g stroke='%23e8dcc8' stroke-width='2.2' fill='none' opacity='.20' stroke-dasharray='16 9 5 14' stroke-linecap='round'><path d='M-10,600 L36,548 L60,566 L96,522 L124,542 L156,508 L186,530 L220,500 L252,524 L286,494 L318,516 L352,490 L400,514'/></g><rect x='0' y='196' width='390' height='30' fill='%23ffffff' opacity='.03'/><rect x='0' y='452' width='390' height='24' fill='%23ffffff' opacity='.025'/><g transform='rotate(-4 342 622)'><rect x='322' y='600' width='42' height='46' fill='rgba(224,101,90,.12)' stroke='%23e0655a' stroke-width='2'/><text x='343' y='618' font-family='serif' font-size='13' fill='%23e0655a' text-anchor='middle' opacity='.8'>舆</text><text x='343' y='636' font-family='serif' font-size='13' fill='%23e0655a' text-anchor='middle' opacity='.8'>图</text></g></svg>");
 }
 
@@ -467,6 +467,26 @@ html.night .map-canvas::after{
 .map-spot{z-index:2}
 .map-note{z-index:3}
 
+/* ── §12c 见闻区下方的舆图微缩（与见闻日志区同宽同高，底图复用 .map-canvas::before 的同一份 SVG） ── */
+#map-mini{
+  position:relative;flex:0 0 auto;width:100%;height:120px;margin:10px 0;
+  overflow:hidden;border-radius:var(--ms-r-l);
+  background:linear-gradient(180deg, var(--ms-paper-lit) 0%, var(--paper) 100%);
+  border:1px solid var(--ms-dai-2);
+  box-shadow:var(--ms-sh-2), var(--ms-sh-in);
+}
+html.night #map-mini{background:linear-gradient(180deg, #1a2130 0%, #12171f 100%)}
+#map-mini span{position:absolute;z-index:2;width:10px;height:10px;margin:-5px 0 0 -5px;border-radius:3px;
+  display:flex;align-items:center;justify-content:center;
+  border:1.4px solid var(--cinnabar);background:rgba(255,253,247,.72);box-shadow:0 1px 2px rgba(58,50,38,.18)}
+#map-mini span b{position:absolute;top:13px;left:50%;transform:translateX(-50%);white-space:nowrap;
+  font-size:9px;font-weight:400;letter-spacing:.1em;line-height:13px;padding:0 4px;border-radius:3px;
+  color:var(--ms-ink-3);background:rgba(243,234,216,.74)}
+html.night #map-mini span b{background:rgba(14,17,23,.62);color:#d9cbb0}
+html.night #map-mini span{border-color:var(--ms-vermilion-lit);background:rgba(20,26,36,.72)}
+#map-mini span.locked{width:6px;height:6px;margin:-3px 0 0 -3px;border-style:dashed;border-color:var(--ms-ink-5);
+  background:none;box-shadow:none;opacity:.6}
+html.night #map-mini span.locked{border-color:rgba(232,220,200,.3)}
 /* ── 画布高度（批二丢失段补回）：撑满视口减顶栏 ── */
 .map-canvas{height:calc(100vh - 110px);min-height:470px}
 
@@ -575,18 +595,19 @@ body:not(.is-holding)::after{animation:none}
   #breakthrough-overlay{animation:none}
 }
 
-/* ── 自动吐纳拨钮（圆钮右上角小开关 + 开启时圆钮呼吸+「自动」角标） ── */
-.auto-toggle{position:absolute;right:-14px;top:34px;display:flex;align-items:center;gap:4px;cursor:pointer;z-index:3;flex-direction:column}
+/* ── 自动吐纳拨钮（中央大区左上角小开关） ── */
+#center{position:relative}
+.auto-toggle{position:absolute;left:16px;top:12px;display:flex;flex-direction:row;align-items:center;gap:8px;cursor:pointer;z-index:4;padding:8px 11px 8px 7px;margin:0;border-radius:var(--ms-r-full);transition:background var(--ms-t-fast) var(--ms-ease)}
+.auto-toggle:hover{background:rgba(243,234,216,.55)}
+html.night .auto-toggle:hover{background:rgba(20,26,36,.45)}
 .auto-toggle input{position:absolute;opacity:0;width:0;height:0}
-.at-track{width:30px;height:16px;border-radius:999px;background:var(--ms-ink-6);border:1px solid var(--ms-dai-2);position:relative;transition:background var(--ms-t-fast) var(--ms-ease)}
-.at-knob{position:absolute;top:1px;left:1px;width:12px;height:12px;border-radius:50%;background:var(--ms-paper-lit);box-shadow:0 1px 3px rgba(58,50,38,.3);transition:transform var(--ms-t-fast) var(--ms-ease)}
+.at-track{width:48px;height:25px;border-radius:999px;background:var(--ms-ink-6);border:1px solid var(--ms-dai-2);position:relative;transition:background var(--ms-t-fast) var(--ms-ease)}
+.at-knob{position:absolute;top:1px;left:1px;width:20px;height:20px;border-radius:50%;background:var(--ms-paper-lit);box-shadow:0 1px 3px rgba(58,50,38,.3);transition:transform var(--ms-t-fast) var(--ms-ease)}
 .auto-toggle input:checked + .at-track{background:var(--cinnabar)}
-.auto-toggle input:checked + .at-track .at-knob{transform:translateX(14px)}
-.at-label{font-size:9px;color:var(--ms-ink-4);letter-spacing:.1em}
-#btn-breath .auto-badge{display:none}
-#btn-breath.auto-on .auto-badge{
-  display:inline-block;position:absolute;top:14px;right:26px;
-  font-size:10px;letter-spacing:.2em;color:#ffe9b8;
-  border:1px solid rgba(255,233,184,.6);border-radius:999px;padding:1px 7px;
-  animation:ms-breath 2.3s var(--ms-ease-soft) infinite;
+.auto-toggle input:checked + .at-track .at-knob{transform:translateX(23px)}
+.at-label{font-size:13px;color:var(--ms-ink-4);letter-spacing:.12em}
+
+/* 堆叠布局(≤1100px)下中央区变窄,开关与居中日期同一行会撞:整列内容下移让位 */
+@media (max-width:1100px){
+  #center{padding-top:62px}
 }

@@ -119,8 +119,9 @@
       <circle cx="24" cy="8" r="1.2" class="seal"/>
     </svg></div></div>
     <div id="breath-wrap">
-      <div class="ms-pulse"></div><div class="ms-qi"></div><div class="ms-qi2"></div><button id="btn-breath"><span class="breath-label">吐 纳</span><span class="auto-badge">自 动</span></button><label class="auto-toggle" title="自动吐纳"><input type="checkbox" id="auto-breath"><span class="at-track"><span class="at-knob"></span></span><span class="at-label">自动</span></label>
+      <div class="ms-pulse"></div><div class="ms-qi"></div><div class="ms-qi2"></div><button id="btn-breath"><span class="breath-label">吐 纳</span></button>
     </div>
+    <label class="auto-toggle" title="自动吐纳"><input type="checkbox" id="auto-breath"><span class="at-track"><span class="at-knob"></span></span><span class="at-label">自动吐纳</span></label>
     <button id="btn-break" class="hidden">突 破</button>
     <div id="forewarn" class="hidden">远处隐有异动…</div>
   </main>
@@ -128,6 +129,9 @@
   <aside id="right-panel" class="panel">
     <h2 class="panel-title">见闻 <span style="float:right"><button id="btn-help" class="icon-btn" style="font-size:11px;padding:2px 8px;min-height:0">指要</button> <button id="btn-codex" class="icon-btn" style="font-size:11px;padding:2px 8px;min-height:0">图鉴</button></span></h2>
     <div id="log-list"></div>
+    <div id="map-mini" aria-hidden="true">
+      <span class="mm-dot" style="left:30%;top:38%"><b>丹房</b></span><span class="mm-dot" style="left:62%;top:60%"><b>市场</b></span><span class="mm-dot" style="left:55%;top:30%"><b>擂台</b></span><span class="mm-dot locked" style="left:74%;top:26%"></span><span class="mm-dot locked" style="left:18%;top:68%"></span><span class="mm-dot locked" style="left:52%;top:14%"></span><span class="mm-dot locked" style="left:84%;top:80%"></span>
+    </div>
     <div class="set-row" style="gap:6px"><button id="btn-map" class="btn-primary" style="flex:1">地  图</button></div>
   <div class="set-row" style="gap:6px"><button id="btn-market" class="icon-btn" style="flex:1">坊 市</button><button id="btn-friends" class="icon-btn" style="flex:1">道友录</button></div>
     <div class="set-row" style="gap:6px"><button id="btn-quest" class="btn-primary" style="flex:1;position:relative">主 线<span id="quest-dot" style="display:none;position:absolute;top:-5px;right:-5px;min-width:16px;height:16px;line-height:16px;border-radius:999px;background:var(--cinnabar);color:#fff6f2;font-size:10px;text-align:center;box-shadow:0 0 8px rgba(192,57,43,.5)">领</span></button><button id="btn-disciple" class="btn-primary" style="flex:1">传 承</button></div>
