@@ -348,3 +348,12 @@ html.night #page-root.open{background:linear-gradient(180deg, #131a26 0%, #0e111
 /* ── 手机窄屏：境界行防腰斩（心魔段不折行、整行紧凑） ── */
 #dao-heart{font-size:12.5px;letter-spacing:.02em;line-height:1.7}
 #dao-heart span{white-space:nowrap}
+
+/* ── 页面转场：前进从右滑入 / 返回从左滑回（真页面切换感） ── */
+#page-root.open{animation:page-root-in .26s var(--ms-ease) 1}
+@keyframes page-root-in{from{opacity:0}to{opacity:1}}
+.page-body.page-in-fwd{animation:page-in-fwd .26s var(--ms-ease) 1}
+.page-body.page-in-back{animation:page-in-back .26s var(--ms-ease) 1}
+@keyframes page-in-fwd{from{transform:translateX(7%);opacity:0}to{transform:none;opacity:1}}
+@keyframes page-in-back{from{transform:translateX(-7%);opacity:0}to{transform:none;opacity:1}}
+.page-topbar{backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px)}
