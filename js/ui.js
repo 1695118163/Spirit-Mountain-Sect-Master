@@ -148,8 +148,24 @@
 
     // 吐纳：点击 + 按住连点（每 150ms）
     let holdTimer = null;
+    // 连发表现层节流：长按/自动时数值照加不差，但飘字/音效/涟漪 450ms 合并一条（消除每秒 27 次 DOM/音频风暴的卡顿）
+    const burst = { on: () => uiState.holdingBreath || !!g.LS.S.auto_breath, qi: 0, xp: 0, timer: null };
+    const burstFlush = () => {
+      burst.timer = null;
+      if (burst.qi <= 0 && burst.xp <= 0) return;
+      const q = burst.qi, x = burst.xp;
+      burst.qi = 0; burst.xp = 0;
+      sfx('click');
+      if (!uiState.holdingBreath && !burst.on()) spawnRipple();
+      spawnFloatText('+' + fmtSafe(q) + ' 灵气' + (x > 0 ? ' · +' + fmtSafe(x) + ' 修为' : ''), x > 0 ? 'gold' : 'cyan');
+    };
     const doBreath = () => {
       const r = g.LS.economy.breath();
+      if (burst.on()) {
+        burst.qi += r.qi; burst.xp += r.xp;
+        if (!burst.timer) burst.timer = setTimeout(burstFlush, 450);
+        return;
+      }
       sfx('click');
       spawnRipple();
       spawnFloatText('+' + fmtSafe(r.qi) + ' 灵气', 'cyan');
