@@ -3,7 +3,7 @@ chcp 65001 >nul
 cd /d %~dp0
 where node >nul 2>nul
 if errorlevel 1 (
-  echo [错误] 未检测到 Node.js，请先安装 Node 18 以上版本（本机应已装 v24）。
+  echo [错误] 未检测到 Node.js，请先到 nodejs.org 安装 Node 18 以上版本（免费）。
   pause
   exit /b 1
 )

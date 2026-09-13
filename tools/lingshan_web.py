@@ -3,7 +3,7 @@
 lingshan_web.py —— 《灵山掌门》公网服务器（升级版）
 - 静态托管（no-cache、禁目录浏览）
 - 斗法约战房间 API（两人同时在线：/api/duel/*，内存房间+30 分钟过期，线程锁）
-- 静态部分与旧版兼容，可直接替换 C:\lingshan\lingshan_web.py 后重启 LingshanServer
+- 静态部分与旧版兼容，可直接替换部署目录中的 lingshan_web.py 后重启服务
 """
 import json
 import mimetypes
