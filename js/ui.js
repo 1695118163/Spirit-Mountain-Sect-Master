@@ -36,6 +36,11 @@
     return hit ? String(hit.name).replace('心魔', '') : '';
   }
   function fmtSafe(v) { return (g.LS.util && g.LS.util.fmt) ? g.LS.util.fmt(v) : String(Math.floor(v || 0)); }
+  // 丹毒提示：与 economy 的产量折损同口径（每 10 点 -3%，上限 -30%）
+  function toxicHint(v) {
+    const pct = Math.min(30, Math.floor((v || 0) / 10) * 3);
+    return pct > 0 ? '-' + pct + '% 产量' : '';
+  }
 
   /* ── WebAudio 合成音效（零素材） ── */
   function sfx(type) {
@@ -279,6 +284,7 @@
       const r = refs.resRows[res];
       // 丹药行显示细分库存总数（各品类丹药之和）；心魔行显示心境计量（0~100，非资源产量）
       const v = res === 'xinmo' ? (s.xinmo || 0)
+        : res === 'toxic' ? Math.floor(s.pill_toxic || 0)
         : (res === 'danyao' && eco.pillTotal ? eco.pillTotal() : (s.resources[res] || 0));
       const str = fmtSafe(v);
       if (lastStr['v_' + res] !== str) {
@@ -288,10 +294,13 @@
           popIfMilestone(r.val, v); // 跨整千/整万弹跳
         }
         r.val.textContent = str;
+        if (res === 'toxic') r.val.style.color = v >= 30 ? 'var(--cinnabar)' : '';   // 与丹房同口径：30 起标红
         lastStr['v_' + res] = str;
       }
-      const rate = res === 'xinmo' ? 0 : eco.computePerSecond(res);
-      const rStr = res === 'xinmo' ? xinmoStage(s.xinmo || 0) : (rate > 0 ? fmtSafe(rate) + '/秒' : '');
+      const rate = (res === 'xinmo' || res === 'toxic') ? 0 : eco.computePerSecond(res);
+      const rStr = res === 'xinmo' ? xinmoStage(s.xinmo || 0)
+        : res === 'toxic' ? toxicHint(s.pill_toxic || 0)
+        : (rate > 0 ? fmtSafe(rate) + '/秒' : '');
       if (lastStr['r_' + res] !== rStr) { r.rate.textContent = rStr; lastStr['r_' + res] = rStr; }
     }
     checkHints(); // 概念即遇即讲
@@ -1105,7 +1114,9 @@
       '<div class="bg-title">斗 法 须 知</div>' +
       '<ul class="bg-list">' +
         '<li>每回合从卡组抽 <b>3 张</b>招，只能出其中 <b>一张</b>。</li>' +
+        '<li>每局由<b>你先出手</b>——先手在你；日后或另立定先手之规，眼下不必挂心。</li>' +
         '<li>出招消耗 <b>行动点</b>（= 自身境界 + 1）；用光了点「调息 · 让招」回满，代价是白让一手。</li>' +
+        '<li>对手吃同一套行动条：他的点数也会耗光，耗光那一手只能调息（意图里会写出来）——那是你的机会。</li>' +
         '<li>对方头顶的<b>意图</b>就是他这一手要出的招——据此决定攻还是守。</li>' +
         '<li>罡气护罩只保当回合；气血尽者判负。</li>' +
       '</ul>' +
@@ -2333,6 +2344,14 @@
   }
 
   /* ── 设置面板 ── */
+  /** 低性能模式（设置开关）：给 html 挂 .lowfx 交给 CSS 简化背景，并停掉环境 canvas 与天气粒子 */
+  function applyLowFx() {
+    const on = !!(g.LS.S && g.LS.S.settings && g.LS.S.settings.lowfx);
+    document.documentElement.classList.toggle('lowfx', on);
+    if (g.LS.ambient && g.LS.ambient.setLowFx) g.LS.ambient.setLowFx(on);
+    return on;
+  }
+
   function showSettings() {
     removeModals();
     const { card, mask } = makeModal(removeModals);
@@ -2356,6 +2375,8 @@
         '<button class="icon-btn" data-setdiff="' + k + '" style="' + (s.settings.difficulty === k ? 'border-color:var(--cinnabar);color:var(--cinnabar)' : '') + '">' + escapeHtml(label(k)) + '</button>'
       ).join(' ') + '</span></div>' +
       '<div class="set-row"><label>音效</label><input type="checkbox" id="set-sound" ' + (s.settings.sound ? 'checked' : '') + '></div>' +
+      '<div class="set-row"><label>低性能模式</label><input type="checkbox" id="set-lowfx" ' + (s.settings.lowfx ? 'checked' : '') + '></div>' +
+      '<div class="modal-desc" style="font-size:11px;color:var(--ink-soft)">低性能模式：去掉全屏模糊、雾层、纸纹与云幕动画，画面略简、GPU 占用大降（老机器或高分屏更顺）。</div>' +
       '<div class="set-row"><label>古琴（环境曲，留白即曲）</label><input type="checkbox" id="set-music" ' + (s.settings.music && !s.settings.custom_music ? 'checked' : '') + '></div>' +
       '<div class="set-row"><label>自定义背景乐</label><input type="file" id="set-bgm-file" accept="audio/*" style="max-width:170px;font-size:11px"></div>' +
       '<div class="set-row"><label>　播放自定义乐</label><input type="checkbox" id="set-custom-music" ' + (s.settings.custom_music ? 'checked' : '') + '></div>' +
@@ -2371,6 +2392,12 @@
 
     bindDiff(); // 难度三选按钮事件（需在 innerHTML 渲染后绑定）
     card.querySelector('#set-sound').addEventListener('change', (e) => { s.settings.sound = e.target.checked; g.LS.save.save(); });
+    card.querySelector('#set-lowfx').addEventListener('change', (e) => {
+      s.settings.lowfx = e.target.checked;
+      applyLowFx();
+      g.LS.save.save();
+      toast(s.settings.lowfx ? '低性能模式已开：背景特效简化。' : '低性能模式已关：背景特效恢复。');
+    });
     card.querySelector('#set-music').addEventListener('change', (e) => {
       if (e.target.checked && s.settings.custom_music) { e.target.checked = false; toast('已启用自定义背景乐——如需古琴请先关闭「播放自定义乐」'); return; }
       s.settings.music = e.target.checked;
@@ -2570,7 +2597,7 @@
     showSettings, showRebirthPanel, showTutorial, showPillHouse, showHelpPanel, showMarket, showFriends, showDeckEditor, showSeniorPick, showCodexPage, showUpdateNotes, playEmperorTribulation, showTrial, showXinmo, showAmbushModal, showQuest, showDisciple, showGenerationChoice, showTutorialSteps,
     showBattleArena, showBattleGuide, updateBattleHP, updateBattleShields, updateBattleQi, renderBattleHands, showBattleIntent,
     showBattleScreen, battleLog, battleAppend, showBattleResult,
-    toast, tweenNumber, setBgm,
+    toast, tweenNumber, setBgm, applyLowFx,
     setLLMStatus, setForewarn, updateBuffBar, drawBg, sfx, playTribulation,
   };
 })(typeof window !== 'undefined' ? window : globalThis);

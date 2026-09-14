@@ -766,7 +766,7 @@
         "kind": "attack",
         "name": "御剑术",
         "cost": 1,
-        "dmg": 11,
+        "dmg": 8,
         "weapon": true,
         "default": true,
         "desc": "引剑气伤敌，吃武器锋锐加成。"
@@ -875,7 +875,7 @@
         "kind": "attack",
         "name": "迅雷击",
         "cost": 1,
-        "dmg": 9,
+        "dmg": 12,
         "el": null,
         "cd": 0,
         "unlock_realm": 0,

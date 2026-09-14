@@ -1179,3 +1179,14 @@ html.night .bfx-name{color:rgba(233,224,204,.45)}
 .bfx-name-op{right:14px}
 /* 舞台内不滚动；窄屏缩一档 */
 @media (max-width:480px){.battle-stage{height:168px}.bfx-fighter{width:66px;height:107px}.bfx-float{font-size:17px;bottom:108px}.bfx-float-tag,.bfx-float-tag-weak{bottom:116px}.bfx-stage::before{bottom:22px;height:74px}.bfx-ground{bottom:18px}}
+
+/* ── 低性能模式（设置面板开关 / html.lowfx）：砍掉全屏模糊·混合层·常驻背景动画，显著降 GPU 占用 ── */
+html.lowfx .panel,html.lowfx #topbar,html.lowfx .page-topbar,html.lowfx .modal-mask{
+  backdrop-filter:none !important;-webkit-backdrop-filter:none !important;
+}
+html.lowfx #ms-scene .mist,html.lowfx #ms-scene .grain,html.lowfx .cloud-band,html.lowfx #ambient{display:none !important}
+html.lowfx #ms-scene .range{filter:none !important}
+html.lowfx #ms-scene .moon,html.lowfx #ms-scene .moon-halo,html.lowfx #ms-scene .bamboo,
+html.lowfx #ms-scene .ms-qi,html.lowfx #ms-scene .ms-qi2,html.lowfx #ms-scene .ms-pulse,
+html.lowfx #ms-scene .seal,html.lowfx #btn-breath{animation:none !important}
+html.lowfx #ms-scene .moon,html.lowfx #ms-scene .moon-halo{box-shadow:none !important}

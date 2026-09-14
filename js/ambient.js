@@ -21,6 +21,7 @@
   let meteor = null;                       // 加料：流星 {x,y,vx,vy,t0}
   let nextMeteorAt = 0;
   let started = false;
+  let lowFx = false;               // 低性能模式：停环境 canvas / 天气粒子 / 云幕烘焙
 
   function seedRand(seed) {
     return function () {
@@ -271,7 +272,7 @@
   }
 
   function startRaf() {
-    if (running || REDUCED || typeof requestAnimationFrame === 'undefined') return;
+    if (running || REDUCED || lowFx || typeof requestAnimationFrame === 'undefined') return;
     running = true;
     lastFrame = 0;
     rafId = requestAnimationFrame(frame);
@@ -312,7 +313,7 @@
     if (!cv) return;
     weather.kind = kind;
     weather.parts = [];
-    if (REDUCED) return;
+    if (REDUCED || lowFx) { weather.parts = []; return; }
     const w = cv.width, h = cv.height;
     if (kind === 'rain') {
       for (let i = 0; i < 100; i++) {
@@ -330,7 +331,7 @@
 
   /** A2：尝试放一只鹤（3~8 分钟一遇，主循环每分钟调一次） */
   function maybeCrane() {
-    if (REDUCED || crane || typeof requestAnimationFrame === 'undefined') return;
+    if (REDUCED || lowFx || crane || typeof requestAnimationFrame === 'undefined') return;
     if (Math.random() < 0.22) {
       crane = {
         y: window.innerHeight * (0.12 + Math.random() * 0.22),
@@ -369,7 +370,7 @@
     if (!cv) return;
     cv.width = window.innerWidth;
     cv.height = window.innerHeight;
-    if (REDUCED) return; // 降级：不烘雾带（保留静态山影）
+    if (REDUCED || lowFx) return; // 降级 / 低性能模式：不烘雾带（保留静态山影）
     // A1 两条雾带：远 150s/循环、近 90s/循环
     if (cloudFar) cloudFar.remove();
     if (cloudNear) cloudNear.remove();
@@ -381,8 +382,25 @@
     document.body.insertBefore(cloudNear, cv);
   }
 
+  /** 低性能模式开关（设置面板调用）：开则停掉环境 rAF、天气粒子与萤火，并清掉雾带 */
+  function setLowFx(on) {
+    lowFx = !!on;
+    if (lowFx) {
+      stopRaf();
+      fireflies = [];
+      weather.parts = [];
+      if (cloudFar) { cloudFar.remove(); cloudFar = null; }
+      if (cloudNear) { cloudNear.remove(); cloudNear = null; }
+      if (cv) cv.style.filter = '';
+    } else {
+      resize();                                   // 关掉低性能模式：重烘雾带
+      if (weather.kind !== 'clear') applyWeather(weather.kind);
+      else if (crane) startRaf();
+    }
+  }
+
   g.LS.ambient = {
-    init, rollWeather, maybeCrane, applyWeather,
+    init, rollWeather, maybeCrane, applyWeather, setLowFx,
     isReduced: () => REDUCED
   };
 })(typeof window !== 'undefined' ? window : globalThis);

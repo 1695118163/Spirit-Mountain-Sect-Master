@@ -8,6 +8,7 @@
   --gold: #b8860b;
   --paper-dim: #ece5d4;
   --ink-soft: rgba(43, 43, 43, .55);
+  --ink-mute: #616055;   /* 停用态文字（技能冷却中）：对卡面约 5.3:1 */
 }
 
 * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -51,6 +52,7 @@ html.night body {
   --cyan: #8fadc0;
   --cinnabar: #d0685a;
   --gold: #d4a94e;
+  --ink-mute: #b4b1a6;   /* 停用态文字（夜里）：对卡面约 5.4:1 */
 }
 html.night body .panel { background: #3a4150; }
 html.night body .b-card { background: rgba(255, 255, 255, .06); }
@@ -200,7 +202,7 @@ button:not(:disabled):active { transform: translateY(1px); }
   background: none; border: 1px solid var(--cyan); color: var(--cyan);
   border-radius: 3px; font-size: 12px; font-family: inherit;
 }
-.b-ability:disabled { border-color: #b8b8b0; color: #9a9a92; cursor: not-allowed; }
+.b-ability:disabled { border-color: var(--ink-mute); color: var(--ink-mute); cursor: not-allowed; }
 
 #xp-bar {
   width: 60%; height: 22px; border: 1px solid var(--ink-soft); border-radius: 11px;

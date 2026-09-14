@@ -90,7 +90,9 @@
     g.LS.llm.checkHealth();
     setInterval(() => g.LS.llm.checkHealth(), 60000);
     g.LS.dev.initDev();
+    if (g.LS.ui.applyLowFx) g.LS.ui.applyLowFx(); // 低性能模式（存档设置）：先于环境层初始化，省掉雾带烘焙
     if (g.LS.ambient) g.LS.ambient.init(); // 环境动画层（云雾/墨鹤/天气）
+    if (g.LS.ui.applyLowFx) g.LS.ui.applyLowFx();
     if (g.LS.S.settings.music && g.LS.ui.setBgm) g.LS.ui.setBgm(true);
 
     // 首次引导（仅首次，存档 flags 后不再弹）

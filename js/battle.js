@@ -146,14 +146,14 @@
   }
 
   /** 大师兄三档（2026-09-13 重定：以当前基础气血为「正常」，同门论道＝1.0 基准）
-      难度靠三件事叠加：气血倍率 / 气血境界偏移 / 补招概率（follow）*/
+      难度靠两件事叠加：气血倍率 / 境界偏移（hard 再加每招 +2 伤，金丹前不升境不加伤）*/
   const SENIOR_TIERS = {
-    easy:  { key: 'easy',  label: '师弟切磋', offset: -1, hpMult: 0.7,  follow: 0.35, dmgAdd: 0, desc: '低你一境的师弟陪练——气血七成，稳，胜负手筋基本不亏。' },
-    equal: { key: 'equal', label: '同门论道', offset: 0,  hpMult: 1.0,  follow: 0.65, dmgAdd: 0, desc: '与你同境的同门——气血相当，有来有回，看意图出招可稳占上风。' },
-    hard:  { key: 'hard',  label: '师兄指教', offset: +1, hpMult: 1.35, follow: 0.8, dmgAdd: 2, desc: '高你一境的师兄——气血多三成半，凶险；胜则论道积分更多，以下克上可留名碑林。' }
+    easy:  { key: 'easy',  label: '师弟切磋', offset: -1, hpMult: 0.7,  dmgAdd: 0, desc: '低你一境的师弟陪练——气血七成，稳，胜负手筋基本不亏。' },
+    equal: { key: 'equal', label: '同门论道', offset: 0,  hpMult: 1.0,  dmgAdd: 0, desc: '与你同境的同门——气血相当，有来有回，看意图出招可稳占上风。' },
+    hard:  { key: 'hard',  label: '师兄指教', offset: +1, hpMult: 1.35, dmgAdd: 2, desc: '高你一境的师兄——气血多三成半，凶险；胜则论道积分更多，以下克上可留名碑林。' }
   };
 
-  /** 对方战斗单位：大师兄（按档位：境界偏移/气血倍率/补招概率/招式加成）或好友影子（通用卡组） */
+  /** 对方战斗单位：大师兄（按档位：境界偏移/气血倍率/招式加成）或好友影子（通用卡组） */
   function buildOp(friend, isSenior, tierCfg) {
     const aiCfg = (CARDS().ai_cards || {})[isSenior ? 'lingyunzi' : 'generic'] || { moves: [] };
     const card = friend && friend.card ? friend.card : null;
@@ -272,10 +272,12 @@
   /* ── AI 拟人策略 + 杀戮尖塔式意图预告 ── */
   function rollIntent(op) {
     const moves = op.hand;
-    // 行动点不够任何一招：对方也靠调息回满（与玩家同一套规则）
+    // 与玩家同一套行动条：点数不够任何一招时，这一手只能「调息」——本手不出招、CD 照常流转；
+    // 回满放到 opTurn 里结算，所以青藤缚的 ap_drain（下次调息少回 1 点）在这里才真正生效
     if (!moves.some(m => (m.cost || 0) <= op.qi)) {
-      op.qi = op.qiMax + (op.apBonus || 0);
-      op.apBonus = 0;
+      op.hand.forEach(m => { if (m.cd && m.cdLeft > 0) m.cdLeft -= 1; });
+      op.intent = { name: '调息', cost: 0, dmg: 0, shield: 0, heal: 0, rest: true };
+      return;
     }
     // AI 与玩家同规则：意图招必须本回合行动点买得起、且不在 CD（否则退而选 0 费调息）
     const affordable = moves.filter(m => (m.cost || 0) <= op.qi && (m.cd || 0) === 0 || (m.cost || 0) <= op.qi && m.cdLeft <= 0);
@@ -311,6 +313,7 @@
     const it = op.intent;
     if (!it) return '';
     if (!it.name) it.name = '调息'; // 名字缺失时兜底，不吐 undefined
+    if (it.rest) return '意图：调息 —— 这一手不出招，盘膝把行动点回满。';
     if (it.dmg) {
       let el = it.el === 'root' ? op.element : it.el;
       const m = elementMult(el, active.my.element);
@@ -339,7 +342,7 @@
   }
 
   /* ── 对阵牌 ── */
-  const SHADOW_CFG = { offset: 0, hpMult: 1, follow: 0.55, dmgAdd: 0 }; // 好友影子档（无 tier 概念，v3 参数补位）
+  const SHADOW_CFG = { offset: 0, hpMult: 1, dmgAdd: 0 }; // 好友影子档（无 tier 概念，v3 参数补位）
   function prepareBattle(friend) {
     if (active) return;
     // 竞技门槛（乙§7）：化神以下禁与道友切磋（大师兄/试炼塔不限）
@@ -355,7 +358,7 @@
   function startTrialFight(spec, ctx) {
     if (active) return;
     const aiCfg = { name: spec.name || '野修', moves: spec.moves || [] };
-    const op = buildOp(null, false, { offset: 0, hpMult: 1, follow: 0.6, dmgAdd: 0 });
+    const op = buildOp(null, false, { offset: 0, hpMult: 1, dmgAdd: 0 });
     // 以 spec 覆盖（realm/element/moves/hpMult）
     op.dao = spec.name || '野修';
     op.realm = spec.realm != null ? spec.realm : op.realm;
@@ -370,7 +373,7 @@
       dmgFinal: m.dmg ? m.dmg + op.realm * 2 : 0,
       cdLeft: 0
     }));
-    active = { my: buildMe(), op, friend: { dao: op.dao }, weather: currentWeatherMod(), round: 0, mode: 'trial', aiFollow: 0.6, trialCtx: ctx };
+    active = { my: buildMe(), op, friend: { dao: op.dao }, weather: currentWeatherMod(), round: 0, mode: 'trial', trialCtx: ctx };
     const info = {
       my: { dao: active.my.dao, realm: active.my.realmName, weapon: active.my.weaponName, tech: active.my.techName, el: active.my.element || '—', hp: active.my.hpMax, cards: (active.my.deckPool || []).length },
       op: { dao: op.dao, realm: op.realmName, weapon: '未知', tech: '野修招式', el: op.element || '—', hp: op.hpMax },
@@ -382,7 +385,7 @@
   /** 奇遇强敌（乙§6）：ambush 模式——败北按 cp_scale 走死亡链或掉灵石 */
   function startAmbushFight(spec, ctx) {
     if (active) return false;
-    const op = buildOp(null, false, { offset: 0, hpMult: 1, follow: 0.65, dmgAdd: 0 });
+    const op = buildOp(null, false, { offset: 0, hpMult: 1, dmgAdd: 0 });
     op.dao = spec.name || '邪修';
     op.realm = spec.realm != null ? spec.realm : op.realm;
     op.realmName = (g.LS.BAL.realms[op.realm] || {}).name || '?';
@@ -396,7 +399,7 @@
       dmgFinal: m.dmg ? m.dmg + op.realm * 2 + (spec.dmgAdd || 0) : 0,
       cdLeft: 0
     }));
-    active = { my: buildMe(), op, friend: { dao: op.dao }, weather: currentWeatherMod(), round: 0, mode: 'ambush', aiFollow: 0.7, ambushCtx: ctx };
+    active = { my: buildMe(), op, friend: { dao: op.dao }, weather: currentWeatherMod(), round: 0, mode: 'ambush', ambushCtx: ctx };
     g.LS.ui.showBattleArena({
       my: { dao: active.my.dao, realm: active.my.realmName, weapon: active.my.weaponName, tech: active.my.techName, el: active.my.element || '—', hp: active.my.hpMax, cards: (active.my.deckPool || []).length },
       op: { dao: op.dao, realm: op.realmName, weapon: '凶相毕露', tech: '邪门歪道', el: op.element || '—', hp: op.hpMax },
@@ -411,7 +414,7 @@
     const tierCfg = SENIOR_TIERS[tier] || SENIOR_TIERS.equal;
     const my = buildMe();
     const op = buildOp(null, true, tierCfg);
-    active = { my, op, friend: { dao: op.dao }, weather: currentWeatherMod(), round: 0, mode: 'senior', tier: tierCfg, aiFollow: tierCfg.follow };
+    active = { my, op, friend: { dao: op.dao }, weather: currentWeatherMod(), round: 0, mode: 'senior', tier: tierCfg };
     openArena();
   }
 
@@ -481,7 +484,7 @@
     a.my.shield = 0;
     (a.my.deckPool || []).forEach(c => { if (c._cdLeft > 0) c._cdLeft -= 1; }); // 招式 CD 流转
     drawHand(a.my, DRAW_N);
-    rollIntent(a.op);   // 敌方行动点也不自动回满，不够时由 rollIntent 让它调息
+    rollIntent(a.op);   // 敌方行动点同样不自动回满，买不起任何一招时它这一手只能调息
     const evs = [];
     if (a.my.toxic >= 10) {
       const dot = Math.min(12, Math.floor(a.my.toxic / 10) * 3);
@@ -551,11 +554,18 @@
     a.op.shield = 0; // 对方回合开始先散旧罡气，出招再凝新罩
     const evs = [];
     if (it) {
-      a.op.qi -= it.cost || 0;   // 对方出招同样消耗行动点
-      if (it.dmg) evs.push(applyHit(a.op, a.my, it, false));
-      if (it.heal) evs.push(applyHeal(a.op, it.heal, it.name, false));
-      if (it.shield) evs.push(applyShield(a.op, it.shield, it.name, false, { thorns_pct: it.thorns_pct || 0, block_heal: it.block_heal || 0 }));
-      if (!it.dmg && !it.heal && !it.shield) evs.push({ type: 'note', side: 'op', text: a.op.dao + '按剑不动，调息蓄势。' });
+      if (it.rest) {
+        // 与玩家「调息 · 让招」同构：本手不出招，把行动点回满（apBonus 的增减在此结算）
+        a.op.qi = a.op.qiMax + (a.op.apBonus || 0);
+        a.op.apBonus = 0;
+        evs.push({ type: 'note', side: 'op', text: a.op.dao + '按剑不动，盘膝调息——行动点复满，这一手不出招。' });
+      } else {
+        a.op.qi -= it.cost || 0;   // 对方出招同样消耗行动点
+        if (it.dmg) evs.push(applyHit(a.op, a.my, it, false));
+        if (it.heal) evs.push(applyHeal(a.op, it.heal, it.name, false));
+        if (it.shield) evs.push(applyShield(a.op, it.shield, it.name, false, { thorns_pct: it.thorns_pct || 0, block_heal: it.block_heal || 0 }));
+        if (!it.dmg && !it.heal && !it.shield) evs.push({ type: 'note', side: 'op', text: a.op.dao + '按剑不动，调息蓄势。' });
+      }
     }
     // 挡后回气（玄武镇岳）：对方出招结束我方罡气尚存 → 回气
     if (a.my.shield > 0 && a.my.shieldAttrs && a.my.shieldAttrs.block_heal) {
