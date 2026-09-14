@@ -412,6 +412,8 @@ button:not(:disabled):active { transform: translateY(1px); }
   box-shadow: 0 8px 40px rgba(0, 0, 0, .4);
   animation: riseUp .2s ease-out;
 }
+/* 斗法弹窗加宽：手牌要放得下「费用圆点 + 招名 + 效果」且不挤压 */
+body:has(#battle-hands) .modal-card { max-width: 680px; }
 @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
 @keyframes riseUp { from { transform: translateY(14px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
 .modal-title { font-size: 22px; letter-spacing: 4px; margin-bottom: 10px; }
@@ -652,14 +654,26 @@ html.night body #version-mark { opacity: .3; }
 .battle-qi { text-align:center; font-size:12px; color:var(--ink-soft,#a6987f); margin-bottom:6px; }
 .qi-dot { color:#4a4438; margin:0 2px; font-size:13px; }
 .qi-dot.on { color:#e8c34a; text-shadow:0 0 6px rgba(232,195,74,.55); }
-.battle-hands { display:flex; gap:8px; justify-content:center; flex-wrap:wrap; margin-bottom:10px; min-height:86px; }
-.hand-card { position:relative; width:96px; min-height:84px; padding:16px 6px 6px; background:linear-gradient(180deg,rgba(58,50,38,.9),rgba(30,26,20,.9)); border:1px solid #7a6a55; border-radius:9px; color:var(--ink,#e8dcc8); cursor:pointer; text-align:center; transition:transform .12s ease, border-color .12s ease; font-size:12px; }
+/* 手牌区固定两行高（8 张正好两行）：手牌数随余点变，若用 min-height 弹窗会跟着一涨一缩；
+   窄屏放不下时在本区内滚动，弹窗尺寸始终不变 */
+.battle-hands { display:flex; gap:8px; justify-content:center; flex-wrap:wrap; align-content:flex-start; margin-bottom:10px; padding:12px 12px 0; height:242px; overflow-y:auto; overflow-x:hidden; }
+.hand-card { position:relative; width:144px; min-height:110px; padding:22px 8px 8px; background:linear-gradient(180deg,rgba(58,50,38,.9),rgba(30,26,20,.9)); border:1px solid #7a6a55; border-radius:9px; color:var(--ink,#e8dcc8); cursor:pointer; text-align:center; transition:transform .12s ease, border-color .12s ease; font-size:13px; }
 .hand-card:hover:not(:disabled) { transform:translateY(-4px); border-color:var(--cinnabar,#c0392b); }
 .hand-card:disabled { cursor:not-allowed; opacity:.38; filter:grayscale(.6); }
-.hand-card b { display:block; font-size:13px; margin-bottom:3px; }
-.hc-cost { position:absolute; top:-7px; left:-7px; width:22px; height:22px; line-height:20px; border-radius:50%; background:radial-gradient(circle at 35% 35%,#f0d878,#b8912e); color:#2a2008; font-weight:700; font-size:12px; border:1px solid #6b5316; }
-.hc-el { display:block; font-size:10.5px; color:#8fb4c8; }
-.hc-eff { display:block; margin-top:3px; font-size:11px; color:#c8a86a; }
+.hand-card b { display:block; font-size:16px; margin-bottom:4px; }
+.hc-cost { position:absolute; top:-9px; left:-9px; width:28px; height:28px; line-height:26px; border-radius:50%; background:radial-gradient(circle at 35% 35%,#f0d878,#b8912e); color:#2a2008; font-weight:700; font-size:14px; border:1px solid #6b5316; }
+.hc-el { display:block; font-size:12px; color:#8fb4c8; }
+.hc-eff { display:block; margin-top:4px; font-size:12.5px; color:#c8a86a; }
+
+/* 矮屏回落（≤860 高）：卡与舞台各收一档，保证弹窗不超 84vh、圆点仍不裁 */
+@media (max-height:860px){
+  body:has(#battle-hands) .modal-card { max-width: 660px; }
+  .battle-hands { height:220px; padding:11px 11px 0; }
+  .hand-card { width:132px; min-height:94px; padding:20px 7px 7px; }
+  .hand-card b { font-size:15px; }
+  .hc-cost { width:25px; height:25px; line-height:23px; font-size:13px; top:-8px; left:-8px; }
+  .battle-stage { height:172px; }
+}
 
 /* ── 卡组整备（皇室战争式四类构筑） ── */
 .deck-row { display:flex; gap:8px; justify-content:center; flex-wrap:wrap; }

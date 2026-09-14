@@ -1190,3 +1190,23 @@ html.lowfx #ms-scene .moon,html.lowfx #ms-scene .moon-halo,html.lowfx #ms-scene 
 html.lowfx #ms-scene .ms-qi,html.lowfx #ms-scene .ms-qi2,html.lowfx #ms-scene .ms-pulse,
 html.lowfx #ms-scene .seal,html.lowfx #btn-breath{animation:none !important}
 html.lowfx #ms-scene .moon,html.lowfx #ms-scene .moon-halo{box-shadow:none !important}
+
+/* ── 斗法中：提示条让位（原本 fixed 居中上方，会压住斗法弹窗的舞台/手牌） ──
+   宽屏挪到弹窗右侧空白，窄屏落到底部，都不再盖住牌面 */
+body:has(#battle-stage) #toast-root{
+  left:auto; right:14px; transform:none; align-items:flex-end;
+  max-width:min(34vw,300px); text-align:right;
+}
+body:has(#battle-stage) .toast{ max-width:min(34vw,300px); }
+@media (max-width:1100px){
+  body:has(#battle-stage) #toast-root{ left:14px; right:14px; top:auto !important; bottom:10px; align-items:center; text-align:center; max-width:none; }
+  body:has(#battle-stage) .toast{ max-width:none; }
+}
+/* 窄屏手牌缩一档：8 张也要两行放得下，不再被手牌区裁掉第三行 */
+@media (max-width:480px){
+  .battle-hands .hand-card{ width:62px; min-height:78px; padding:15px 3px 4px; }
+  .battle-hands .hand-card b{ font-size:11px; }
+  .battle-hands .hc-el, .battle-hands .hc-eff{ font-size:10px; }
+  .battle-hands .hc-cost{ font-size:10px; width:20px; height:20px; line-height:18px; top:-6px; left:-6px; }
+  .battle-hands{ gap:6px; height:172px; padding:10px 10px 0; }
+}

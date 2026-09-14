@@ -342,6 +342,8 @@
       buildingSig = sig;
       refs.buildingList.innerHTML = '';
       lastStr.bbtn = {};
+      // 技能按钮跟卡片一起被清空重造：ab_ 缓存必须一并作废，否则脏比对会跳过写入，按钮就一直空着
+      for (const k in lastStr) { if (k.indexOf('ab_') === 0) delete lastStr[k]; }
       for (const b of bal.buildings) {
         const unlocked = b.unlock_realm <= s.realm.index;
         const card = document.createElement('div');
@@ -1067,7 +1069,7 @@
       '</div></div>' +
       (info.elRel ? '<div class="modal-desc" style="text-align:center;color:var(--cinnabar)">' + escapeHtml(info.elRel) + '</div>' : '') +
       '<div class="modal-desc" style="text-align:center">' + escapeHtml(info.weather) + '</div>' +
-      '<div class="modal-desc" style="font-size:11px;color:var(--ink-soft)">行动点=自身境界+1：出招按招式所需点数扣减，用光了点「调息 · 让招」回满（代价是白让一手）；每回合抽 3 张、只出一招；罡气护罩只保当回合。</div>' +
+      '<div class="modal-desc" style="font-size:11px;color:var(--ink-soft)">行动点=自身境界+1：出招按招式所需点数扣减，用光了点「调息 · 让招」回满（代价是白让一手）；每回合从你已参悟的招与基础牌里摸牌（付得起的、至多 8 张，境界越高越容易摸到重手）、只出一招；罡气护罩只保当回合。</div>' +
       '<div style="text-align:center;margin-top:10px"><button class="btn-primary" id="battle-start" style="padding:10px 34px;font-size:16px">开 战</button> ' +
       '<button class="icon-btn" id="battle-cancel">改日再战</button></div>';
     card.querySelector('#battle-start').addEventListener('click', () => { onStart(); });
@@ -1113,7 +1115,7 @@
     gd.innerHTML =
       '<div class="bg-title">斗 法 须 知</div>' +
       '<ul class="bg-list">' +
-        '<li>每回合从卡组抽 <b>3 张</b>招，只能出其中 <b>一张</b>。</li>' +
+        '<li>每回合从你<b>已参悟的招与基础牌</b>里摸牌：只手摸得动付得起、且不在冷却的（至多八张，<b>境界越高越容易摸到重手</b>），只能出其中 <b>一张</b>。</li>' +
         '<li>每局由<b>你先出手</b>——先手在你；日后或另立定先手之规，眼下不必挂心。</li>' +
         '<li>出招消耗 <b>行动点</b>（= 自身境界 + 1）；用光了点「调息 · 让招」回满，代价是白让一手。</li>' +
         '<li>对手吃同一套行动条：他的点数也会耗光，耗光那一手只能调息（意图里会写出来）——那是你的机会。</li>' +
@@ -1126,7 +1128,7 @@
         '<li>血条下方那行横条：<b>对方意图</b>——他这一手要出什么招，据此决定攻守。</li>' +
         '<li>中间方框：<b>对战舞台</b>，招式、护罩、伤害数字都在这里演。</li>' +
         '<li>「行动点」一行：亮着的点就是你还剩的行动点，出招按费用扣。</li>' +
-        '<li>「<b>手牌</b>」一栏：三张招，点其中一张打出去（每回合限一张）。</li>' +
+        '<li>「<b>手牌</b>」一栏：你这一手能用的招都在这里，点其中一张打出去（每回合限一张）。</li>' +
         '<li>最下「<b>调息 · 让招</b>」：不出招，把行动点回满，本回合让给对方。</li>' +
       '</ul>' +
       '<div style="text-align:center;margin-top:16px"><button class="btn-primary" id="bg-ok" style="padding:9px 34px">知 道 了</button></div>';
@@ -1871,7 +1873,7 @@
             '<div>' + (has ? '<span class="stamp">已 参 悟</span>'
               : '<button class="icon-btn" data-buycard="' + c.id + '" ' + (canBuy ? '' : 'disabled') + '>' + g.LS.util.fmt(c.price) + ' 灵石</button>') + '</div></div>';
         }
-        rows += '<div class="modal-desc" style="font-size:11px;color:var(--ink-soft)">秘传牌参悟后，去道友录「整备卡组」编入出战（每类限带一张）。</div>';
+        rows += '<div class="modal-desc" style="font-size:11px;color:var(--ink-soft)">秘传牌参悟后自动进抽牌池：斗法每回合从「已参悟的招 + 基础牌」里按行动点摸牌，不用手动编入。</div>';
       } else {
         const list = tabName === 'tech' ? (cul.techniques || []) : (cul.weapons || []);
         const ownedArr = tabName === 'tech' ? (s.techniques_owned || []) : (s.weapons_owned || []);
@@ -1963,7 +1965,7 @@
     render('weapon');
   }
 
-  /* ── 卡组整备（皇室战争式）：四类各选 1 张出战，只能从已参悟的牌里挑 ── */
+  /* ── 招式录：已参悟招式一览（四类归类）+ 自己标星；斗法抽牌不看此处编成 ── */
   function showDeckEditor() {
     removeModals();
     const { card } = makeModal(removeModals);
@@ -1994,20 +1996,20 @@
         }
         cols += '<div class="deck-col"><div class="deck-kind">' + (KIND_NAME[kind] || kind) + '</div>' + items + '</div>';
       }
-      const deckDesc = (s.deck || []).map(id => { const c = pool.find(x => x.id === id); return c ? c.name : ''; }).filter(Boolean).join('、') || '基础套（各类默认招式）';
+      const deckDesc = (s.deck || []).map(id => { const c = pool.find(x => x.id === id); return c ? c.name : ''; }).filter(Boolean).join('、') || '（无）';
       card.innerHTML =
-        '<div class="modal-title">整 备 卡 组<button class="icon-btn" id="dk-close" style="float:right;font-size:12px;padding:3px 12px">合 上</button></div>' +
-        '<div class="modal-desc">斗法四类招式，每类限带一张、只能从已参悟的里面挑。当前出战：' + escapeHtml(deckDesc) + '</div>' +
+        '<div class="modal-title">招 式 录<button class="icon-btn" id="dk-close" style="float:right;font-size:12px;padding:3px 12px">合 上</button></div>' +
+        '<div class="modal-desc">已参悟的招式一览（按攻式 · 五行 · 守式 · 回式归类）。斗法每回合从<b>已参悟的全部招式与基础牌</b>里摸牌：只手摸得动付得起的（费用 ≤ 当前行动点），够格的不超 8 张就全给你、超过 8 张随机抽，且<b>境界越高越容易摸到重手</b>——不看此处标记。已标星：' + escapeHtml(deckDesc) + '</div>' +
         '<div class="deck-row">' + cols + '</div>' +
-        '<div style="text-align:center;margin-top:8px"><button class="btn-primary" id="dk-save" style="padding:7px 26px">定 编</button> ' +
-        '<button class="icon-btn" id="dk-reset">恢复基础套</button></div>';
+        '<div style="text-align:center;margin-top:8px"><button class="btn-primary" id="dk-save" style="padding:7px 26px">保 存 标 记</button> ' +
+        '<button class="icon-btn" id="dk-reset">清 空 标 记</button></div>';
       card.querySelector('#dk-close').addEventListener('click', removeModals);
       card.querySelector('#dk-save').addEventListener('click', () => {
         g.LS.save.save();
-        toast('卡组已定编：' + ((s.deck || []).length ? '自定义' : '基础套'));
+        toast('标记已保存（只作备忘，不影响斗法抽牌）');
         removeModals();
       });
-      card.querySelector('#dk-reset').addEventListener('click', () => { s.deck = []; g.LS.save.save(); toast('已恢复基础套'); render(); });
+      card.querySelector('#dk-reset').addEventListener('click', () => { s.deck = []; g.LS.save.save(); toast('已清空标记'); render(); });
       card.querySelectorAll('[data-pick]').forEach(btn => btn.addEventListener('click', () => {
         const id = btn.dataset.pick;
         const c = pool.find(x => x.id === id);
@@ -2052,7 +2054,8 @@
         '<div class="modal-desc">添加好友（粘贴对方名片）：</div>' +
         '<textarea class="set-textarea" id="fr-paste" placeholder="粘贴对方名片码"></textarea>' +
         '<div class="set-row"><button class="btn-primary" id="fr-add" style="padding:6px 16px">添加好友</button></div>' +
-        '<div class="set-row" style="justify-content:center;gap:8px"><button class="btn-primary" id="fr-arena" style="padding:6px 16px">擂 台</button><button class="icon-btn" id="fr-deck" style="padding:6px 12px">整备卡组</button></div>' +
+        '<div class="set-row" style="justify-content:center;gap:8px"><button class="btn-primary" id="fr-arena" style="padding:6px 16px">擂 台</button><button class="icon-btn" id="fr-deck" style="padding:6px 12px">招式录</button></div>' +
+        '<div class="modal-desc" style="font-size:11px">抽牌不看此处编成：四路斗法（论道、试炼塔、奇遇强敌、好友切磋）每回合都从<b>你已参悟的全部招式与基础牌</b>里摸——只摸得动付得起的（费用 ≤ 当前行动点），够格的不超过 8 张就全给你、超过 8 张随机抽，<b>境界越高越容易摸到重手</b>。此处仅作招式一览与标星。</div>' +
         '<div class="set-row" id="fr-join-row" style="display:none"><input class="set-input" id="fr-room-code" placeholder="输入房间码" style="flex:1"></div>' +
         '<h3 class="panel-title">道友录（' + fr.length + '）</h3><div class="modal-desc">论道积分 ' + (s.honor || 0) + ' · 段位 <b>' + (function(){ const ranks=(g.LS.BAL.battle||{}).ranks||[]; let cur=ranks[0]||{name:'凡品'}; for(const r of ranks){ if((s.honor||0)>=r.min) cur=r; } return cur.name; })() + '</b></div>' + rows +
         '<div style="text-align:center;margin-top:10px"><button class="icon-btn" id="fr-close2">合上</button></div>';
@@ -2094,7 +2097,7 @@
         removeModals();
         g.LS.page.go('arena');
       });
-      // 整备卡组（四类各带一张，皇室战争式构筑）
+      // 招式录（已参悟招式一览）
       card.querySelector('#fr-deck').addEventListener('click', () => {
         removeModals();
         showDeckEditor();

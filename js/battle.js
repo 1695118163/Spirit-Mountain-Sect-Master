@@ -1,8 +1,8 @@
 /**
  * battle.js v3 —— 斗法引擎（杀戮尖塔式回合制选牌）：
- *  - 行动点 = 境界 + 1：每回合从卡组抽 3 张，出招按招式费用扣点，点用光后靠「调息 · 让招」回满（代价是白让一手）；
+ *  - 行动点 = 境界 + 1：每回合从卡组抽 8 张（付得起的全摸在手里），出招按招式费用扣点，点用光后靠「调息 · 让招」回满（代价是白让一手）；
  *    出一招即把回合交给对方（一回合仅此一招）；护盾只保当回合；对方 AI 先亮「意图」再出手，玩家据此决断；
- *  - 五行克制 ×1.25 / 被克 ×0.85，天时（雨助水行/雪寒）微调，丹毒每回合自伤；
+ *  - 五行克制 ×1.25 / 被克 ×0.85，天时（雨助水行/雪寒）微调，丹毒每回合自伤（按气血百分比，每档 2%）；
  *  - 大师兄「凌云子」（金丹）为内置人机陪练；好友影子斗法由影子 AI 代打（通用卡组）。
  * 数据：data/cultivation.json battle_cards（我方牌库 / AI 卡组）；QTE 与自动对垒已移除。
  */
@@ -90,7 +90,7 @@
   /** 卡组槽位（乙§3.2）：攻3/五2/守2/回1 = 8 槽 */
   const KIND_LIMITS = { attack: 3, element: 2, defense: 2, heal: 1 };
 
-  /** 出战卡组解析：S().deck 按类取前 N 张合法牌（8 槽）；缺槽回退该类默认牌 */
+  /** 出战卡组解析：S().deck 按类取前 N 张合法牌（8 槽）；缺槽自动补位（须已参悟 且 费用 ≤ 自身行动点；够格的不超槽数则全给，超过随机抽） */
   function resolveDeck() {
     const s = S();
     const pool = CARDS().my_cards || [];
@@ -105,13 +105,29 @@
         const c = pool.find(x => x.id === id && x.kind === kind && (!x.unlock_realm || S().realm.index >= x.unlock_realm));
         if (c && ownsCard(c) && picked.indexOf(c) === -1) { picked.push(c); taken += 1; }
       }
-      if (taken === 0) {
-        const defaults = pool.filter(x => x.kind === kind && x.default);
-        for (const fb of (defaults.length ? defaults : pool.filter(x => x.kind === kind))) {
+      // 槽位没填满：从「已拥有 + 境界达标 + 本境付得起（费用 ≤ 境界+1）」的牌里随机补位，
+      // 按强度排序（伤害+护盾+回气，同分看费用），保证出战池尽量满 8 槽、且会带重手
+      if (taken < limit) {
+        const qiCap = S().realm.index + 1;
+        const auto = pool.filter(x => x.kind === kind && ownsCard(x)
+            && (!x.unlock_realm || S().realm.index >= x.unlock_realm)
+            && (x.cost || 0) <= qiCap && picked.indexOf(x) === -1);
+        // 够格的牌不超过槽数就全给；多了就随机抽（洗牌取前 N）——不按强度挑，免得每局都是同样那几张
+        for (let i = auto.length - 1; i > 0; i--) {
+          const j = Math.floor(Math.random() * (i + 1));
+          const t = auto[i]; auto[i] = auto[j]; auto[j] = t;
+        }
+        for (const c of auto) {
           if (taken >= limit) break;
-          picked.push(fb); taken += 1;
+          picked.push(c); taken += 1;
         }
       }
+      // 这一类没有「已参悟 且 付得起」的牌 → 先空着：付不起的牌不进池（四类全空时见下方兜底）
+    }
+    // 极端兜底：四类都没凑出一张（存档异常等）→ 取全场费用最低的一张，保证手里有牌
+    if (!picked.length) {
+      const cheap = pool.slice().sort((x, y) => (x.cost || 0) - (y.cost || 0));
+      if (cheap.length) picked.push(cheap[0]);
     }
     return picked;
   }
@@ -127,9 +143,10 @@
     const rootMult = g.LS.state.spiritRootMult ? g.LS.state.spiritRootMult() : 1;
     // 气血整体下调 60%（2026-09-13 用户口径：一回合只出一招后，原血量让战斗过长）
     const hpMax = Math.round((80 + realm * 45 + sharp * 0.8) * 0.4 * Math.min(1.3, rootMult));
-    // 出战卡组（8 槽）＝ 抽牌池；每回合从池中抽 3 张（见 drawHand），行动点是「可驭招式上限」
-    const deckPool = resolveDeck()
-      .filter(c => !c.unlock_realm || realm >= c.unlock_realm)
+    // 抽牌池＝「已参悟的招式 + 基础牌」全集（2026-09-14 用户口径：卡组不再参与抽牌）；
+    // 每回合按当前行动点从池里随机摸 8 张、境界越高越容易摸到重手（见 drawHand）；行动点是「可驭招式上限」
+    const handPool = (CARDS().my_cards || [])
+      .filter(c => ownsCard(c) && (!c.unlock_realm || realm >= c.unlock_realm))
       .map(c => Object.assign({}, c, {
         dmgFinal: c.dmg ? Math.round((c.dmg + realm * 2 + (c.weapon ? sharp * 0.3 : 0)) * Math.min(1.25, rootMult)) : 0,
         // 武器牌五行随装备武器（兼修武器为数组，克制判定取最有利行）
@@ -141,7 +158,7 @@
       element: (s.spirit_root && s.spirit_root.element) || (t ? t.element : null),
       daoxin: s.dao_heart, toxic: Math.floor(s.pill_toxic || 0),
       hpMax, hp: hpMax, qi: realm + 1, qiMax: realm + 1, shield: 0,
-      deckPool, hand: [] // AP=境界+1（乙§2）：不再是每回合资源，而是可驭招式的费用上限
+      handPool, hand: [] // AP=境界+1（乙§2）：不再是每回合资源，而是可驭招式的费用上限
     };
   }
 
@@ -375,7 +392,7 @@
     }));
     active = { my: buildMe(), op, friend: { dao: op.dao }, weather: currentWeatherMod(), round: 0, mode: 'trial', trialCtx: ctx };
     const info = {
-      my: { dao: active.my.dao, realm: active.my.realmName, weapon: active.my.weaponName, tech: active.my.techName, el: active.my.element || '—', hp: active.my.hpMax, cards: (active.my.deckPool || []).length },
+      my: { dao: active.my.dao, realm: active.my.realmName, weapon: active.my.weaponName, tech: active.my.techName, el: active.my.element || '—', hp: active.my.hpMax, cards: (active.my.handPool || []).length },
       op: { dao: op.dao, realm: op.realmName, weapon: '未知', tech: '野修招式', el: op.element || '—', hp: op.hpMax },
       elRel: '', weather: active.weather.text, mode: 'trial'
     };
@@ -401,7 +418,7 @@
     }));
     active = { my: buildMe(), op, friend: { dao: op.dao }, weather: currentWeatherMod(), round: 0, mode: 'ambush', ambushCtx: ctx };
     g.LS.ui.showBattleArena({
-      my: { dao: active.my.dao, realm: active.my.realmName, weapon: active.my.weaponName, tech: active.my.techName, el: active.my.element || '—', hp: active.my.hpMax, cards: (active.my.deckPool || []).length },
+      my: { dao: active.my.dao, realm: active.my.realmName, weapon: active.my.weaponName, tech: active.my.techName, el: active.my.element || '—', hp: active.my.hpMax, cards: (active.my.handPool || []).length },
       op: { dao: op.dao, realm: op.realmName, weapon: '凶相毕露', tech: '邪门歪道', el: op.element || '—', hp: op.hpMax },
       elRel: '', weather: active.weather.text, mode: 'ambush'
     }, () => beginFight());
@@ -425,7 +442,7 @@
       return m > 1 ? '（灵根克制对方）' : (m < 1 ? '（灵根被克）' : '');
     })() : '';
     g.LS.ui.showBattleArena({
-      my: { dao: a.my.dao, realm: a.my.realmName, weapon: a.my.weaponName, tech: a.my.techName, el: a.my.element || '—', hp: a.my.hpMax, cards: (a.my.deckPool || []).length },
+      my: { dao: a.my.dao, realm: a.my.realmName, weapon: a.my.weaponName, tech: a.my.techName, el: a.my.element || '—', hp: a.my.hpMax, cards: (a.my.handPool || []).length },
       op: { dao: a.op.dao, realm: a.op.realmName, weapon: a.op.weaponName, tech: a.op.techName, el: a.op.element || '—', hp: a.op.hpMax },
       elRel, weather: a.weather.text,
       mode: a.mode, senior: a.mode === 'senior',
@@ -457,17 +474,27 @@
   }
 
   /* ── 抽牌：行动点是「出招要付的代价」，上限=境界+1，用点靠「调息」回满。
-     每回合从卡组抽 3 张，且只抽【当前余点】付得起的招——点耗光就抽不到贵招，只能调息。
+     每回合从卡组抽 8 张（= 整套池子），只抽【当前余点】付得起、且不在冷却的招——点耗光就只剩便宜招可摸。
      故练气（AP 1）只能使 1 费招，随境界解锁 2/3/4… 费的重手。 ── */
-  const DRAW_N = 3;
+  const DRAW_N = 8;   // 每回合把付得起的牌都摸上来（池子 8 槽 → 基本就是整套在手）
   function drawHand(unit, n) {
     const ap = Math.max(0, unit.qi || 0);   // 按当前行动点抽牌：点耗光了就抽不到贵招
-    const pool = (unit.deckPool || []).filter(c => (c.cost || 0) <= ap && (c._cdLeft || 0) <= 0);
-    const bag = pool.slice();
+    const pool = (unit.handPool || []).filter(c => (c.cost || 0) <= ap && (c._cdLeft || 0) <= 0);
     const picked = [];
-    while (picked.length < n && bag.length) picked.push(bag.splice(Math.floor(Math.random() * bag.length), 1)[0]);
-    if (!picked.length) { // 卡组全被境界/CD 卡住：兜底给费用最低的一张，别让玩家无牌可动
-      const cheap = (unit.deckPool || []).slice().sort((x, y) => (x.cost || 0) - (y.cost || 0));
+    if (pool.length <= n) picked.push.apply(picked, pool);   // 够格的不超过手牌上限 → 全都给你
+    else {                                                   // 超过 → 随机抽 n 张；境界越高，重手权重越大
+      const rank = S().realm.index / 9;                      // 0（练气）→ 1（飞升）
+      const bag = pool.slice();
+      while (picked.length < n && bag.length) {
+        let total = 0;
+        for (const c of bag) total += 1 + rank * (c.cost || 0);
+        let r = Math.random() * total, k = 0;
+        for (; k < bag.length - 1; k++) { r -= 1 + rank * (bag[k].cost || 0); if (r <= 0) break; }
+        picked.push(bag.splice(k, 1)[0]);
+      }
+    }
+    if (!picked.length) { // 余点太低/招全在冷却：兜底给费用最低的一张，别让玩家无牌可动
+      const cheap = (unit.handPool || []).slice().sort((x, y) => (x.cost || 0) - (y.cost || 0));
       if (cheap.length) picked.push(cheap[0]);
     }
     unit.hand = picked;
@@ -482,12 +509,14 @@
     // 行动点不再每回合自动回满：出招按费用扣，用光了靠「调息 · 让招」恢复（用户口径 2026-09-13）
     if (a.round === 1) a.my.qi = a.my.qiMax;
     a.my.shield = 0;
-    (a.my.deckPool || []).forEach(c => { if (c._cdLeft > 0) c._cdLeft -= 1; }); // 招式 CD 流转
+    (a.my.handPool || []).forEach(c => { if (c._cdLeft > 0) c._cdLeft -= 1; }); // 招式 CD 流转
     drawHand(a.my, DRAW_N);
     rollIntent(a.op);   // 敌方行动点同样不自动回满，买不起任何一招时它这一手只能调息
     const evs = [];
     if (a.my.toxic >= 10) {
-      const dot = Math.min(12, Math.floor(a.my.toxic / 10) * 3);
+      // 丹毒自伤按气血百分比（2026-09-14 用户口径）：每满 10 点毒＝1 档，每档扣 2% 气血，
+      // 下限 1 点、上限 12 点——免得低境界（练气 34 血）被固定 6 点/回合直接毒死，高境界又毫无感觉
+      const dot = Math.max(1, Math.min(12, Math.round(a.my.hpMax * 0.02 * Math.floor(a.my.toxic / 10))));
       a.my.hp -= dot;
       evs.push({ type: 'poison', side: 'my', target: 'my', dealt: dot, text: '丹毒发作，' + a.my.dao + '气血翻涌（-' + dot + '）。' });
     }
@@ -581,10 +610,10 @@
       syncHP();
       if (a.my.hp <= 0) { fallIfDead('my'); finish(false, []); return; }
       if (a.op.hp <= 0) { fallIfDead('op'); finish(true, []); return; }
-      // 天道裁定（乙§2）：8 回合未分胜负，按剩余气血百分比判，防双龟流与 AI 卡壳死局
-      if (a.round >= 8) {
+      // 天道裁定（乙§2）：12 回合未分胜负，按剩余气血百分比判，防双龟流与 AI 卡壳死局
+      if (a.round >= 12) {
         const myPct = a.my.hp / a.my.hpMax, opPct = a.op.hp / a.op.hpMax;
-        const line = '八回合已满，天道裁定：' + (myPct > opPct ? a.my.dao + '气机更完足，判胜！' : (myPct < opPct ? a.op.dao + '气机更完足，判胜。' : '气机相当，挑战方让半招——判负。'));
+        const line = '十二回合已满，天道裁定：' + (myPct > opPct ? a.my.dao + '气机更完足，判胜！' : (myPct < opPct ? a.op.dao + '气机更完足，判胜。' : '气机相当，挑战方让半招——判负。'));
         logEvents([{ text: line }]);
         finish(myPct > opPct, []);
         return;
