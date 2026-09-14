@@ -555,7 +555,7 @@
       refs.btnBreak.classList.toggle('hidden', !can);
     } else {
       refs.xpFill.style.width = '100%';
-      refs.xpText.textContent = '已至飞升之境';
+      refs.xpText.textContent = '已至' + (((g.LS.BAL.realms[s.realm.index] || {}).name) || '飞升') + '之境';
       refs.btnBreak.classList.add('hidden');
       if (refs.taichiMonk) refs.taichiMonk.style.left = '100%'; // 满境小人也走到最前端
       if (refs.xpBar) refs.xpBar.classList.add('full');
@@ -988,6 +988,9 @@
       const tactics = bt.tactics || {};
       const pill = bt.pill_guard || {};
       const novice = (g.LS.S.stats.breakthroughs || 0) < 2; // 前两次突破给新手推荐
+      // 大帝走九重雷劫：策略与 rate 不参与，故不给假百分比，只标它对灵石奖励的影响
+      const emperor = next.index >= 10;
+      const odds = emperor && g.LS.realm.emperorOdds ? g.LS.realm.emperorOdds(usePill && pill.rate_add ? pill.rate_add : 0) : null;
       let rows = '';
       ['steady', 'normal', 'bold'].forEach(k => {
         const t = tactics[k];
@@ -995,21 +998,33 @@
         let r = Math.max(0.05, Math.min(1, base + t.rate_add + (usePill && pill.rate_add ? pill.rate_add : 0)));
         const sel = selTactic === k;
         const rec = novice && k === 'normal';
+        const badge = emperor
+          ? (t.reward_mult !== 1 ? '<span class="ev-badge ' + (t.reward_mult > 1 ? 'ev-badge-good' : 'ev-badge-bad') + '">突破灵石 ×' + t.reward_mult + '</span> ' : '')
+          : '<span class="ev-badge ' + (t.rate_add > 0 ? 'ev-badge-good' : (t.rate_add < 0 ? 'ev-badge-bad' : 'ev-badge-buff')) + '">' + Math.round(r * 100) + '%</span> ';
         rows += '<button class="ev-option tactic-row' + (sel ? ' tactic-sel' : '') + '" data-t="' + k + '">' +
-          '<span class="ev-badge ' + (t.rate_add > 0 ? 'ev-badge-good' : (t.rate_add < 0 ? 'ev-badge-bad' : 'ev-badge-buff')) + '">' + Math.round(r * 100) + '%</span> ' +
+          badge +
           '<b>' + escapeHtml(t.name) + '</b>' + (rec ? '<span class="ev-badge ev-badge-good">新手推荐</span>' : '') + '　' + escapeHtml(t.desc) +
-          (t.reward_mult !== 1 ? '　<span class="log-gain">灵石 ×' + t.reward_mult + '</span>' : '') + '</button>';
+          (emperor ? '' : (t.reward_mult !== 1 ? '　<span class="log-gain">灵石 ×' + t.reward_mult + '</span>' : '')) + '</button>';
       });
       const canPill = g.LS.economy.pillCount ? g.LS.economy.pillCount('pozhang') > 0 : false;
+      const head = emperor && odds
+        ? '<div class="modal-title">冲关 · ' + escapeHtml(next.name) + '</div>' +
+          '<div class="modal-desc">帝劫 · 九重雷劫：连受 <b>' + odds.strikes + '</b> 道天雷，每道单独判定，你的过率 <b>' + Math.round(odds.p * 100) + '%</b>。<br>' +
+          '落空不超过 <b>' + odds.layers + '</b> 道即可破境称帝——总过率 <b>' + (odds.pass * 100).toFixed(1) + '%</b>' +
+          (odds.hasMingdao ? '（名刀在身，多容一道）' : '') + '。</div>'
+        : '<div class="modal-title">冲关 · ' + escapeHtml(next.name) + '</div>' +
+          '<div class="modal-desc">基础成功率 <b>' + Math.round(base * 100) + '%</b>' +
+          (g.LS.S.dao_heart > (bt.dao_heart_bonus || {}).high ? '（道心加持）' : (g.LS.S.dao_heart < (bt.dao_heart_bonus || {}).low ? '（道心拖累）' : '')) +
+          '　连败保底：' + (bt.pity_success || 3) + ' 次必成</div>';
+      const tail = emperor
+        ? '<div class="modal-desc" style="font-size:12px;color:var(--ink-soft)">每道落空：修为 −' + Math.round((odds.perStrikeLoss || 0.3) * 100) + '%（至多结算 3 层）；落空 ≥ 3 道 → <b>形神俱灭</b>，需名刀碎裂或还魂甲裹魂方能保命。</div>'
+        : '<div class="modal-desc" style="font-size:12px;color:var(--ink-soft)">若失败：修为保留一半，可能走火入魔（全局产量减半片刻）——但连败三次必成，不必过虑。</div>';
       card.innerHTML =
-        '<div class="modal-title">冲关 · ' + escapeHtml(next.name) + '</div>' +
-        '<div class="modal-desc">基础成功率 <b>' + Math.round(base * 100) + '%</b>' +
-        (g.LS.S.dao_heart > (bt.dao_heart_bonus || {}).high ? '（道心加持）' : (g.LS.S.dao_heart < (bt.dao_heart_bonus || {}).low ? '（道心拖累）' : '')) +
-        '　连败保底：' + (bt.pity_success || 3) + ' 次必成</div>' +
+        head +
         rows +
-        '<div class="set-row"><label>破障丹护法（1 颗，成功率 +' + Math.round((pill.rate_add || 0) * 100) + '%）— 丹房现有 ' + (g.LS.economy.pillCount ? g.LS.economy.pillCount('pozhang') : 0) + '</label>' +
+        '<div class="set-row"><label>破障丹护法（1 颗，' + (emperor ? '每道过率' : '成功率') + ' +' + Math.round((pill.rate_add || 0) * 100) + '%）— 丹房现有 ' + (g.LS.economy.pillCount ? g.LS.economy.pillCount('pozhang') : 0) + '</label>' +
         '<input type="checkbox" id="bt-use-pill" ' + (usePill ? 'checked' : '') + (canPill ? '' : ' disabled') + '></div>' +
-        '<div class="modal-desc" style="font-size:12px;color:var(--ink-soft)">若失败：修为保留一半，可能走火入魔（全局产量减半片刻）——但连败三次必成，不必过虑。</div>' +
+        tail +
         '<div style="text-align:center;margin-top:10px"><button class="btn-primary" id="bt-go" style="padding:10px 34px;font-size:16px">出 关</button> ' +
         '<button class="icon-btn" id="bt-cancel">再想想</button></div>';
       card.querySelectorAll('[data-t]').forEach(b => {

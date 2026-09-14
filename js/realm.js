@@ -82,18 +82,42 @@
     return 'death';
   }
 
-  /** 大帝九重雷劫（甲 §3）：连续 9 道天雷独立判定，失败积劫伤（修为-30%/层），2 层形神俱灭 */
-  function emperorTribulation(next) {
+  /** 组合数（九重雷劫过率用） */
+  function combi(n, k) { let r = 1; for (let i = 0; i < k; i++) r = r * (n - i) / (i + 1); return r; }
+  /** 落空不超过 miss 道的概率（p = 每道过率） */
+  function binomAtMost(n, miss, p) {
+    let acc = 0;
+    for (let k = 0; k <= miss; k++) acc += combi(n, k) * Math.pow(1 - p, k) * Math.pow(p, n - k);
+    return acc;
+  }
+
+  /** 帝劫数值（面板与引擎唯一出处，不消耗任何状态；extraBonus 供面板试算破障丹） */
+  function emperorOdds(extraBonus) {
     const s = S();
-    const bal = BAL();
-    const tb = (bal.breakthrough && bal.breakthrough.tribulation) || {};
+    const tb = (BAL().breakthrough && BAL().breakthrough.tribulation) || {};
     let p = tb.base_p != null ? tb.base_p : 0.70;
-    if (s.bt && s.bt.breakthrough_bonus) { p += s.bt.breakthrough_bonus; s.bt.breakthrough_bonus = 0; } // 破障丹等
+    if (s.bt && s.bt.breakthrough_bonus) p += s.bt.breakthrough_bonus;
     p += getTalentLv('tiandao_qin') * 0.04 + diwenCount() * 0.02;
     const xm = xinmoOf();
     if (xm >= 85) p -= 0.20; else if (xm >= 60) p -= 0.12; else if (xm >= 30) p -= 0.06;
+    if (extraBonus) p += extraBonus;
     p = Math.max(0.55, Math.min(tb.cap != null ? tb.cap : 0.85, p));
-    const allowLayers = relicOf('mingdao') ? ((tb.death_layers || 2) + 1) : (tb.death_layers || 2);
+    const strikes = tb.strikes || 9;
+    const layers = (tb.death_layers || 2) + (relicOf('mingdao') ? 1 : 0);
+    return { p: p, strikes: strikes, layers: layers, pass: binomAtMost(strikes, layers, p),
+             perStrikeLoss: tb.per_strike_xp_loss != null ? tb.per_strike_xp_loss : 0.3, hasMingdao: relicOf('mingdao') };
+  }
+
+  /** 大帝九重雷劫（甲 §3）：连续 9 道天雷独立判定，失败积劫伤（修为-30%/层），2 层形神俱灭
+      opts 必须透传（原缺失 → 第 101 行 ReferenceError，点「出关」直接崩）；opts.pillBonus = 破障丹加成 */
+  function emperorTribulation(next, opts) {
+    const s = S();
+    const bal = BAL();
+    const tb = (bal.breakthrough && bal.breakthrough.tribulation) || {};
+    const odds = emperorOdds((opts && opts.pillBonus) || 0);
+    const p = odds.p;
+    if (s.bt && s.bt.breakthrough_bonus) s.bt.breakthrough_bonus = 0; // 已计入 odds.p（破障丹类），用后即清
+    const allowLayers = odds.layers;
     const results = [];
     for (let i = 0; i < (tb.strikes || 9); i++) results.push(Math.random() < p);
     const fails = results.filter(x => !x).length;
@@ -138,7 +162,10 @@
       rate += bt.tactics[opts.tactic].rate_add;
       rewardMult = bt.tactics[opts.tactic].reward_mult;
     }
-    if (opts && opts.usePill && bt.pill_guard && s.pill_stock) {
+    let pillBonus = 0; // 破障丹加成：普通路进 rate，大帝路进帝劫的每道过率
+    // skipTribulation 为真 = 天劫/帝劫动画后的重入（首判已定、丹药首判已扣），别再扣第二次
+    // （原缺这个判断：重入时丹已空 → !key → return false → 突破在最后一步静默失败、丹白吃）
+    if (opts && opts.usePill && !opts.skipTribulation && bt.pill_guard && s.pill_stock) {
       // 破障丹：低品质先扣
       const order = ['凡', '灵', '珍', '仙'];
       let key = null;
@@ -147,10 +174,13 @@
       s.pill_stock[key] -= 1;
       if (s.pill_stock[key] <= 0) delete s.pill_stock[key];
       rate += bt.pill_guard.rate_add;
+      pillBonus = bt.pill_guard.rate_add || 0;
     }
+    // 大帝走九重雷劫：本函数的 rate 全程不参与，故此处不清零，留给 emperorTribulation 计入每道过率
+    const goingEmperor = next.index >= 10 && !(opts && opts.skipTribulation) && !(opts && opts.failReplay);
     if (s.bt && s.bt.breakthrough_bonus) {
       rate += s.bt.breakthrough_bonus; // 破障丹等来源的额外成功率
-      s.bt.breakthrough_bonus = 0;
+      if (!goingEmperor) s.bt.breakthrough_bonus = 0;
     }
     let guaranteed = !!(s.bt && s.bt.guaranteed);
     if (guaranteed) s.bt.guaranteed = false; // 渡厄丹：下次冲关必成，用后即清
@@ -179,8 +209,8 @@
       : ((opts && opts.forceSuccess) || guaranteed || streak >= pity - 1 || Math.random() < rate);
 
     // 大帝境：九重雷劫专项，不走普通成败判定
-    if (next.index >= 10 && !(opts && opts.skipTribulation) && !(opts && opts.failReplay)) {
-      return emperorTribulation(next);
+    if (goingEmperor) {
+      return emperorTribulation(next, Object.assign({}, opts, { pillBonus: pillBonus }));
     }
 
     // 升境界天劫：金丹起每次冲关都被雷劈（与失败率体系同起点），练气/筑基保持温和水墨
@@ -403,7 +433,7 @@
   }
 
   g.LS.realm = {
-    realmInfo, realmMult, canBreakthrough, doBreakthrough, breakthroughRate,
+    realmInfo, realmMult, canBreakthrough, doBreakthrough, breakthroughRate, emperorOdds,
     unlockedBuildingIds, unlockedEventPools,
     canRebirth, rebirthGain, doRebirth
   };
