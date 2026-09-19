@@ -79,6 +79,10 @@
       <circle cx="33" cy="18" r="1.6" class="seal"/>
       <path d="M34 20 q1.5 3 .5 5.5" class="blood"/>
     </symbol>
+    <symbol id="ic-gear" viewBox="0 0 24 24">
+      <circle cx="12" cy="12" r="3.2"/>
+      <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+    </symbol>
   </defs>
 </svg>
 <div id="app">
@@ -99,7 +103,19 @@
   </header>
 
   <aside id="left-panel" class="panel">
-    <h2 class="panel-title">洞天福地</h2>
+    <div class="head-wrap">
+      <h2 class="panel-title with-action"><span>洞天福地</span><span class="head-actions"><button id="btn-buyall-set" type="button" class="buyall-gear" aria-label="一键升级设置" title="一键升级设置"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="#ic-gear"/></svg></button><button id="btn-buyall" type="button" class="buyall">一键升级</button></span></h2>
+      <div id="buyall-menu" class="buyall-menu" hidden>
+        <div class="bm-title">花法</div>
+        <label class="bm-opt"><input type="radio" name="bm-mode" value="all"><span>能买的都买了</span></label>
+        <label class="bm-opt"><input type="radio" name="bm-mode" value="one"><span>一次只升一级</span></label>
+        <label class="bm-opt"><input type="radio" name="bm-mode" value="pill"><span>留一颗丹的钱</span></label>
+        <div class="bm-title">家底</div>
+        <label class="bm-opt"><input type="checkbox" id="bm-stone"><span>灵石</span></label>
+        <label class="bm-opt"><input type="checkbox" id="bm-danyao"><span>丹药</span></label>
+        <div class="bm-hint">灵气随时能动</div>
+      </div>
+    </div>
     <div id="building-list"></div>
   </aside>
 

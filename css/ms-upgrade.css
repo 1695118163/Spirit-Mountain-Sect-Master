@@ -655,7 +655,7 @@ html.night .battle-stage{background:linear-gradient(180deg,rgba(0,0,0,.38),trans
 .bfx-stage{position:absolute;inset:0}
 /* 水墨远山：让两位小人有"站在山中"的层次 */
 .bfx-stage::before{
-  content:"";position:absolute;left:-3%;right:-3%;bottom:26px;height:96px;pointer-events:none;
+  content:"";position:absolute;left:-3%;right:-3%;bottom:42px;height:96px;pointer-events:none;
   background:
     radial-gradient(58% 100% at 20% 100%,rgba(95,113,131,.34),transparent 72%),
     radial-gradient(52% 100% at 52% 100%,rgba(95,113,131,.22),transparent 74%),
@@ -665,11 +665,11 @@ html.night .battle-stage{background:linear-gradient(180deg,rgba(0,0,0,.38),trans
   }
 html.night .bfx-stage::before{opacity:.55}
 .bfx-ground{
-  position:absolute;left:4%;right:4%;bottom:22px;height:2px;
+  position:absolute;left:4%;right:4%;bottom:38px;height:2px;
   background:linear-gradient(90deg,transparent,rgba(95,113,131,.5),transparent);
 }
 .bfx-fighter{
-  position:absolute;bottom:10px;width:82px;height:133px;
+  position:absolute;bottom:26px;width:82px;height:133px;
   transition:transform var(--ms-t-slow) var(--ms-ease);
   will-change:transform;
 }
@@ -1178,7 +1178,7 @@ html.night .bfx-name{color:rgba(233,224,204,.45)}
 .bfx-name-my{left:14px}
 .bfx-name-op{right:14px}
 /* 舞台内不滚动；窄屏缩一档 */
-@media (max-width:480px){.battle-stage{height:168px}.bfx-fighter{width:66px;height:107px}.bfx-float{font-size:17px;bottom:108px}.bfx-float-tag,.bfx-float-tag-weak{bottom:116px}.bfx-stage::before{bottom:22px;height:74px}.bfx-ground{bottom:18px}}
+@media (max-width:480px){.battle-stage{height:168px}.bfx-fighter{width:66px;height:107px}.bfx-float{font-size:17px;bottom:108px}.bfx-float-tag,.bfx-float-tag-weak{bottom:116px}.bfx-stage::before{bottom:38px;height:74px}.bfx-ground{bottom:34px}}
 
 /* ── 低性能模式（设置面板开关 / html.lowfx）：砍掉全屏模糊·混合层·常驻背景动画，显著降 GPU 占用 ── */
 html.lowfx .panel,html.lowfx #topbar,html.lowfx .page-topbar,html.lowfx .modal-mask{
@@ -1240,3 +1240,93 @@ body:has(#battle-stage) .toast{ max-width:min(34vw,300px); }
   body[data-mobtab="center"] #center{display:flex;padding-bottom:calc(66px + env(safe-area-inset-bottom))}
   body[data-mobtab="right"] #right-panel{display:flex;padding-bottom:calc(66px + env(safe-area-inset-bottom))}
 }
+
+
+/* ── 手机端修正（2026-09-19）─────────────────────────────────────────────────
+   ① 横向裁切：背景水墨层（#ms-scene 的 .mist/.range/.cloud-band）比视口宽
+      51~142px，把文档一起撑宽（实测 390 视口下文档 532px），手机上手一动整页
+      左右晃、WebView 还会自适应缩放，看起来就是「界面乱动」。overflow-x:clip
+      只禁横向滚动；超出的部分本来就在屏幕外，画面零变化。
+      注意必须挂在 html 上：只挂 body 实测无效(#center 内溢出仍把布局视口撑到 406~482，
+      整页被 WebView 缩小 —— 就是手机上看到的「缩放」)。
+   ② 斗法弹窗一屏内：原内容 651px，小屏 WebView 视口 570~780px，84vh 一压就
+      出内部滚动条，且整屏还能上下拖 72px。这里收紧间距与舞台高度，max-height
+      提到 92vh，弹窗开着时锁住背景滚动。舞台下限 142px（人物 107 + 上移 26 +
+      名字 17）。 */
+html,body{overflow-x:clip}
+
+@media (max-width:1100px){
+  html:has(.modal-mask){overflow:hidden}          /* 弹窗开着时背景不跟手指滚 */
+}
+@media (max-width:480px){
+  body:has(#battle-hands) .modal-card{max-height:92vh;padding:14px 14px}
+  body:has(#battle-hands) .battle-stage{height:150px;margin-bottom:5px}
+  body:has(#battle-hands) #battle-intent{margin:3px 0;padding:5px 10px;min-height:32px}
+  body:has(#battle-hands) .battle-qi{margin-bottom:2px}
+  body:has(#battle-hands) .battle-hands{margin-bottom:6px}
+  body:has(#battle-hands) .battle-note{margin:0 0 3px;font-size:10px;line-height:1.5}
+}
+/* 矮视口（微信内置浏览器带工具栏时）再收一档 */
+@media (max-width:480px) and (max-height:700px){
+  body:has(#battle-hands) .modal-card{padding:11px 12px}
+  body:has(#battle-hands) .battle-stage{height:142px}
+  body:has(#battle-hands) .battle-hands{padding-top:8px}
+  body:has(#battle-hands) .battle-note{font-size:9px}
+}
+
+/* ── 洞天福地「一键升级」（2026-09-19）───────────────────────────────────────
+   放在标题行右侧，「一键升级」四字与「洞天福地」四字同宽，尺寸相当。
+   .on = 有可建造/可升级的建筑（实心深色，强调）；无则淡底弱化。
+   可升级态昼夜各一套实心色：白天深褐 #241f18、夜间朱红 #c0392b（米白实心会与夜间
+   界面自带的浅色文字抢视线，故取全局强调色）：语义变量在夜间会翻转成浅底，与要求相反；
+   无可升级态才用会翻转的淡变量（夜间自然更淡）。 */
+.panel-title.with-action{display:flex;align-items:center;justify-content:space-between;gap:10px}
+.panel-title.with-action>span{letter-spacing:4px}
+.buyall{
+  font-family:inherit;font-size:13px;letter-spacing:.08em;line-height:1;
+  padding:6px 9px;border-radius:var(--ms-r-s);cursor:pointer;
+  border:1px solid var(--ms-dai-3);background:var(--ms-ink-7);color:var(--ms-ink-4);
+  transition:background var(--ms-t-fast) var(--ms-ease),color var(--ms-t-fast) var(--ms-ease),
+             border-color var(--ms-t-fast) var(--ms-ease),box-shadow var(--ms-t-fast) var(--ms-ease);
+  -webkit-tap-highlight-color:transparent;
+}
+.buyall:active{transform:scale(.96)}
+.buyall.on{background:#241f18;border-color:#c0392b;color:#fdf8ec;box-shadow:var(--ms-sh-2)}
+.buyall.on:hover{background:#c0392b;border-color:#c0392b;color:#fdf8ec}
+html.night .buyall.on{background:#c0392b;border-color:#e8b9b0;color:#fdf8ec}   /* 夜间：朱红实心 */
+html.night .buyall.on:hover{background:#a83232;border-color:#e8b9b0}
+.buyall:focus-visible{outline:2px solid var(--cinnabar);outline-offset:2px}
+
+/* ── 一键升级 · 齿轮设置菜单（2026-09-19）───────────────────────────────────
+   齿轮在「一键升级」左侧，点开小面板设置升级方式与可消耗资源，写进 settings.buyall。
+   面板用会翻转的 paper 变量底色，昼夜都成立；靠 .head-wrap{position:relative} 定位，
+   菜单挂在标题行正下方。 */
+.head-wrap{position:relative}
+.panel-title.with-action .head-actions{display:flex;align-items:center;gap:6px}
+.buyall-gear{
+  width:30px;height:30px;padding:0;display:flex;align-items:center;justify-content:center;
+  border:1px solid var(--ms-dai-3);border-radius:var(--ms-r-s);cursor:pointer;
+  background:var(--ms-ink-7);color:var(--ms-ink-4);
+  transition:background var(--ms-t-fast) var(--ms-ease),color var(--ms-t-fast) var(--ms-ease),
+             border-color var(--ms-t-fast) var(--ms-ease);
+  -webkit-tap-highlight-color:transparent;
+}
+.buyall-gear svg{width:16px;height:16px;display:block;fill:none;stroke:currentColor;
+  stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.buyall-gear:hover{color:var(--ms-ink-deep);border-color:var(--ms-dai-2)}
+.buyall-gear:active{transform:scale(.94)}
+.buyall-gear.on{background:#241f18;border-color:#c0392b;color:#fdf8ec}
+html.night .buyall-gear.on{background:#c0392b;border-color:#e8b9b0;color:#fdf8ec}
+.buyall-menu{
+  position:absolute;right:0;top:calc(100% + 3px);z-index:20;
+  min-width:170px;padding:6px 10px 9px;border-radius:var(--ms-r-m);
+  border:1px solid var(--ms-dai-2);background:var(--ms-paper-lit);
+  box-shadow:var(--ms-sh-3);
+}
+.buyall-menu[hidden]{display:none}
+.bm-title{font-size:11px;color:var(--ms-ink-4);letter-spacing:.1em;margin:7px 0 3px}
+.bm-opt{display:flex;align-items:center;gap:7px;font-size:12px;color:var(--ms-ink-deep);
+  padding:5px 4px;border-radius:var(--ms-r-s);cursor:pointer;white-space:nowrap}
+.bm-opt:hover{background:var(--ms-ink-7)}
+.bm-opt input{margin:0;accent-color:var(--cinnabar);flex:0 0 auto}
+.bm-hint{font-size:10px;color:var(--ms-ink-4);margin-top:8px;letter-spacing:.03em}
