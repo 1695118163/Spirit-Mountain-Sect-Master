@@ -843,6 +843,20 @@
     removeModals();
     const { mask, card } = makeModal();
     card.classList.add('offline-scroll');
+    // 兜底：结算单被外部清掉（玩家中途打开别的面板 → removeModals）时别把事件队列卡死。
+    // 正常「收取」路径先清 open 再 remove，这里判 open 已归零就不会重复放行。
+    try {
+      const mo = new MutationObserver(() => {
+        if (document.body.contains(mask)) return;
+        mo.disconnect();
+        const st = g.LS.S && g.LS.S.event_state;
+        if (st && st.open && st.open.kind === 'settle') {
+          st.open = null;
+          setTimeout(() => { if (g.LS.events && g.LS.events.pumpQueue) g.LS.events.pumpQueue(0); }, 400);
+        }
+      });
+      mo.observe(refs.modalRoot, { childList: true });
+    } catch (e) {}
     const resName = (id) => { const r = bal.resources.find(x => x.id === id); return r ? r.name : id; };
     let rows = '';
     const order = ['lingqi', 'xiufu', 'lingshi', 'danyao'];
@@ -871,12 +885,9 @@
         // 只移除离线卷轴自己的弹窗（保留玩家可能打开的其他面板，如斗法/设置）
         mask.remove();
         if (g.LS.save) g.LS.save.save();
-        // 离线归来：故人候在山门外 / 弟子梦中来报——塞入事件队列随后弹出
-        const visitor = g.LS.events.maybeVisitor('offline');
-        if (visitor) { g.LS.S.event_state.queue.push(visitor); g.LS.S.stats.events_total += 1; }
-        const dream = g.LS.events.rollDream(result.gap);
-        if (dream) { g.LS.S.event_state.queue.push(dream); g.LS.S.stats.events_total += 1; }
-        if (g.LS.S.event_state.queue.length) setTimeout(() => g.LS.events.pumpQueue(0), 700);
+        // 离线归来：结算单是队列首条（见 events.queueOfflineReturn），看完就放下一条
+        g.LS.S.event_state.open = null;
+        setTimeout(() => g.LS.events.pumpQueue(0), 520);
       }, 520);
     });
     card.appendChild(btn);

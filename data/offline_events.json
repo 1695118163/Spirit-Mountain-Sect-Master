@@ -1,0 +1,152 @@
+{
+  "version": "v0.21.3",
+  "note": "离线归来独立事件池（2026-09-19）。与 data/events.json 的日常奇遇池互不影响：离线事件在结算单之后依次弹出，走同一套 rollSlots / chooseOption 结算。cond 支持：always / tag / lingshoulan / hushanzhen / xinmo / daoxin。",
+  "count_by_hours": [[2, 1], [4, 2], [8, 3]],
+  "default_rarity": "灵",
+  "leave_text_key": "event_leave",
+  "events": [
+    {
+      "id": "off_disciple",
+      "title": "山中弟子来报",
+      "desc": "大弟子禀道：师尊离山这几日，灵田照看无碍，只是山门账目积了些。",
+      "weight": 10,
+      "cond": "always",
+      "options": [
+        { "text": "翻一翻账目", "fits": ["A"], "daoxin": 0 },
+        { "text": "勉励几句", "fits": ["A"], "daoxin": 3 }
+      ]
+    },
+    {
+      "id": "off_lodger",
+      "title": "野修借宿",
+      "desc": "山门外来了个赶路的散修，说想借宿一晚，天明就走。",
+      "weight": 8,
+      "cond": "always",
+      "options": [
+        { "text": "留他一晚", "fits": ["E"], "daoxin": 0 },
+        { "text": "婉言送客", "fits": ["A"], "daoxin": 0 }
+      ]
+    },
+    {
+      "id": "off_karma",
+      "title": "因果回响",
+      "desc": "你当年结下的那桩因果，趁着离山这几日，有人找上门了。",
+      "weight": 6,
+      "cond": "tag",
+      "options": [
+        { "text": "认下这桩", "fits": ["E"], "daoxin": 2 },
+        { "text": "推说不知", "fits": ["A"], "daoxin": -3 }
+      ]
+    },
+    {
+      "id": "off_crane",
+      "title": "灵鹤衔物",
+      "desc": "灵鹤不知从哪叼回一株药草，落在丹房檐下，歪头看你。",
+      "weight": 6,
+      "cond": "lingshoulan",
+      "options": [
+        { "text": "收了入药", "fits": ["A"], "daoxin": 0 },
+        { "text": "放归山林", "fits": ["A"], "daoxin": 3 }
+      ]
+    },
+    {
+      "id": "off_nightmare",
+      "title": "梦魇缠身",
+      "desc": "离山太久，识海深处那点黑气又翻上来了，压得你气机发滞。",
+      "weight": 5,
+      "cond": "xinmo",
+      "options": [
+        { "text": "静心压制", "fits": ["C"], "daoxin": 1 },
+        { "text": "顺着它看", "fits": ["F"], "daoxin": -2 }
+      ]
+    },
+    {
+      "id": "off_msg",
+      "title": "山门留言",
+      "desc": "一位过路道友在门外候了半日未遇，留帖而去。",
+      "weight": 9,
+      "cond": "always",
+      "options": [
+        { "text": "拆开看看", "fits": ["E"], "daoxin": 0 },
+        { "text": "收进匣子", "fits": ["A"], "daoxin": 3 }
+      ]
+    },
+    {
+      "id": "off_harvest",
+      "title": "灵田一茬",
+      "desc": "灵田里的谷子熟透了，穗子压得低低的，这几日没人动手。",
+      "weight": 10,
+      "cond": "always",
+      "options": [
+        { "text": "雇山下人来收", "fits": ["B"], "daoxin": 0 },
+        { "text": "自己卷袖下去", "fits": ["A"], "daoxin": 2 }
+      ]
+    },
+    {
+      "id": "off_market",
+      "title": "集市行情",
+      "desc": "山下这几天灵谷价好，坊市里挤满了外地来的行商。",
+      "weight": 9,
+      "cond": "always",
+      "options": [
+        { "text": "趁价出货", "fits": ["A"], "daoxin": 0 },
+        { "text": "再囤几日看看", "fits": ["C"], "daoxin": 0 }
+      ]
+    },
+    {
+      "id": "off_disciple_deed",
+      "title": "弟子擅专",
+      "desc": "留守的大弟子擅自做主，把灵田收成借给了山下受灾的村子。他跪在阶前等罚。",
+      "weight": 8,
+      "cond": "always",
+      "options": [
+        { "text": "记他一功", "fits": ["A"], "daoxin": 5 },
+        { "text": "责他越权", "fits": ["B"], "daoxin": -2 }
+      ]
+    },
+    {
+      "id": "off_sect_invite",
+      "title": "邻宗递帖",
+      "desc": "邻山清风宗遣人递帖，想上门论道。帖上字客气，话里有试探。",
+      "weight": 6,
+      "cond": "always",
+      "options": [
+        { "text": "应下这局", "fits": ["E"], "daoxin": 0 },
+        { "text": "婉言推了", "fits": ["A"], "daoxin": 0 }
+      ]
+    },
+    {
+      "id": "off_cave",
+      "title": "后山塌方",
+      "desc": "后山塌了一角，露出个旧洞窟，里头黑黢黢的，隐约有东西反光。",
+      "weight": 6,
+      "cond": "always",
+      "options": [
+        { "text": "亲自下去看看", "fits": ["F"], "daoxin": 0 },
+        { "text": "派弟子去探", "fits": ["B"], "daoxin": 1 }
+      ]
+    },
+    {
+      "id": "off_incense",
+      "title": "山民上香",
+      "desc": "山下村民感念护佑，自发来山门上香，把门廊熏得暖烘烘的。",
+      "weight": 7,
+      "cond": "daoxin",
+      "options": [
+        { "text": "受着便是", "fits": ["A"], "daoxin": 3 },
+        { "text": "备些回礼", "fits": ["B"], "daoxin": 5 }
+      ]
+    },
+    {
+      "id": "off_beast",
+      "title": "妖兽腥迹",
+      "desc": "山门外留下一串爪印，护山阵的符纹暗了半分。",
+      "weight": 5,
+      "cond": "hushanzhen",
+      "options": [
+        { "text": "加固阵法", "fits": ["B"], "daoxin": 0 },
+        { "text": "循迹去查", "fits": ["F"], "daoxin": 0 }
+      ]
+    }
+  ]
+}

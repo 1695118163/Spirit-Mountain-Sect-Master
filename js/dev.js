@@ -24,7 +24,7 @@
         S().lastSeen = Date.now() - seconds * 1000;
         S().last_seen_max = Math.max(S().last_seen_max || 0, S().lastSeen);
         const r = g.LS.tick.settleOffline();
-        if (r && g.LS.ui) g.LS.ui.showOfflinePopup(r);
+        if (r) g.LS.events.queueOfflineReturn(r);   // 与真实归来同一条链：结算单 + 离线事件池
         if (g.LS.ui) g.LS.ui.renderAll();
       },
       event() { g.LS.events.drawEvent(); },

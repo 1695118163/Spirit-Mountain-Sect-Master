@@ -278,6 +278,7 @@ async function handle(req, res) {
       let pills = {};
       let help = {};
       let cultivation = {};
+      let offlineEvents = {};
       try {
         chains = JSON.parse(fs.readFileSync(path.join(ROOT, 'data', 'chains.json'), 'utf8')).chains || [];
       } catch (e) { /* chains.json 可选 */ }
@@ -290,7 +291,10 @@ async function handle(req, res) {
       try {
         cultivation = JSON.parse(fs.readFileSync(path.join(ROOT, 'data', 'cultivation.json'), 'utf8'));
       } catch (e) { /* cultivation.json 可选 */ }
-      return sendJSON(res, 200, { ok: true, balance, events, chains, pills, help, cultivation });
+      try {
+        offlineEvents = JSON.parse(fs.readFileSync(path.join(ROOT, 'data', 'offline_events.json'), 'utf8'));
+      } catch (e) { /* offline_events.json 可选 */ }
+      return sendJSON(res, 200, { ok: true, balance, events, chains, pills, help, cultivation, offline_events: offlineEvents });
     } catch (e) {
       return sendJSON(res, 500, { ok: false, message: '读取数据文件失败：' + e.message });
     }

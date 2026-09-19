@@ -46,6 +46,10 @@
             const r8 = await fetch('./data/story.json');
             if (r8.ok) balance.story = (await r8.json());
           } catch (e) {}
+          try {
+            const r9 = await fetch('./data/offline_events.json');
+            if (r9.ok) balance.offline_events = (await r9.json());
+          } catch (e) {}
           return { balance, events, chains };
         }
       }
@@ -56,6 +60,7 @@
       if (r && r.ok && r.balance && Array.isArray(r.balance.buildings)) {
         r.balance.pills = r.pills || {};
         r.balance.help = r.help || {}; r.balance.cultivation = r.cultivation || {};
+        r.balance.offline_events = r.offline_events || {};
         return { balance: r.balance, events: r.events, chains: r.chains || [] };
       }
     } catch (e) {}
@@ -82,7 +87,8 @@
     // 离线结算（先结算再开循环，防重复结算）
     const off = g.LS.tick.settleOffline();
     g.LS.ui.renderAll();
-    if (off) g.LS.ui.showOfflinePopup(off);
+    // 离线归来 = 一串事件：结算单打头，后面跟独立池事件 + 故人 / 托梦（依次弹）
+    if (off) g.LS.events.queueOfflineReturn(off);
 
     // 主循环 + 自动存档 + LLM 状态探测
     g.LS.tick.startLoop();

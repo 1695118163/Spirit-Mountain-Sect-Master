@@ -257,6 +257,11 @@
     const ev = s.event_state.queue.shift();
     s.event_state.open = ev;
     s.event_state.opened_at = Date.now();
+    // 离线结算单：走卷轴样式（收益明细 + 收取），不是普通事件弹窗
+    if (ev.kind === 'settle' && g.LS.ui && g.LS.ui.showOfflinePopup) {
+      g.LS.ui.showOfflinePopup(ev.payload);
+      return;
+    }
     if (g.LS.ui && g.LS.ui.showEventModal) g.LS.ui.showEventModal(ev);
   }
 
@@ -459,6 +464,93 @@
         { key: 'C', text: BAL().texts.event_leave, slot: null, daoxin: 0, effect: 'none' }
       ]
     };
+  }
+
+  /* ── 离线归来独立事件池（2026-09-19）────────────────────────────────────
+     data/offline_events.json 与日常奇遇池互不影响。离线越久抽得越多
+     （count_by_hours），同一次离线不重复；结算单本身也作为队列首条事件。 */
+  function offlinePoolCfg() {
+    return (g.LS.BAL && g.LS.BAL.offline_events) || null;
+  }
+
+  /** 离线时长 → 抽几条（取最后一个满足的档） */
+  function offlineEventCount(gapSec) {
+    const cfg = offlinePoolCfg();
+    if (!cfg) return 0;
+    const hours = gapSec / 3600;
+    let n = 0;
+    for (const pair of (cfg.count_by_hours || [])) if (hours >= pair[0]) n = pair[1];
+    return n;
+  }
+
+  function offlineCondOk(ev) {
+    const c = ev.cond;
+    if (!c || c === 'always') return true;
+    const s = S();
+    if (c === 'tag') {
+      const tags = s.tags || {};
+      return Object.keys(tags).some(k => tags[k] && !tags[k].recycled && tags[k].weight >= 1);
+    }
+    if (c === 'lingshoulan') return !!(g.LS.economy && g.LS.economy.bLevel('lingshoulan') >= 1);
+    if (c === 'hushanzhen') return !!(g.LS.economy && g.LS.economy.bLevel('hushanzhen') >= 1);
+    if (c === 'xinmo') return (s.xinmo || 0) > 30;
+    if (c === 'daoxin') return (s.dao_heart || 0) >= 0;   // 道心不亏的人家才有人来上香
+    return true;
+  }
+
+  /** 抽离线事件（加权、不重复、按条件过滤）→ finalEv 数组，结构与托梦一致 */
+  function rollOfflineEvents(gapSec) {
+    const cfg = offlinePoolCfg();
+    if (!cfg || !cfg.events || !cfg.events.length) return [];
+    const n = offlineEventCount(gapSec);
+    if (!n) return [];
+    const pool = cfg.events.filter(offlineCondOk);
+    const rarity = cfg.default_rarity || '灵';
+    const picked = [];
+    for (let i = 0; i < n && pool.length; i++) {
+      const total = pool.reduce((a, e) => a + (e.weight == null ? 1 : e.weight), 0);
+      let r = Math.random() * total, hit = pool.length - 1;
+      for (let j = 0; j < pool.length; j++) {
+        r -= (pool[j].weight == null ? 1 : pool[j].weight);
+        if (r <= 0) { hit = j; break; }
+      }
+      const e = pool.splice(hit, 1)[0];          // 同一次离线不重复
+      const stageEv = { id: e.id, pool: 'OFFLINE', rarity: rarity, title: e.title, desc: e.desc, options: e.options, tags: [] };
+      const slots = rollSlots(stageEv);
+      picked.push({
+        id: 'offline:' + e.id,
+        source: 'offline',
+        rarity: rarity,
+        recycle: null,
+        after: null,
+        builtinTags: [],
+        title: e.title,
+        desc: e.desc,
+        options: [
+          { key: 'A', text: e.options[0].text, slot: slots[0], daoxin: e.options[0].daoxin || 0, effect: e.options[0].effect || 'none' },
+          { key: 'B', text: e.options[1].text, slot: slots[1], daoxin: e.options[1].daoxin || 0, effect: e.options[1].effect || 'none' },
+          { key: 'C', text: BAL().texts.event_leave, slot: null, daoxin: 0, effect: 'none' }
+        ]
+      });
+    }
+    return picked;
+  }
+
+  /** 离线归来：结算单排第一，后面跟独立池事件 + 访客 / 托梦，然后开始依次弹 */
+  function queueOfflineReturn(settleResult) {
+    if (!settleResult) return;
+    const s = S();
+    const q = s.event_state.queue;
+    q.push({
+      id: 'offline:settle', source: 'offline', kind: 'settle', payload: settleResult,
+      rarity: '灵', title: (BAL().texts || {}).offline_title || '山中无甲子', desc: '', options: []
+    });
+    rollOfflineEvents(settleResult.gap).forEach(e => q.push(e));
+    const visitor = maybeVisitor('offline');
+    if (visitor) q.push(visitor);
+    const dream = rollDream(settleResult.gap);
+    if (dream) q.push(dream);
+    pumpQueue(0);
   }
 
   /* ── 山志（编年手札）：大事自动记行，飞升/转生时凝成碑文 ── */
@@ -676,6 +768,7 @@
   }
 
   g.LS.events = {
+    rollOfflineEvents, queueOfflineReturn,
     drawEvent, chooseOption, maybeTriggerEvent, scheduleNext, pumpQueue, maybeContinueChain, maybeAmbush,
     maybeVisitor, rollDream, isPastLife, chronicle, carveStele,
     rollSlots, rollRarity, pickByRarity, materializeSlot,
