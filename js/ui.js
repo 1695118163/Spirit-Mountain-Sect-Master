@@ -953,7 +953,11 @@
     hint.textContent = '点击任意处继续';
     ov.appendChild(hint);
     if (!ov.parentNode) document.body.appendChild(ov); // 时序：突破爆发炸亮瞬间才挂载
-    const close = () => { ov.remove(); renderAll(); };
+    const close = () => {
+      ov.remove();
+      renderAll();
+      drainBtToastQueue();   // 过场看完，把排队等着的提示依次放出来
+    };
     ov.addEventListener('click', close); // 用户要求：过场画面点一下才关，不自动消失（动画照常播完，看完再点）
   }
 
@@ -1710,10 +1714,7 @@
       card.querySelectorAll('[data-claim]').forEach(btn => btn.addEventListener('click', () => {
         const [c, i] = btn.dataset.claim.split('_').map(Number);
         const r = g.LS.quest.claim(c, i);
-        if (r) {
-          if (r.gainText) toast(r.gainText);
-          if (r.chapter && r.chapter.outro) toast('【' + r.chapter.name + '】' + r.chapter.outro, 5000);
-        }
+        if (r) queueQuestClaimToast(r);   // 合并成一条，防连点刷屏
         render();
         renderAll();
       }));
@@ -1722,6 +1723,29 @@
   }
 
   /* ── 传承面板：亲传弟子 / 投喂 / 代际 ── */
+  /* ── 主线领奖提示合并（2026-09-19）────────────────────────────────────────
+     主线 10 章 31 个任务，补领制下可以积压一堆可领；连点领奖原本每个任务弹一条
+     「灵石 +XXX」、每章再弹一条章末长文案，一次领完能刷出 40 条、糊满手机屏。
+     这里把短时间内的多次领奖汇总成一条，500ms 静默后一起弹。
+     章末剧情文案不再弹 toast —— 同一句本来就在主线面板的章末块里渲染（showQuest），
+     弹到屏幕上属于同句重复。 */
+  let questClaimBuf = null;
+  function queueQuestClaimToast(r) {
+    const buf = questClaimBuf || (questClaimBuf = { n: 0, lingshi: 0, timer: null });
+    buf.n += 1;
+    const gain = (r.task && r.task.reward && r.task.reward.lingshi) || 0;
+    buf.lingshi += gain;
+    if (buf.timer) clearTimeout(buf.timer);
+    buf.timer = setTimeout(flushQuestClaimToast, 500);
+  }
+  function flushQuestClaimToast() {
+    const buf = questClaimBuf;
+    questClaimBuf = null;
+    if (!buf) return;
+    const head = buf.n > 1 ? '主线领奖 ×' + buf.n : '主线领奖';
+    toast(head + (buf.lingshi > 0 ? ' · 灵石 +' + fmtSafe(buf.lingshi) : ''), 3000);
+  }
+
   function showDisciple() {
     removeModals();
     const { card } = makeModal(removeModals);
@@ -2660,7 +2684,29 @@
   }
 
   /* ── toast 与数字补间 ── */
+  /* 突破过场期间的提示排队（2026-09-19）：过场是「点击任意处继续」的整屏大动画，
+     期间冒出来的提示（境界引导 / 飞升 / 转生 / 概念提示）原本直接叠在画面上。
+     改成静默入队，玩家点掉过场后按 1.2 秒间隔依次播，最多留 3 条。
+     判定走 DOM 存在性，过场一被移除就自动恢复，不需要额外状态位。 */
+  const btToastQueue = [];
+  function btOverlayShowing() { return !!document.getElementById('breakthrough-overlay'); }
+  function drainBtToastQueue() {
+    if (!btToastQueue.length) return;
+    const it = btToastQueue.shift();
+    toast(it.msg, it.dur);
+    if (btToastQueue.length) setTimeout(drainBtToastQueue, 1200);
+  }
+
+  /* 同屏提示条上限（2026-09-19，桌面/移动统一）：任何来源刷屏都顶掉最旧的，
+     防“主线连领 / 批量买建筑”这类瞬时多提示把屏幕铺满、压住境界名。 */
+  const TOAST_MAX = 3;
   function toast(msg, dur) {
+    // 突破过场期间：先入队，等过场关掉再依次播
+    if (btOverlayShowing()) {
+      btToastQueue.push({ msg: msg, dur: dur });
+      while (btToastQueue.length > 3) btToastQueue.shift();
+      return;
+    }
     // 顶栏换行变高时动态下移提示条，保证永不遮挡资源栏
     if (refs.topbar && refs.toastRoot) {
       refs.toastRoot.style.top = (refs.topbar.offsetHeight + 18) + 'px';
@@ -2669,6 +2715,9 @@
     el.className = 'toast';
     el.textContent = msg;
     refs.toastRoot.appendChild(el);
+    while (refs.toastRoot.childElementCount > TOAST_MAX) {
+      refs.toastRoot.removeChild(refs.toastRoot.firstElementChild);
+    }
     setTimeout(() => el.remove(), dur || 2600);
   }
 
