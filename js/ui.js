@@ -35,6 +35,15 @@
     for (const t of ths) if (v >= t.min) hit = t;
     return hit ? String(hit.name).replace('心魔', '') : '';
   }
+
+  // 手机端底部三面板 Tab（方案一）：只切 body[data-mobtab]，桌面端该属性无任何 CSS 依赖
+  function syncMobTabs() {
+    if (!refs.mobTabs) return;
+    const cur = document.body.dataset.mobtab || 'center';
+    refs.mobTabs.querySelectorAll('button[data-tab]').forEach(b => {
+      b.classList.toggle('on', b.dataset.tab === cur);
+    });
+  }
   function fmtSafe(v) { return (g.LS.util && g.LS.util.fmt) ? g.LS.util.fmt(v) : String(Math.floor(v || 0)); }
   // 丹毒提示：与 economy 的产量折损同口径（每 10 点 -3%，上限 -30%）
   function toxicHint(v) {
@@ -120,6 +129,21 @@
     refs.btnHelp = $id('btn-help');
     refs.btnPillHouse = $id('btn-pillhouse');
     refs.btnRebirth = $id('btn-rebirth');
+    // 手机端底部三面板 Tab（方案一）：窄屏一次只显示一个面板，桌面端不受影响
+    refs.mobTabs = $id('mob-tabs');
+    if (refs.mobTabs) {
+      document.body.dataset.mobtab = document.body.dataset.mobtab || 'center';
+      refs.mobTabs.addEventListener('click', (e) => {
+        const btn = e.target.closest('button[data-tab]');
+        if (!btn) return;
+        document.body.dataset.mobtab = btn.dataset.tab;
+        syncMobTabs();
+        window.scrollTo(0, 0);           // 换面板即回顶，避免停在上一面板的滚动位置
+        document.documentElement.scrollTop = 0;
+        document.body.scrollTop = 0;
+      });
+      syncMobTabs();
+    }
     // 移动端长按菜单拦截：吐纳圆钮与面板按钮长按不再弹出系统菜单
     document.addEventListener('contextmenu', (e) => {
       if (e.target.closest('#btn-breath, #breath-wrap, button, .panel')) e.preventDefault();

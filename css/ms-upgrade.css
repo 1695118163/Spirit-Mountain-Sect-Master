@@ -1210,3 +1210,33 @@ body:has(#battle-stage) .toast{ max-width:min(34vw,300px); }
   .battle-hands .hc-cost{ font-size:10px; width:20px; height:20px; line-height:18px; top:-6px; left:-6px; }
   .battle-hands{ gap:6px; height:172px; padding:10px 10px 0; }
 }
+
+/* ── 手机端：首页三面板底部 Tab（方案一，2026-09-19） ──
+   窄屏(≤1100px)堆叠布局下一步只显示一个面板，底部固定栏切换；桌面三栏不受影响。
+   z-index:30 —— 高于面板(1)、低于弹窗遮罩(40)与整屏页 #page-root(900)，
+   于是弹窗/页面打开时底栏自然被盖住，无需额外 JS 判断。 */
+#mob-tabs{display:none}
+@media (max-width:1100px){
+  #mob-tabs{
+    display:flex;position:fixed;left:0;right:0;bottom:0;z-index:30;
+    padding-bottom:env(safe-area-inset-bottom);
+    background:linear-gradient(180deg,var(--ms-jade) 0%,var(--ms-jade-2) 100%);
+    border-top:1px solid var(--ms-dai-2);
+    box-shadow:0 -2px 12px rgba(58,50,38,.14);
+    backdrop-filter:blur(10px) saturate(1.08);-webkit-backdrop-filter:blur(10px) saturate(1.08);
+  }
+  #mob-tabs button{
+    flex:1;height:54px;background:none;border:0;border-top:2px solid transparent;
+    font-family:inherit;font-size:14px;letter-spacing:.22em;color:var(--ms-ink-4);
+    cursor:pointer;transition:color var(--ms-t-fast) var(--ms-ease),border-color var(--ms-t-fast) var(--ms-ease);
+  }
+  #mob-tabs button.on{color:var(--cinnabar);border-top-color:var(--cinnabar);font-weight:bold}
+  /* 未设置属性时（JS 未跑）三块照旧堆叠，不会误隐藏 */
+  body[data-mobtab] #left-panel,
+  body[data-mobtab] #center,
+  body[data-mobtab] #right-panel{display:none}
+  /* 亮起的那块补齐底栏高度，内容不被压住 */
+  body[data-mobtab="left"] #left-panel{display:block;padding-bottom:calc(66px + env(safe-area-inset-bottom))}
+  body[data-mobtab="center"] #center{display:flex;padding-bottom:calc(66px + env(safe-area-inset-bottom))}
+  body[data-mobtab="right"] #right-panel{display:flex;padding-bottom:calc(66px + env(safe-area-inset-bottom))}
+}
