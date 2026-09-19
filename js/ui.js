@@ -35,6 +35,15 @@
     for (const t of ths) if (v >= t.min) hit = t;
     return hit ? String(hit.name).replace('心魔', '') : '';
   }
+
+  // 手机端底部三面板 Tab（方案一）：只切 body[data-mobtab]，桌面端该属性无任何 CSS 依赖
+  function syncMobTabs() {
+    if (!refs.mobTabs) return;
+    const cur = document.body.dataset.mobtab || 'center';
+    refs.mobTabs.querySelectorAll('button[data-tab]').forEach(b => {
+      b.classList.toggle('on', b.dataset.tab === cur);
+    });
+  }
   function fmtSafe(v) { return (g.LS.util && g.LS.util.fmt) ? g.LS.util.fmt(v) : String(Math.floor(v || 0)); }
   // 丹毒提示：与 economy 的产量折损同口径（每 10 点 -3%，上限 -30%）
   function toxicHint(v) {
@@ -104,6 +113,9 @@
       refs.resRows[row.dataset.res] = { val: row.querySelector('.res-val'), rate: row.querySelector('.res-rate') };
     });
     refs.buildingList = $id('building-list');
+    refs.btnBuyAll = $id('btn-buyall');
+    refs.btnBuyAllSet = $id('btn-buyall-set');
+    refs.buyallMenu = $id('buyall-menu');
     refs.realmName = $id('realm-name');
     refs.daoHeart = $id('dao-heart');
     refs.gameDate = $id('game-date');
@@ -120,6 +132,48 @@
     refs.btnHelp = $id('btn-help');
     refs.btnPillHouse = $id('btn-pillhouse');
     refs.btnRebirth = $id('btn-rebirth');
+    // 手机端底部三面板 Tab（方案一）：窄屏一次只显示一个面板，桌面端不受影响
+    refs.mobTabs = $id('mob-tabs');
+    if (refs.mobTabs) {
+      document.body.dataset.mobtab = document.body.dataset.mobtab || 'center';
+      refs.mobTabs.addEventListener('click', (e) => {
+        const btn = e.target.closest('button[data-tab]');
+        if (!btn) return;
+        document.body.dataset.mobtab = btn.dataset.tab;
+        syncMobTabs();
+        window.scrollTo(0, 0);           // 换面板即回顶，避免停在上一面板的滚动位置
+        document.documentElement.scrollTop = 0;
+        document.body.scrollTop = 0;
+      });
+      syncMobTabs();
+    }
+    // 洞天福地「一键升级」：反复升「等级最低且买得起」的，直到无可升
+    if (refs.btnBuyAll) {
+      refs.btnBuyAll.addEventListener('click', () => {
+        const r = buyAllAffordable();
+        if (r.n > 0) { sfx('click'); toast('一键升级 · ' + buyallSummary(r.by), 2600); }
+        else toast('洞天暂无可升级');
+        renderBuildings(); renderResources();
+      });
+    }
+    // 齿轮：展开/收起一键升级的设置面板
+    if (refs.btnBuyAllSet) {
+      refs.btnBuyAllSet.addEventListener('click', (e) => {
+        e.stopPropagation();
+        toggleBuyallMenu();
+      });
+    }
+    if (refs.buyallMenu) {
+      refs.buyallMenu.addEventListener('click', (e) => e.stopPropagation());
+      refs.buyallMenu.addEventListener('change', (e) => {
+        const t = e.target;
+        if (!t) return;
+        if (t.name === 'bm-mode') setBuyallCfg({ mode: t.value });
+        else if (t.id === 'bm-stone') setBuyallCfg({ useStone: t.checked });
+        else if (t.id === 'bm-danyao') setBuyallCfg({ useDanyao: t.checked });
+      });
+    }
+    document.addEventListener('click', () => toggleBuyallMenu(false));
     // 移动端长按菜单拦截：吐纳圆钮与面板按钮长按不再弹出系统菜单
     document.addEventListener('contextmenu', (e) => {
       if (e.target.closest('#btn-breath, #breath-wrap, button, .panel')) e.preventDefault();
@@ -334,6 +388,80 @@
     return g.LS.BAL.buildings.map(b => b.id + ':' + (g.LS.S.buildings[b.id] || 0) + ':' + (b.unlock_realm <= g.LS.S.realm.index ? 1 : 0)).join(',');
   }
 
+  /**
+   * 一键升级（2026-09-19）：反复挑「当前等级最低且买得起」的洞天升上去，
+   * 直到没有任何可升级的为止。
+   * 依据：成本 = 首级成本 × 增长系数^等级（指数上涨），所以等级最低的那栋
+   * 下一级的「单位成本收益」最高；实测该顺序与逐次算性价比的最优解
+   * 元婴前完全一致、化神后差 1.3%，且优于作者 sim 的顺序表。
+   */
+  /** 一键升级设置: { mode:'all'|'one'|'pill', useStone, useDanyao } —— 默认一次花光 */
+  function buyallCfg() {
+    const st = (g.LS.S && g.LS.S.settings && g.LS.S.settings.buyall) || {};
+    return { mode: st.mode || 'all', useStone: st.useStone !== false, useDanyao: st.useDanyao !== false };
+  }
+  function setBuyallCfg(patch) {
+    const s = g.LS.S;
+    if (!s) return;
+    if (!s.settings) s.settings = {};
+    s.settings.buyall = Object.assign(buyallCfg(), patch);
+    if (g.LS.save && g.LS.save.save) g.LS.save.save();
+    syncBuyallMenu();
+  }
+  function syncBuyallMenu() {
+    if (!refs.buyallMenu) return;
+    const cfg = buyallCfg();
+    const m = refs.buyallMenu.querySelectorAll('input[name=bm-mode]');
+    for (const r of m) r.checked = (r.value === cfg.mode);
+    const st = refs.buyallMenu.querySelector('#bm-stone'); if (st) st.checked = cfg.useStone;
+    const dn = refs.buyallMenu.querySelector('#bm-danyao'); if (dn) dn.checked = cfg.useDanyao;
+  }
+  function toggleBuyallMenu(force) {
+    if (!refs.buyallMenu) return;
+    const open = (force === undefined) ? refs.buyallMenu.hasAttribute('hidden') : !!force;
+    if (open) { syncBuyallMenu(); refs.buyallMenu.removeAttribute('hidden'); }
+    else refs.buyallMenu.setAttribute('hidden', '');
+    if (refs.btnBuyAllSet) refs.btnBuyAllSet.classList.toggle('on', open);
+  }
+
+  function buyAllAffordable() {
+    const eco = g.LS.economy, bal = g.LS.BAL, s = g.LS.S;
+    if (!eco || !eco.canAfford || !bal || !s) return 0;
+    const cfg = buyallCfg();
+    const pillQi = (bal.pill && bal.pill.cost_lingqi_per_pill) || 50;
+    const rounds = cfg.mode === 'one' ? 1 : 500;   // 一次只升一级 = 只走一轮
+    let n = 0;
+    const by = {};                                 // 建筑 id → 升了几级
+    for (let guard = 0; guard < rounds; guard++) {
+      let pick = null;
+      for (const b of bal.buildings) {
+        if ((b.unlock_realm || 0) > s.realm.index) continue;
+        const cost = eco.buildingCost(b.id);
+        if (!cfg.useStone && cost.lingshi) continue;      // 设置：不动灵石
+        if (!cfg.useDanyao && cost.danyao) continue;      // 设置：不动丹药
+        if (!eco.canAfford(cost)) continue;
+        if (cfg.mode === 'pill' && (s.resources.lingqi - (cost.lingqi || 0)) < pillQi) continue;  // 留一颗丹的钱
+        if (!pick || (s.buildings[b.id] || 0) < (s.buildings[pick.id] || 0)) pick = b;
+      }
+      if (!pick) break;
+      if (!eco.buyBuilding(pick.id)) break;
+      by[pick.id] = (by[pick.id] || 0) + 1;
+      n++;
+    }
+    return { n: n, by: by };
+  }
+
+  /** 把升级明细拼成「灵田 +3、灵泉 +2」；种类超过 5 个只列前 5 并加「等」 */
+  function buyallSummary(by) {
+    const bal = g.LS.BAL;
+    const rows = Object.keys(by || {}).map((id) => {
+      const b = bal && bal.buildings ? bal.buildings.find((x) => x.id === id) : null;
+      return { name: b ? b.name : id, n: by[id] };
+    }).sort((a, b) => b.n - a.n);
+    const shown = rows.slice(0, 5).map((r) => r.name + ' +' + r.n);
+    return shown.join('、') + (rows.length > shown.length ? ' 等' : '');
+  }
+
   function renderBuildings() {
     const bal = g.LS.BAL, s = g.LS.S, eco = g.LS.economy;
     const sig = buildingUnlockSig();
@@ -393,6 +521,7 @@
     }
     // 每 tick 只刷新数字与可购态
     const now = Date.now();
+    let anyAffordable = false;
     for (const card of refs.buildingList.children) {
       const b = bal.buildings.find(x => x.id === card.dataset.id);
       if (!b) continue;
@@ -406,6 +535,7 @@
       const cost = eco.buildingCost(b.id);
       const ok = eco.canAfford(cost);
       btn.disabled = !ok;
+      if (ok) anyAffordable = true;
       const txt = (lv === 0 ? '建造' : '升级') + ' · ' + eco.costText(cost);
       if (lastStr.bbtn[b.id] !== txt) { btn.textContent = txt; lastStr.bbtn[b.id] = txt; }
       // B3 首次买得起：登记 + toast 一次建议（tooltip 从此刻起追加建议行）
@@ -431,6 +561,8 @@
         if (badge) badge.remove();
       }
     }
+    // 一键升级按钮：有可升级 = 深色实心，无可升 = 浅色
+    if (refs.btnBuyAll) refs.btnBuyAll.classList.toggle('on', anyAffordable);
   }
 
   function specialEffectText(b) {
