@@ -758,6 +758,33 @@ html.night .bfx-stage::before{opacity:.55}
 /* ── 招式飞影：五行各一形（2026-09-13 第二版） ──
    金＝斜切剑光  木＝弯藤带叶  水＝水箭带尾迹  火＝火球跳动  土＝双岩旋转  无相＝气浪圆环 */
 .bfx-fx{position:absolute;inset:0;pointer-events:none}
+.bfx-cast-telegraph{
+  position:absolute;left:50%;top:43%;width:58px;height:58px;margin:-29px 0 0 -29px;
+  border:1px solid var(--fx-accent);
+  border-color:color-mix(in srgb,var(--fx-accent) 80%,white 20%);
+  border-radius:50%;opacity:0;pointer-events:none;z-index:3;
+  box-shadow:0 0 10px color-mix(in srgb,var(--fx-accent) 70%,transparent),inset 0 0 12px color-mix(in srgb,var(--fx-accent) 28%,transparent);
+  animation:bfx-telegraph .62s ease-out forwards;
+}
+.bfx-cast-telegraph::before,.bfx-cast-telegraph::after{
+  content:"";position:absolute;left:50%;top:50%;width:76px;height:1px;margin:-.5px 0 0 -38px;
+  background:linear-gradient(90deg,transparent,var(--fx-accent),transparent);opacity:.72;
+}
+.bfx-cast-telegraph::after{transform:rotate(90deg)}
+.bfx-cast-telegraph.fx-fire{filter:saturate(1.35)}
+.bfx-cast-telegraph.fx-water{border-radius:44% 56% 50% 50%}
+.bfx-cast-telegraph.fx-earth{border-radius:12px;transform:rotate(45deg)}
+@keyframes bfx-telegraph{
+  0%{opacity:0;transform:scale(.42) rotate(0)}
+  28%{opacity:.95}
+  100%{opacity:0;transform:scale(1.18) rotate(90deg)}
+}
+.bfx-stage.bfx-casting::after{
+  content:"";position:absolute;inset:0;pointer-events:none;z-index:2;
+  background:radial-gradient(circle at 50% 52%,color-mix(in srgb,var(--fx-accent,#e8d7a2) 9%,transparent),transparent 58%);
+  animation:bfx-cast-wash .62s ease-out forwards;
+}
+@keyframes bfx-cast-wash{0%,100%{opacity:0}35%{opacity:1}}
 .bfx-proj{position:absolute;animation-name:bfx-fly;animation-fill-mode:forwards;animation-timing-function:cubic-bezier(.36,.03,.9,.62)}
 @keyframes bfx-fly{0%{transform:translate(0,0) scale(.5);opacity:.35}55%{opacity:1}100%{transform:translate(var(--fx-to-x),var(--fx-to-y)) scale(1);opacity:1}}
 
@@ -1238,6 +1265,13 @@ html.lowfx #ms-scene .moon,html.lowfx #ms-scene .moon-halo,html.lowfx #ms-scene 
 html.lowfx #ms-scene .ms-qi,html.lowfx #ms-scene .ms-qi2,html.lowfx #ms-scene .ms-pulse,
 html.lowfx #ms-scene .seal,html.lowfx #btn-breath{animation:none !important}
 html.lowfx #ms-scene .moon,html.lowfx #ms-scene .moon-halo{box-shadow:none !important}
+html.lowfx .bfx-cast-telegraph{box-shadow:none;filter:none;animation-duration:.35s}
+html.lowfx .bfx-stage.bfx-casting::after{display:none}
+
+@media (prefers-reduced-motion:reduce){
+  .bfx-cast-telegraph{animation:none;opacity:.65}
+  .bfx-stage.bfx-casting::after{animation:none;opacity:.2}
+}
 
 /* ── 斗法中：提示条让位（原本 fixed 居中上方，会压住斗法弹窗的舞台/手牌） ──
    宽屏挪到弹窗右侧空白，窄屏落到底部，都不再盖住牌面 */

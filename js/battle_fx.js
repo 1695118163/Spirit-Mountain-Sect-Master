@@ -925,6 +925,30 @@
     setTimeout(function () { cls(el, 'bfx-hurt', false); cls(el, 'bfx-hurt-strong', false); }, 460);
   }
 
+  var FX_ACCENT = {
+    '金': '#e6c66f', '木': '#86c978', '水': '#82c9ef',
+    '火': '#ff9966', '土': '#d0a878', '五行': '#e8d7a2'
+  };
+  function telegraph(side, fx, el) {
+    var host = sideEl(side);
+    var st = box && box.querySelector('.bfx-stage');
+    if (!host || !st) return null;
+    var node = document.createElement('div');
+    node.className = 'bfx-cast-telegraph fx-' + (fx || 'qi');
+    var accent = FX_ACCENT[el] || '#e8d7a2';
+    node.style.setProperty('--fx-accent', accent);
+    st.style.setProperty('--fx-accent', accent);
+    host.appendChild(node);
+    cls(st, 'bfx-casting', true);
+    st.dataset.fx = fx || 'qi';
+    return node;
+  }
+  function clearTelegraph(node) {
+    if (node && node.parentNode) node.parentNode.removeChild(node);
+    var st = box && box.querySelector('.bfx-stage');
+    if (st) cls(st, 'bfx-casting', false);
+  }
+
   /* ── 罡气护罩：升起 / 常驻缓转 / 受击涟漪 / 碎裂 ───── */
   function guardNode(side) {
     var d = document.createElement('div');
@@ -985,7 +1009,8 @@
     cls(me, shieldEvent ? 'bfx-cast' : 'bfx-lunge', true);
 
     var steps = [];
-    steps.push(function () { return wait(300); });   // 起手
+    var tele = telegraph(side, fx, el);
+    steps.push(function () { return wait(260); });   // 起手
     var ringNode = null;
     if (dmgEvent) {
       if (fx === 'swordring') {
@@ -1029,6 +1054,7 @@
         });
       }
       steps.push(function () {                        // 命中
+        clearTelegraph(tele);
         var to = centerOf(foe);
         impact(fx, to, dmgEvent.dealt >= 25);
         shake(foe, dmgEvent.dealt >= 25);
@@ -1044,6 +1070,7 @@
       });
     }
     if (healEvent) steps.push(function () {
+      clearTelegraph(tele);
       var hkey = fxOf(card, el);
       if (hkey === 'lotus') {
         var host = sideEl(side);
@@ -1084,6 +1111,7 @@
       return wait(340);
     });
     if (shieldEvent) steps.push(function () {
+      clearTelegraph(tele);
       var gkey = fxOf(card, el);
       if (GUARD_FX[gkey]) guardCast(gkey, side);   // 守式各自动画（护体罡气＝通用罡气护罩）
       float(side, '+' + shieldEvent.amount, 'shield');
@@ -1097,6 +1125,7 @@
       return p.then(step).then(function () {});
     }, Promise.resolve()).then(function () {
       cls(me, 'bfx-act', false); cls(me, 'bfx-lunge', false); cls(me, 'bfx-cast', false);
+      clearTelegraph(tele);
       busy = false;
       if (done) done();
     });
