@@ -949,6 +949,39 @@
     if (st) cls(st, 'bfx-casting', false);
   }
 
+  var FX_THEME = {
+    metal: ['#fff2b8', '#d8a949'], wood: ['#c6f39a', '#5caa69'],
+    water: ['#d4f5ff', '#4f9ed0'], fire: ['#ffe0a0', '#e65d3f'],
+    earth: ['#ead0a0', '#96704b'], qi: ['#f8ebc4', '#a793d4']
+  };
+  function sceneTheme(fx, el) {
+    var k = elKey(el);
+    if (k === 'qi') k = /fire|flame|sky|prairie/.test(fx || '') ? 'fire' : /water|whirl|frost/.test(fx || '') ? 'water' : /wood|vine|root|sprout/.test(fx || '') ? 'wood' : /earth|rock|sink|dust/.test(fx || '') ? 'earth' : /blade|sword|gold|metal|cut/.test(fx || '') ? 'metal' : 'qi';
+    return FX_THEME[k] || FX_THEME.qi;
+  }
+  function sceneAt(name, at, fx, el) {
+    if (!layer) return null;
+    var n = document.createElement('div'), c = sceneTheme(fx, el);
+    n.className = name + ' scene-' + (fx || 'qi');
+    n.style.left = at.x + 'px'; n.style.top = at.y + 'px';
+    n.style.setProperty('--scene-a', c[0]); n.style.setProperty('--scene-b', c[1]);
+    return n;
+  }
+  function sceneCast(side, fx, el) {
+    var n = sceneAt('bfx-cast-scene', centerOf(side), fx, el);
+    if (!n) return null;
+    n.innerHTML = '<i class="scene-orbit o1"></i><i class="scene-orbit o2"></i><i class="scene-rune r1">*</i><i class="scene-rune r2">+</i><i class="scene-rune r3">x</i><i class="scene-core"></i><i class="scene-ring"></i>';
+    layer.appendChild(n); return n;
+  }
+  function sceneImpact(at, fx, el, strong) {
+    var n = sceneAt('bfx-impact-scene' + (strong ? ' is-strong' : ''), at, fx, el);
+    if (!n) return;
+    var shards = '';
+    for (var i = 0; i < (strong ? 14 : 9); i++) shards += '<i class="scene-shard" style="--a:' + (Math.PI * 2 * i / (strong ? 14 : 9)) + 'rad;--d:' + (30 + i % 4 * 9) + 'px"></i>';
+    n.innerHTML = '<i class="scene-bloom"></i><i class="scene-ring ir1"></i><i class="scene-ring ir2"></i><i class="scene-cross"></i><i class="scene-cross c2"></i><i class="scene-core"></i>' + shards;
+    layer.appendChild(n); setTimeout(function () { if (n.parentNode) n.parentNode.removeChild(n); }, strong ? 1050 : 860);
+  }
+
   /* ── 罡气护罩：升起 / 常驻缓转 / 受击涟漪 / 碎裂 ───── */
   function guardNode(side) {
     var d = document.createElement('div');
@@ -1009,7 +1042,8 @@
     cls(me, shieldEvent ? 'bfx-cast' : 'bfx-lunge', true);
 
     var steps = [];
-    var tele = telegraph(side, fx, el);
+    var tele = null;
+    var castScene = sceneCast(side, fx, el);
     steps.push(function () { return wait(260); });   // 起手
     var ringNode = null;
     if (dmgEvent) {
@@ -1055,6 +1089,7 @@
       }
       steps.push(function () {                        // 命中
         clearTelegraph(tele);
+        if (castScene && castScene.parentNode) castScene.parentNode.removeChild(castScene);
         var to = centerOf(foe);
         impact(fx, to, dmgEvent.dealt >= 25);
         shake(foe, dmgEvent.dealt >= 25);
@@ -1071,6 +1106,7 @@
     }
     if (healEvent) steps.push(function () {
       clearTelegraph(tele);
+      if (castScene && castScene.parentNode) castScene.parentNode.removeChild(castScene);
       var hkey = fxOf(card, el);
       if (hkey === 'lotus') {
         var host = sideEl(side);
@@ -1112,6 +1148,7 @@
     });
     if (shieldEvent) steps.push(function () {
       clearTelegraph(tele);
+      if (castScene && castScene.parentNode) castScene.parentNode.removeChild(castScene);
       var gkey = fxOf(card, el);
       if (GUARD_FX[gkey]) guardCast(gkey, side);   // 守式各自动画（护体罡气＝通用罡气护罩）
       float(side, '+' + shieldEvent.amount, 'shield');
@@ -1126,6 +1163,7 @@
     }, Promise.resolve()).then(function () {
       cls(me, 'bfx-act', false); cls(me, 'bfx-lunge', false); cls(me, 'bfx-cast', false);
       clearTelegraph(tele);
+      if (castScene && castScene.parentNode) castScene.parentNode.removeChild(castScene);
       busy = false;
       if (done) done();
     });

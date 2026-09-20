@@ -758,6 +758,31 @@ html.night .bfx-stage::before{opacity:.55}
 /* ── 招式飞影：五行各一形（2026-09-13 第二版） ──
    金＝斜切剑光  木＝弯藤带叶  水＝水箭带尾迹  火＝火球跳动  土＝双岩旋转  无相＝气浪圆环 */
 .bfx-fx{position:absolute;inset:0;pointer-events:none}
+
+/* Rebuilt layered skill language: orbit -> core -> bloom -> fragments. */
+.bfx-cast-scene,.bfx-impact-scene{position:absolute;width:1px;height:1px;pointer-events:none;z-index:5;color:var(--scene-a)}
+.bfx-cast-scene .scene-core,.bfx-impact-scene .scene-core{position:absolute;width:18px;height:18px;margin:-9px;border-radius:50%;background:radial-gradient(circle,#fff,var(--scene-a) 35%,var(--scene-b) 72%,transparent 74%);box-shadow:0 0 16px 5px var(--scene-b);animation:scene-core 1s ease-out both}
+.bfx-cast-scene .scene-ring{position:absolute;width:58px;height:58px;margin:-29px;border:1px solid var(--scene-a);border-radius:50%;box-shadow:0 0 14px var(--scene-b),inset 0 0 10px var(--scene-b);animation:scene-charge .72s ease-out both}
+.scene-orbit{position:absolute;width:7px;height:7px;margin:-3.5px;border-radius:50%;background:var(--scene-a);box-shadow:0 0 9px 3px var(--scene-b);animation:scene-orbit 1.2s linear both}
+.scene-orbit.o1{transform:rotate(0) translateX(33px)} .scene-orbit.o2{transform:rotate(120deg) translateX(26px);animation-delay:.08s}
+.scene-rune{position:absolute;font:16px serif;color:var(--scene-a);text-shadow:0 0 8px var(--scene-b);animation:scene-rune .7s ease-out both}
+.scene-rune.r1{left:-42px;top:-9px}.scene-rune.r2{left:25px;top:-35px}.scene-rune.r3{left:18px;top:20px}
+.bfx-impact-scene .scene-bloom{position:absolute;width:90px;height:90px;margin:-45px;border-radius:50%;background:radial-gradient(circle,var(--scene-a),color-mix(in srgb,var(--scene-b) 45%,transparent) 24%,transparent 70%);filter:blur(2px);animation:scene-bloom .72s ease-out both}
+.bfx-impact-scene .scene-ring{position:absolute;border:2px solid var(--scene-a);border-radius:50%;animation:scene-impact-ring .8s cubic-bezier(.12,.75,.26,1) both}
+.bfx-impact-scene .ir1{width:42px;height:42px;margin:-21px;border-color:var(--scene-a)}
+.bfx-impact-scene .ir2{width:76px;height:32px;margin:-16px -38px;border-color:var(--scene-b);animation-delay:.1s}
+.scene-cross{position:absolute;width:112px;height:3px;margin:-1.5px -56px;background:linear-gradient(90deg,transparent,var(--scene-a),transparent);animation:scene-cross .52s ease-out both}.scene-cross.c2{transform:rotate(90deg);background:linear-gradient(90deg,transparent,var(--scene-b),transparent);animation-delay:.05s}
+.scene-shard{position:absolute;width:4px;height:15px;margin:-7px -2px;background:linear-gradient(var(--scene-a),transparent);transform:rotate(var(--a)) translateY(var(--d));transform-origin:2px 7px;animation:scene-shard .72s ease-out both}
+@keyframes scene-charge{0%{opacity:0;transform:scale(.35) rotate(-30deg)}35%{opacity:1}100%{opacity:0;transform:scale(1.25) rotate(100deg)}}
+@keyframes scene-core{0%{opacity:0;transform:scale(.2)}30%{opacity:1;transform:scale(1.3)}100%{opacity:0;transform:scale(.8)}}
+@keyframes scene-orbit{0%{opacity:0;transform:rotate(0) translateX(9px)}30%{opacity:1}100%{opacity:0;transform:rotate(300deg) translateX(38px)}}
+@keyframes scene-rune{0%{opacity:0;transform:scale(.5) rotate(-30deg)}35%{opacity:1}100%{opacity:0;transform:scale(1.3) rotate(45deg)}}
+@keyframes scene-bloom{0%{opacity:0;transform:scale(.2)}28%{opacity:1}100%{opacity:0;transform:scale(1.7)}}
+@keyframes scene-impact-ring{0%{opacity:0;transform:scale(.2)}24%{opacity:1}100%{opacity:0;transform:scale(1.8)}}
+@keyframes scene-cross{0%{opacity:0;transform:scaleX(.1)}30%{opacity:1}100%{opacity:0;transform:scaleX(1.2)}}
+@keyframes scene-shard{0%{opacity:1;transform:rotate(var(--a)) translateY(5px) scale(.5)}100%{opacity:0;transform:rotate(var(--a)) translateY(var(--d)) scale(1)}}
+html.lowfx .bfx-cast-scene,html.lowfx .bfx-impact-scene{filter:none}
+@media (prefers-reduced-motion:reduce){.bfx-cast-scene,.bfx-impact-scene{animation:none}.bfx-cast-scene .scene-orbit,.bfx-cast-scene .scene-rune,.bfx-cast-scene .scene-ring,.bfx-impact-scene>*{animation-duration:.2s}}
 .bfx-cast-telegraph{
   position:absolute;left:50%;top:43%;width:58px;height:58px;margin:-29px 0 0 -29px;
   border:1px solid var(--fx-accent);
