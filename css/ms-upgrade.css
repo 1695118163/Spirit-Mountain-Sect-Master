@@ -1277,9 +1277,8 @@ html,body{overflow-x:clip}
 /* ── 洞天福地「一键升级」（2026-09-19）───────────────────────────────────────
    放在标题行右侧，「一键升级」四字与「洞天福地」四字同宽，尺寸相当。
    .on = 有可建造/可升级的建筑（实心深色，强调）；无则淡底弱化。
-   可升级态昼夜各一套实心色：白天深褐 #241f18、夜间朱红 #c0392b（米白实心会与夜间
-   界面自带的浅色文字抢视线，故取全局强调色）：语义变量在夜间会翻转成浅底，与要求相反；
-   无可升级态才用会翻转的淡变量（夜间自然更淡）。 */
+   可升级态：淡墨底 + 深墨字 + 淡线（2026-09-19 起，原为深褐/朱红实心，太跳）。
+   两态都用同一组会翻转的语义变量，只是深浅差一档 —— 夜间自动适配，无需另写一套。 */
 .panel-title.with-action{display:flex;align-items:center;justify-content:space-between;gap:10px}
 .panel-title.with-action>span{letter-spacing:4px}
 .buyall{
@@ -1291,10 +1290,12 @@ html,body{overflow-x:clip}
   -webkit-tap-highlight-color:transparent;
 }
 .buyall:active{transform:scale(.96)}
-.buyall.on{background:#241f18;border-color:#c0392b;color:#fdf8ec;box-shadow:var(--ms-sh-2)}
-.buyall.on:hover{background:#c0392b;border-color:#c0392b;color:#fdf8ec}
-html.night .buyall.on{background:#c0392b;border-color:#e8b9b0;color:#fdf8ec}   /* 夜间：朱红实心 */
-html.night .buyall.on:hover{background:#a83232;border-color:#e8b9b0}
+/* 2026-09-19 改：可升级态不再是深褐/朱红实心（在宣纸上像块墨砖），改用淡墨底，
+   与右侧「选丹 / 丹房」那排小按钮同族。全用会翻转的语义变量，昼夜自动适配：
+   底 ink-6、字 ink-deep、线 dai-2；与「无可升级」态（ink-7 / ink-4 / dai-3）差一档，
+   能不能买仍然一眼看得出。 */
+.buyall.on{background:var(--ms-ink-6);border-color:var(--ms-dai-2);color:var(--ms-ink-deep);box-shadow:none}
+.buyall.on:hover{background:var(--ms-ink-5);border-color:var(--ms-dai-2);color:var(--ms-ink-deep)}
 .buyall:focus-visible{outline:2px solid var(--cinnabar);outline-offset:2px}
 
 /* ── 一键升级 · 齿轮设置菜单（2026-09-19）───────────────────────────────────
@@ -1315,8 +1316,7 @@ html.night .buyall.on:hover{background:#a83232;border-color:#e8b9b0}
   stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
 .buyall-gear:hover{color:var(--ms-ink-deep);border-color:var(--ms-dai-2)}
 .buyall-gear:active{transform:scale(.94)}
-.buyall-gear.on{background:#241f18;border-color:#c0392b;color:#fdf8ec}
-html.night .buyall-gear.on{background:#c0392b;border-color:#e8b9b0;color:#fdf8ec}
+.buyall-gear.on{background:var(--ms-ink-6);border-color:var(--ms-dai-2);color:var(--ms-ink-deep)}
 .buyall-menu{
   position:absolute;right:0;top:calc(100% + 3px);z-index:20;
   min-width:170px;padding:6px 10px 9px;border-radius:var(--ms-r-m);
