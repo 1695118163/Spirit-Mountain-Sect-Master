@@ -452,7 +452,7 @@ html.night .map-spot span{background:rgba(14,17,23,.6);color:#d9cbb0}
 }
 @keyframes map-ping{0%{transform:scale(.6);opacity:.9}100%{transform:scale(1.9);opacity:0}}
 /* 未开化：压缩为淡墨小记，不占三行 */
-.map-spot.locked{opacity:.42;gap:0}
+.map-spot.locked{opacity:.42;gap:0;width:38px;margin-left:-19px;margin-top:-21px}  /* 待开化点只有「待开化」三字，宽度 38px，负 margin 也要跟着取半 */
 .map-spot.locked .ms-icon{
   width:16px;height:16px;border-radius:3px;font-size:9px;
   border:1px solid var(--ms-ink-5);color:var(--ms-ink-5);
@@ -537,7 +537,11 @@ html.night #map-mini span.locked{border-color:rgba(232,220,200,.3)}
 .map-canvas{height:calc(100vh - 110px);min-height:470px}
 
 /* ── 地点印章定位（批二丢失段补回）：绝对定位按画布百分比落位 ── */
-.map-spot{position:absolute;margin-left:-60px;margin-top:-23px} /* 负 margin 居中替代 transform（:active 期间 transform 元素 hit-test 会穿透） */
+.map-spot{position:absolute;width:74px;text-align:center;margin-left:-37px;margin-top:-30px}
+/* 定位语义：left/top = 标记**正中**所在位置。
+   实测盒 74×60px，负 margin 取其半(-37/-30)即正中；
+   不用 transform 居中 —— :active 期间 transform 元素 hit-test 会穿透。
+   改 marker 文案长度时要同步这两个值；见闻区微缩共用同一套百分比，会一起对上。 */
 
 /* ── 地图页禁滚动：消除「手指微动=滚动取消点击」的误触（画布高度自适应视口） ── */
 .page-view[data-view="map"]{overflow:hidden}

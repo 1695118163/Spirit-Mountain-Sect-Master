@@ -1480,6 +1480,47 @@
 
     // 见闻区下方的舆图微缩：**与地图页同一份画**（竖屏 scene / 宽屏 wide），
     // 不再另画一张 —— 这样两边看上去就是同一幅，标记百分比也天然一致
+    /* 舆图地点坐标 —— 唯一定义处，地图页与见闻区微缩共用同一份。
+       语义 = 标记正中所在的百分比位置（.map-spot 与微缩标记都是中心对齐），
+       所以同一串数字在两边落在同一处地物上，不会再各写各的。 */
+    function mapSpots(W) {
+      return W ? [
+        { id: 'dannfang', name: '丹 房', x: 11.6, y: 84.4, desc: '炼丹服丹' },
+        { id: 'market', name: '市 场', x: 49.6, y: 83.2, desc: '灵石买卖' },
+        { id: 'arena', name: '擂 台', x: 45.3, y: 56.6, desc: '论道切磋' },
+        { id: 'locked1', name: '？', x: 85.7, y: 24.8, locked: true },
+        { id: 'locked2', name: '？', x: 7.4, y: 69.8, locked: true },
+        { id: 'locked3', name: '？', x: 88.2, y: 89.8, locked: true },
+        { id: 'locked4', name: '？', x: 18.2, y: 83.1, locked: true }
+      ] : [
+        { id: 'dannfang', name: '丹 房', x: 17.3, y: 81.4, desc: '炼丹服丹' },
+        { id: 'market', name: '市 场', x: 41.8, y: 85.9, desc: '灵石买卖' },
+        { id: 'arena', name: '擂 台', x: 49.2, y: 52.7, desc: '论道切磋' },
+        { id: 'locked1', name: '？', x: 68.9, y: 18.0, locked: true },
+        { id: 'locked2', name: '？', x: 5.9, y: 58.0, locked: true },
+        { id: 'locked3', name: '？', x: 70.4, y: 88.3, locked: true },
+        { id: 'locked4', name: '？', x: 58.9, y: 73.7, locked: true }
+      ];
+    }
+
+    function paintMini(st) {
+      const W = mapIsWide();
+      st.dataset.mode = W ? 'wide' : 'tall';
+      const oldSvg = st.querySelector('.map-svg');
+      if (oldSvg) oldSvg.remove();
+      st.insertAdjacentHTML('afterbegin', W
+        ? (g.MAPART.wide ? g.MAPART.wide() : '')
+        : (g.MAPART.scene ? g.MAPART.scene() : ''));
+      // 标记随视口取同一份坐标 —— 换了构图就一起换，永不脱节
+      const dots = [...st.querySelectorAll('span')];
+      mapSpots(W).forEach((sp, i) => {
+        const d = dots[i];
+        if (!d) return;
+        d.style.left = sp.x + '%';
+        d.style.top = sp.y + '%';
+      });
+    }
+
     function buildMini() {
       const mm = document.getElementById('map-mini');
       if (!mm || !g.MAPART) return;
@@ -1490,11 +1531,7 @@
         while (mm.firstChild) st.appendChild(mm.firstChild);
         mm.appendChild(st);
       }
-      const W = mapIsWide();
-      st.dataset.mode = W ? 'wide' : 'tall';
-      st.insertAdjacentHTML('afterbegin', W
-        ? (g.MAPART.wide ? g.MAPART.wide() : '')
-        : (g.MAPART.scene ? g.MAPART.scene() : ''));
+      paintMini(st);
     }
     if (!window.__miniBound) {
       window.__miniBound = true;
@@ -1502,15 +1539,7 @@
         try {
           const st = document.querySelector('#map-mini .map-stage');
           if (!st) return;
-          if ((st.dataset.mode === 'wide') !== mapIsWide()) {
-            const svg = st.querySelector('.map-svg');
-            if (svg) svg.remove();
-            const W = mapIsWide();
-            st.dataset.mode = W ? 'wide' : 'tall';
-            st.insertAdjacentHTML('afterbegin', W
-              ? (g.MAPART.wide ? g.MAPART.wide() : '')
-              : (g.MAPART.scene ? g.MAPART.scene() : ''));
-          }
+          if ((st.dataset.mode === 'wide') !== mapIsWide()) paintMini(st);
         } catch (e) {}
       });
     }
@@ -1549,23 +1578,7 @@
       // 擂台在山巅平台、丹房在西侧山腰瀑溪旁、市场在山脚溪口与灵田之间，
       // 四个待开化点分别落在云中、左岸/西麓、泽心礁洲、近景坡地。
       const W = mapIsWide();
-      const spots = W ? [
-        { id: 'dannfang', name: '丹 房', x: 43.3, y: 64.2, desc: '炼丹服丹 · 丹毒调理' },
-        { id: 'market', name: '市 场', x: 55.4, y: 78.3, desc: '灵石买卖 · 散修集市' },
-        { id: 'arena', name: '擂 台', x: 47.2, y: 39.3, desc: '论道切磋 · 以武会友' },
-        { id: 'locked1', name: '？', x: 88.3, y: 25.0, locked: true },
-        { id: 'locked2', name: '？', x: 10.0, y: 70.0, locked: true },
-        { id: 'locked3', name: '？', x: 90.8, y: 90.0, locked: true },
-        { id: 'locked4', name: '？', x: 20.8, y: 83.3, locked: true }
-      ] : [
-        { id: 'dannfang', name: '丹 房', x: 30.8, y: 59.2, desc: '炼丹服丹 · 丹毒调理' },
-        { id: 'market', name: '市 场', x: 64.6, y: 67.5, desc: '灵石买卖 · 散修集市' },
-        { id: 'arena', name: '擂 台', x: 60.0, y: 49.0, desc: '论道切磋 · 以武会友' },
-        { id: 'locked1', name: '？', x: 80.0, y: 18.3, locked: true },
-        { id: 'locked2', name: '？', x: 13.8, y: 58.3, locked: true },
-        { id: 'locked3', name: '？', x: 81.5, y: 88.6, locked: true },
-        { id: 'locked4', name: '？', x: 33.3, y: 86.4, locked: true }
-      ];
+      const spots = mapSpots(W);   // 与见闻区微缩同一份坐标
       // 山水与地点剪影都来自 js/mapart.js；未加载时退化成空背景，地点仍可点
       const drawScene = (W && g.MAPART && g.MAPART.wide) ? g.MAPART.wide
                      : ((g.MAPART && g.MAPART.scene) ? g.MAPART.scene : null);
