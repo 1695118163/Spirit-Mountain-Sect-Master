@@ -38,7 +38,24 @@
     yujianshu: 'swordring',       // 御剑术：五剑绕身 1s 再齐射（用户指定）
     // 守式：每张一套（护体罡气走通用罡气护罩）
     jinzhongzhao: 'bell', tiebushan: 'ironbody', xuanwu_zhenyue: 'xuanwu',
-    jingang_buhuai: 'sutra', zhoutian_xingdou: 'starmap', guixigong: 'turtle'
+    jingang_buhuai: 'sutra', zhoutian_xingdou: 'starmap', guixigong: 'turtle',
+    // ── 第二批专属形态（2026-09-20 wkh 逐张选定）──
+    tunazhang: 'breathring',     // 吐纳掌：吐纳一息（呼吸光环 → 掌风无声推出）
+    pojunzhan: 'crosscut',       // 破军斩：十字斩（斜劈接横切）
+    xunleiji: 'triplebolt',      // 迅雷击：三连小雷
+    zhuifengjian: 'windblades',  // 追风剑：三道剑影掠过 + 风痕
+    jingangquan: 'palmseal',     // 金刚拳：金刚一印（留印缓慢消退）
+    wuxingshu: 'fivecol',        // 五行术：五行光柱（五色柱自天而降）
+    xuanbingjian: 'frostbite',   // 玄冰箭：冰晶结霜（冰花地纹）
+    qingmuchan: 'rootlock',      // 青木缠：木根锁足（根须自地面收紧）
+    gengjinrui: 'goldburst',     // 庚金锐：金屑迸散
+    houtu_qing: 'sinkhole',      // 厚土诀：地陷合拢
+    zhoutian: 'acupoint',        // 周天运转：经脉光点依次亮起
+    chunhuijue: 'sprout',        // 春回诀：枯木新芽（先枯后荣）
+    benming: 'swordarc',         // 本命飞剑：剑光绕弧贯入
+    sanmeihuo: 'flamespiral',    // 三昧真火：三簇螺旋合一
+    qingtengfu: 'vinecage',      // 青藤缚：古藤成笼
+    yusui_danfang: 'cauldron'    // 玉髓丹方：丹鼎虚影洒药光
   };
   function fxOf(card, el) {
     var k = card && card.id ? CARD_FX[card.id] : null;
@@ -265,8 +282,308 @@
     (function (n) { setTimeout(function () { if (n.parentNode) n.parentNode.removeChild(n); }, 700 + (delay || 0)); })(d);
   }
 
+  /* ── 招式专属形态（批次一，2026-09-20）──────────────────────────
+     独立成函数、在 impact 入口前置调用，原 impact 一行未动。
+     设计取向：招式之间要一眼能分辨，所以「起手方式 + 命中瞬间」都各写各的。 */
+  function impactNew(fx, at, strong) {
+    if (!layer) return true;
+    var i, ang, dist, n, el, d;
+    var add = function (node, ms) {
+      layer.appendChild(node);
+      setTimeout(function () { if (node.parentNode) node.parentNode.removeChild(node); }, ms);
+    };
+    var box = function (cls2, x, y) {
+      var e2 = document.createElement('div');
+      e2.className = cls2;
+      e2.style.left = (x == null ? at.x : x) + 'px';
+      e2.style.top = (y == null ? at.y : y) + 'px';
+      return e2;
+    };
+
+    if (fx === 'breathring') {
+      // 吐纳掌：先起一圈呼吸光环（吸气），再无声推出一记掌风
+      var ring = box('bfx-breathring');
+      add(ring, 900);
+      setTimeout(function () { add(box('bfx-palmwave'), 700); }, 220);
+      for (i = 0; i < 6; i++) {
+        ang = Math.PI * 2 * i / 6;
+        sparkAt(at, 'sp-qi', Math.cos(ang) * 16, Math.sin(ang) * 10, 260 + i * 26);
+      }
+    } else if (fx === 'crosscut') {
+      // 破军斩：斜劈接横切，两道斩痕叠成十字
+      var cut = function (rot, delay, wide) {
+        var sl = box('bfx-cut');
+        sl.style.setProperty('--r', rot + 'deg');     // 角度走变量，keyframes 会读它
+        sl.style.animationDelay = delay + 'ms';
+        add(sl, 560 + delay);
+      };
+      cut(38, 0);
+      cut(128, 150, 1.15);
+      flashAt(at);
+      setTimeout(function () {
+        for (i = 0; i < 7; i++) {
+          ang = Math.PI * 2 * i / 7;
+          dist = 20 + Math.random() * 22;
+          sparkAt(at, 'sp-metal', Math.cos(ang) * dist, Math.sin(ang) * dist, i * 26);
+        }
+      }, 150);
+      shake(foeSideByAt(at), 1);
+    } else if (fx === 'triplebolt') {
+      // 迅雷击：极快三下，一下比一下短
+      var d3 = [-18, 2, 18];
+      for (i = 0; i < 3; i++) {
+        (function (idx) {
+          setTimeout(function () {
+            boltAt(at, d3[idx], 0, 0.72);
+            for (n = 0; n < 4; n++) {
+              ang = Math.PI * 2 * n / 4 + idx;
+              sparkAt(at, 'sp-thunder', Math.cos(ang) * (14 + idx * 4), Math.sin(ang) * (12 + idx * 3), 0);
+            }
+            if (idx === 2) flashAt(at);
+          }, idx * 140);
+        })(i);
+      }
+    } else if (fx === 'windblades') {
+      // 追风剑：三道极细剑影几乎同时掠过，拖出风痕
+      for (i = 0; i < 3; i++) {
+        (function (idx) {
+          var sl = box('bfx-slash');
+          sl.classList.add('thin');
+          sl.style.setProperty('--r', (80 + idx * 6) + 'deg');
+          sl.style.animationDelay = (idx * 70) + 'ms';
+          add(sl, 520 + idx * 70);
+          setTimeout(function () { add(box('bfx-gale'), 460); }, idx * 70);
+        })(i);
+      }
+      for (i = 0; i < 5; i++) {
+        ang = Math.PI * 2 * i / 5;
+        sparkAt(at, 'sp-qi', Math.cos(ang) * 24, Math.sin(ang) * 18, 40 + i * 30);
+      }
+    } else if (fx === 'palmseal') {
+      // 金刚拳：一记重拳落下，目标身上留一枚拳印缓缓消退
+      var seal = box('bfx-palmseal');
+      add(seal, 1100);
+      impactFlashRing(at, '#f0d78a');
+      for (i = 0; i < 8; i++) {
+        ang = Math.PI * 2 * i / 8;
+        dist = 22 + Math.random() * 20;
+        sparkAt(at, 'sp-metal', Math.cos(ang) * dist, Math.sin(ang) * dist, i * 22);
+      }
+      flashAt(at);
+      shake('op', 2);
+    } else if (fx === 'fivecol') {
+      // 五行术：五色光柱自天而降，围住对手
+      var cols = ['#f0e2a0', '#9ed69a', '#a8d8f0', '#f0a87c', '#d8bd8a'];
+      for (i = 0; i < 5; i++) {
+        (function (idx) {
+          var col = box('bfx-fivecol', at.x - 32 + idx * 16, at.y - 58);
+          col.style.color = cols[idx];
+          col.style.animationDelay = (idx * 90) + 'ms';
+          add(col, 1000 + idx * 90);
+        })(i);
+      }
+      setTimeout(function () {
+        flashAt(at);
+        for (i = 0; i < 8; i++) {
+          ang = Math.PI * 2 * i / 8;
+          sparkAt(at, 'sp-qi', Math.cos(ang) * 26, Math.sin(ang) * 18, i * 24);
+        }
+      }, 420);
+    } else if (fx === 'frostbite') {
+      // 玄冰箭：命中处结出冰花地纹，寒气滞留一瞬
+      var fr = box('bfx-frost');
+      add(fr, 1400);
+      setTimeout(function () {
+        for (i = 0; i < 7; i++) {
+          ang = Math.PI * 2 * i / 7;
+          dist = 16 + Math.random() * 20;
+          sparkAt(at, 'sp-drop', Math.cos(ang) * dist, Math.sin(ang) * dist * 0.7, i * 30);
+        }
+      }, 120);
+      for (i = 0; i < 3; i++) {
+        (function (idx) {
+          var spike = box('bfx-icespike');
+          spike.style.setProperty('--r', (idx * 120 + 20) + 'deg');
+          spike.style.animationDelay = (idx * 70) + 'ms';
+          add(spike, 800 + idx * 70);
+        })(i);
+      }
+    } else if (fx === 'rootlock') {
+      // 青木缠：细根须自地面升起缠住双脚，缓缓收紧
+      for (i = 0; i < 6; i++) {
+        (function (idx) {
+          var rt = box('bfx-root');
+          rt.style.setProperty('--r', (idx * 60) + 'deg');
+          rt.style.animationDelay = (idx * 60) + 'ms';
+          add(rt, 1200 + idx * 60);
+        })(i);
+      }
+      setTimeout(function () {
+        for (i = 0; i < 6; i++) {
+          ang = Math.PI * 2 * i / 6;
+          sparkAt(at, 'sp-leaf', Math.cos(ang) * 20, Math.abs(Math.sin(ang)) * 8 + 4, i * 40);
+        }
+      }, 300);
+    } else if (fx === 'goldburst') {
+      // 庚金锐：金屑迸散
+      impactFlashRing(at, '#fff6d0');
+      flashAt(at);
+      for (i = 0; i < 12; i++) {
+        ang = Math.PI * 2 * i / 12 + Math.random() * 0.3;
+        dist = 18 + Math.random() * 26;
+        sparkAt(at, 'sp-metal', Math.cos(ang) * dist, Math.sin(ang) * dist, i * 16);
+      }
+      var shine = box('bfx-goldshine');
+      add(shine, 620);
+    } else if (fx === 'sinkhole') {
+      // 厚土诀：脚下地面下陷，两侧土石向内合拢
+      var hole = box('bfx-sinkhole', at.x, at.y + 14);
+      add(hole, 1100);
+      for (i = 0; i < 8; i++) {
+        (function (idx) {
+          var side2 = idx < 4 ? -1 : 1;
+          var off = (idx % 4) * 13 + 8;
+          var rub = box('bfx-rubble', at.x + side2 * off, at.y + 6 + (idx % 3) * 9);
+          rub.style.setProperty('--dx', (-side2 * 16) + 'px');
+          rub.style.animationDelay = (idx * 55) + 'ms';
+          add(rub, 1100 + idx * 55);
+        })(i);
+      }
+      setTimeout(function () {
+        for (i = 0; i < 7; i++) {
+          ang = Math.PI * (0.15 + Math.random() * 0.7);
+          sparkAt(at, 'sp-rock', Math.cos(ang) * (26 + Math.random() * 16),
+                  -Math.abs(Math.sin(ang)) * 18, i * 32);
+        }
+      }, 220);
+      shake(foeSideByAt(at), 1);
+    } else if (fx === 'acupoint') {
+      // 周天运转：己身一圈穴点依次亮起，再连成一线
+      var mx = layer.clientWidth * (at.x > layer.clientWidth / 2 ? 0.22 : 0.78);
+      var myy = at.y;
+      for (i = 0; i < 9; i++) {
+        (function (idx) {
+          var aa = -Math.PI / 2 + (idx / 9) * Math.PI * 2;
+          var pp = box('bfx-acupoint', mx + Math.cos(aa) * 26, myy + Math.sin(aa) * 30);
+          pp.style.animationDelay = (idx * 85) + 'ms';
+          add(pp, 1500 + idx * 85);
+        })(i);
+      }
+      setTimeout(function () {
+        var ln = box('bfx-meridian', mx, myy);
+        add(ln, 900);
+      }, 620);
+    } else if (fx === 'sprout') {
+      // 春回诀：先显枯纹，再抽新芽
+      var mx2 = layer.clientWidth * (at.x > layer.clientWidth / 2 ? 0.22 : 0.78);
+      var wit = box('bfx-wither', mx2, at.y);
+      add(wit, 800);
+      for (i = 0; i < 7; i++) {
+        (function (idx) {
+          var aa2 = -Math.PI / 2 + (idx / 7) * Math.PI * 2;
+          var sp2 = box('bfx-sprout', mx2 + Math.cos(aa2) * 24, at.y + 22 + Math.sin(aa2) * 12);
+          sp2.style.setProperty('--rot', (Math.cos(aa2) * 26) + 'deg');
+          sp2.style.animationDelay = (330 + idx * 70) + 'ms';
+          add(sp2, 1500 + idx * 70);
+        })(i);
+      }
+      setTimeout(function () {
+        for (i = 0; i < 8; i++) {
+          sparkAt({ x: mx2, y: at.y - 10 }, 'sp-leaf',
+                  (Math.random() - 0.5) * 46, 14 + Math.random() * 26, i * 60);
+        }
+      }, 420);
+    } else if (fx === 'swordarc') {
+      // 本命飞剑：剑光自上方绕一弧贯入
+      var arc = box('bfx-swordarc', at.x - 34, at.y - 62);
+      add(arc, 760);
+      setTimeout(function () {
+        var pierce = box('bfx-swordpierce', at.x, at.y);
+        add(pierce, 560);
+        flashAt(at);
+        for (i = 0; i < 7; i++) {
+          ang = Math.PI * 2 * i / 7;
+          sparkAt(at, 'sp-metal', Math.cos(ang) * 20, Math.sin(ang) * 16, i * 22);
+        }
+      }, 330);
+    } else if (fx === 'flamespiral') {
+      // 三昧真火：三簇火苗自下窜起、螺旋合一成柱
+      for (i = 0; i < 3; i++) {
+        (function (idx) {
+          var fl = box('bfx-flamespiral', at.x - 22 + idx * 22, at.y + 24);
+          fl.style.setProperty('--sx', ((idx - 1) * 20) + 'px');
+          fl.style.animationDelay = (idx * 110) + 'ms';
+          add(fl, 1000 + idx * 110);
+        })(i);
+      }
+      setTimeout(function () {
+        var pil = box('bfx-flamepillar2', at.x, at.y - 20);
+        add(pil, 800);
+        for (i = 0; i < 10; i++) {
+          ang = -Math.PI / 2 + (Math.random() - 0.5) * 1.5;
+          dist = 20 + Math.random() * 26;
+          sparkAt(at, 'sp-fire', Math.cos(ang) * dist * 0.8, Math.sin(ang) * dist, i * 26);
+        }
+      }, 340);
+    } else if (fx === 'vinecage') {
+      // 青藤缚：四角粗藤升起，交织成笼
+      for (i = 0; i < 4; i++) {
+        (function (idx) {
+          var vx = at.x + (idx < 2 ? -26 : 26);
+          var vy = at.y + (idx % 2 === 0 ? -16 : 26);
+          var vc = box('bfx-vinecage', vx, vy);
+          vc.style.setProperty('--rot', (idx < 2 ? -8 : 8) + 'deg');
+          vc.style.animationDelay = (idx * 90) + 'ms';
+          add(vc, 1300 + idx * 90);
+        })(i);
+      }
+      setTimeout(function () {
+        var lid = box('bfx-vinecage-lid', at.x, at.y - 30);
+        add(lid, 1000);
+        for (i = 0; i < 7; i++) {
+          ang = Math.PI * (0.1 + Math.random() * 0.8);
+          sparkAt(at, 'sp-leaf', Math.cos(ang) * (20 + Math.random() * 14),
+                  -Math.abs(Math.sin(ang)) * 14, i * 40);
+        }
+      }, 460);
+    } else if (fx === 'cauldron') {
+      // 玉髓丹方：一尊丹鼎虚影在己身头顶转一圈、洒下药光
+      var mx3 = layer.clientWidth * (at.x > layer.clientWidth / 2 ? 0.22 : 0.78);
+      var caul = box('bfx-cauldron', mx3, at.y - 26);
+      add(caul, 1500);
+      for (i = 0; i < 9; i++) {
+        (function (idx) {
+          var dd = box('bfx-pilldrop', mx3 + (Math.random() * 40 - 20), at.y - 12);
+          dd.style.animationDelay = (300 + idx * 90) + 'ms';
+          add(dd, 1500 + idx * 90);
+        })(i);
+      }
+      setTimeout(function () { impactFlashRing({ x: mx3, y: at.y }, '#e8dcc8'); }, 500);
+    } else {
+      return false;   // 不是这批新增的形态，交回原 impact 处理
+    }
+    return true;
+  }
+
+  /* 命中处一圈泛光（金刚拳等重击的通用配件） */
+  function impactFlashRing(at, color) {
+    if (!layer) return;
+    var r = document.createElement('div');
+    r.className = 'bfx-hitring';
+    if (color) r.style.color = color;
+    r.style.left = at.x + 'px';
+    r.style.top = at.y + 'px';
+    layer.appendChild(r);
+    setTimeout(function () { if (r.parentNode) r.parentNode.removeChild(r); }, 620);
+  }
+  /* impact 只知道命中点，震屏要按"挨打的是谁"来 —— 命中点在对手半场就震对手 */
+  function foeSideByAt(at) {
+    try { return at.x < (layer.clientWidth || 300) / 2 ? 'my' : 'op'; } catch (e) { return 'op'; }
+  }
+
   function impact(fx, at, strong) {
     if (!layer) return;
+    if (impactNew(fx, at, strong)) return;   // 新增招式形态优先（批次一）
     var k = fx;
     var i, ang, dist;
     if (k === 'leichi') {
