@@ -499,10 +499,20 @@
   }
 
   /** 抽离线事件（加权、不重复、按条件过滤）→ finalEv 数组，结构与托梦一致 */
+  /** 离线时长 → 口语化时间词（文案里用 {away} 占位，按真实离线时长替换） */
+  function awayWord(gapSec) {
+    const cfg = offlinePoolCfg();
+    const table = (cfg && cfg.away_words) || [[2, '这一两个时辰'], [8, '这半日'], [26, '这一夜'], [192, '这几日'], [99999, '这大半月']];
+    const h = (gapSec || 0) / 3600;
+    for (let i = 0; i < table.length; i++) if (h < table[i][0]) return table[i][1];
+    return table[table.length - 1][1];
+  }
+
   function rollOfflineEvents(gapSec) {
     const cfg = offlinePoolCfg();
     if (!cfg || !cfg.events || !cfg.events.length) return [];
-    const n = offlineEventCount(gapSec);
+    // 一次离线只讲一件事（2026-09-19 定）：不再按时长抽多条，避免归来就被事件刷屏
+    const n = cfg.count != null ? cfg.count : offlineEventCount(gapSec);
     if (!n) return [];
     const pool = cfg.events.filter(offlineCondOk);
     const rarity = cfg.default_rarity || '灵';
@@ -515,7 +525,23 @@
         if (r <= 0) { hit = j; break; }
       }
       const e = pool.splice(hit, 1)[0];          // 同一次离线不重复
-      const stageEv = { id: e.id, pool: 'OFFLINE', rarity: rarity, title: e.title, desc: e.desc, options: e.options, tags: [] };
+      const away = awayWord(gapSec);
+      // 正/负随机：同一件事（比如弟子来报）可能是好事也可能是坏事。
+      // 权重 = 数据里的基线（这件事本身的倾向） + 玩家状态浮动：
+      //   道心厚则好事多，心魔重则坏事多 —— 「你修成什么样，山门就遇什么样的事」
+      const st0 = S();
+      const dx01 = Math.max(0, Math.min(120, st0.dao_heart || 0)) / 120;
+      const xm01 = Math.max(0, Math.min(100, st0.xinmo || 0)) / 100;
+      const shift = (dx01 - xm01) * 3;
+      const pw = Math.max(0.5, (e.pos_weight == null ? 5 : e.pos_weight) + shift);
+      const nw = Math.max(0.5, (e.neg_weight == null ? 5 : e.neg_weight) - shift);
+      const isGood = Math.random() * (pw + nw) < pw;
+      // 每个方向都是一组文案（好事也有好几种说法），随机挑一条，来回多挂几次不会老看同一句
+      const pickSide = (v) => Array.isArray(v) ? (v.length ? v[Math.floor(Math.random() * v.length)] : null) : (v || null);
+      const side = pickSide(isGood ? e.pos : e.neg) || pickSide(isGood ? e.neg : e.pos) || {};
+      const desc = String(side.desc || e.desc || '').split('{away}').join(away);   // 「离山这几日」按真实离线时长落字
+      const sideFits = side.fits || (isGood ? ['A'] : ['F']);
+      const stageEv = { id: e.id, pool: 'OFFLINE', rarity: rarity, title: e.title, desc: desc, options: [{ fits: sideFits }], tags: [] };
       const slots = rollSlots(stageEv);
       picked.push({
         id: 'offline:' + e.id,
@@ -525,11 +551,12 @@
         after: null,
         builtinTags: [],
         title: e.title,
-        desc: e.desc,
+        desc: desc,
+        no_choice: true,        // 离线事件不给选择：看到的就是已经发生的事
+        good: isGood,
         options: [
-          { key: 'A', text: e.options[0].text, slot: slots[0], daoxin: e.options[0].daoxin || 0, effect: e.options[0].effect || 'none' },
-          { key: 'B', text: e.options[1].text, slot: slots[1], daoxin: e.options[1].daoxin || 0, effect: e.options[1].effect || 'none' },
-          { key: 'C', text: BAL().texts.event_leave, slot: null, daoxin: 0, effect: 'none' }
+          { key: 'A', text: '知道了', slot: slots[0], daoxin: side.daoxin || 0, effect: side.effect || 'none' },
+          { key: 'C', text: BAL().texts.event_leave, slot: null, daoxin: 0, effect: 'none' }   // 只作倒计时兜底，不渲染
         ]
       });
     }

@@ -799,6 +799,7 @@
       (pastLife ? '<div class="past-life-line">（前尘旧影，依稀是故人来。）</div>' : '') +
       '<div class="modal-desc">' + escapeHtml(ev.desc) + '</div>';
     for (const opt of ev.options) {
+      if (ev.no_choice && opt.key !== 'A') continue;   // 离线事件不给选择，只留一个「知道了」
       const btn = document.createElement('button');
       btn.className = 'ev-option' + (opt.key === 'C' ? ' ev-leave' : '');
       // 效果方向徽章（不给数值，只给方向感）
@@ -810,7 +811,7 @@
         if (opt.daoxin > 0) badge += '<span class="ev-badge ev-badge-good">仁</span>';
         else if (opt.daoxin < 0) badge += '<span class="ev-badge ev-badge-bad">贪</span>';
       }
-      const tail = opt.key === 'C' ? '' : '（' + (opt.key === 'A' ? '其一' : '其二') + '）';
+      const tail = (opt.key === 'C' || ev.no_choice) ? '' : '（' + (opt.key === 'A' ? '其一' : '其二') + '）';
       btn.innerHTML = badge + ' ' + escapeHtml(opt.text) + tail;
       btn.addEventListener('click', () => g.LS.events.chooseOption(opt.key));
       card.appendChild(btn);
@@ -1864,6 +1865,55 @@
     render();
   }
 
+  /* ── 破境解锁向导（2026-09-19）─────────────────────────────────────────
+     破境之后逐屏交代这一层新开了什么：本层概述 → 每个新解锁的建筑 / 功能一屏，
+     底部「知道了」点一下进下一屏，最后一屏「明白了」收尾。
+     过场（点击才关）看完之后才弹，避免两张大图叠一起。 */
+  function showRealmUnlockGuide(realmIdx) {
+    const bal = g.LS.BAL;
+    const realm = bal.realms[realmIdx];
+    if (!realm) return;
+    if (document.querySelector('.modal-mask')) { setTimeout(() => showRealmUnlockGuide(realmIdx), 2500); return; }
+    const steps = [];
+    const guides = (bal.texts && bal.texts.guide_by_realm) || [];
+    steps.push({ t: '破 境 · ' + realm.name, d: guides[realmIdx] || (realm.name + '境已成，山中气象一新。'), icon: null });
+    for (const bid of (realm.unlock_buildings || [])) {
+      const b = (bal.buildings || []).find(x => x.id === bid);
+      if (!b) continue;
+      steps.push({ t: '新解锁 · ' + b.name, d: b.desc, icon: bid, eff: specialEffectText(b) });
+    }
+    const traits = realm.traits || [];
+    if (traits.indexOf('unlock_rebirth') !== -1) {
+      steps.push({ t: '新解锁 · 转生', d: '兵解转世：修为换传承点，买永久加成，下一世快得多。右栏「转生」可查看与开转。', icon: null });
+    }
+    if (traits.indexOf('ascension') !== -1) {
+      steps.push({ t: '新解锁 · 碑林', d: '本世山志将刻入碑林，隔世的故人与传承都跟着你走。', icon: null });
+    }
+    if (steps.length <= 1) return;   // 这一层没开新东西就别打扰
+    removeModals();
+    let i = 0;
+    const { card } = makeModal(null);
+    const render = () => {
+      const st = steps[i];
+      const last = i >= steps.length - 1;
+      card.innerHTML =
+        '<div class="modal-title">' + escapeHtml(st.t) +
+          '<span style="font-size:12px;color:var(--ink-soft);margin-left:8px">' + (i + 1) + ' / ' + steps.length + '</span></div>' +
+        '<div class="modal-desc">' +
+          (st.icon ? '<svg class="b-icon" style="width:30px;height:30px;vertical-align:-6px;margin-right:8px;opacity:.9"><use href="#ic-' + st.icon + '"/></svg>' : '') +
+          escapeHtml(st.d) + '</div>' +
+        (st.eff && st.eff !== st.d ? '<div class="modal-desc" style="font-size:12px;color:var(--ink-soft)">效果：' + escapeHtml(st.eff) + '</div>' : '') +
+        '<div style="text-align:center;margin-top:10px"><button class="btn-primary" id="ug-ok" style="padding:7px 26px">' +
+          (last ? '明 白 了' : '知 道 了') + '</button></div>';
+      card.querySelector('#ug-ok').addEventListener('click', () => {
+        if (last) { removeModals(); return; }
+        i += 1;
+        render();
+      });
+    };
+    render();
+  }
+
   /* ── 邪修面板：劫掠/血祭/黑市（心魔≥30 解锁） ── */
   function showXinmo() {
     removeModals();
@@ -2804,6 +2854,7 @@
     initRefs, renderAll, renderResources, renderBuildings, renderCenter,
     renderChronicle, renderPermList, pushLog, markNewBuildings, isModalOpen, hintOnce,
     showEventModal, closeEventModal, showOfflinePopup, showBreakthroughOverlay, showFailOverlay,
+    showRealmUnlockGuide,
     showSettings, showRebirthPanel, showTutorial, showPillHouse, showHelpPanel, showMarket, showFriends, showDeckEditor, showSeniorPick, showCodexPage, showUpdateNotes, playEmperorTribulation, showTrial, showXinmo, showAmbushModal, showQuest, showDisciple, showGenerationChoice, showTutorialSteps,
     showBattleArena, showBattleGuide, updateBattleHP, updateBattleShields, updateBattleQi, renderBattleHands, showBattleIntent,
     showBattleScreen, battleLog, battleAppend, showBattleResult,
