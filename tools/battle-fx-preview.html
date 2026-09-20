@@ -1,0 +1,39 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>斗法特效预览</title>
+  <link rel="stylesheet" href="../css/main.css">
+  <link rel="stylesheet" href="../css/ms-upgrade.css">
+  <style>
+    body{margin:0;padding:18px;background:#e8e2d3;color:#292b29;font-family:"Microsoft YaHei",sans-serif}
+    .preview{max-width:820px;margin:auto}.preview h1{font-size:20px;font-weight:600;margin:0 0 12px}
+    .battle-stage{height:220px;background:linear-gradient(#dde2df,#ece5d7)}
+    .controls{display:grid;grid-template-columns:repeat(auto-fill,minmax(105px,1fr));gap:7px;margin-top:14px}
+    .controls button{height:34px;border:1px solid #9a9588;background:#f4f0e6;color:#30322f;cursor:pointer}
+    .controls button:hover{border-color:#9d392c;color:#9d392c}.group{grid-column:1/-1;margin-top:8px;font-size:12px;color:#6c685e}
+  </style>
+</head>
+<body>
+  <main class="preview">
+    <h1>技能动画预览</h1>
+    <div id="battle-stage" class="battle-stage"></div>
+    <div id="controls" class="controls"></div>
+  </main>
+  <script src="../js/battle_fx_v2.js"></script>
+  <script>
+    (function () {
+      var groups = [
+        ['攻式',[['tunazhang','吐纳掌'],['yujianshu','御剑术'],['pojunzhan','破军斩'],['benming','本命飞剑'],['xunleiji','迅雷击'],['zhuifengjian','追风剑'],['jingangquan','金刚拳'],['fentianjin','焚天劲','火'],['xingchenzhi','星辰指','金'],['hunyuanyiqi','混元一气','土'],['dayan_shenlei','大衍神雷','金'],['zhanxian_feidao','斩仙飞刀','金']]],
+        ['五行式',[['wuxingshu','五行术','root'],['sanmeihuo','三昧真火','火'],['xuanbingjian','玄冰箭','水'],['qingmuchan','青木缠','木'],['gengjinrui','庚金锐','金'],['houtu_qing','厚土诀','土'],['qingtengfu','青藤缚','木'],['tianleipo','天雷破','金'],['liaoyuanhuo','燎原火','火'],['canghaitun','沧海吞','水'],['wulei_zhengfa','五雷正法','root']]],
+        ['守式',[['hutigangqi','护体罡气'],['jinzhongzhao','金钟罩'],['guixigong','龟息功'],['tiebushan','铁布衫'],['xuanwu_zhenyue','玄武镇岳'],['jingang_buhuai','金刚不坏'],['zhoutian_xingdou','周天星斗大阵']]],
+        ['回式',[['zhoutian','周天运转'],['chunhuijue','春回诀'],['yusui_danfang','玉髓丹方'],['taiqing_zaohua','太清造化']]]
+      ];
+      var stage=document.getElementById('battle-stage'),controls=document.getElementById('controls'),shield=0;
+      LS.battleFx.mount(stage,{my:{dao:'灵山掌门',el:'木'},op:{dao:'试剑道友',el:'金'}});LS.battleFx.kick();
+      groups.forEach(function(g){var label=document.createElement('div');label.className='group';label.textContent=g[0];controls.appendChild(label);g[1].forEach(function(x){var b=document.createElement('button');b.textContent=x[1];b.onclick=function(){if(LS.battleFx.busy)return;var card={id:x[0],name:x[1],el:x[2]||null,cost:3},ev;if(g[0]==='守式'){LS.battleFx.setShield('my',0);shield=15;ev=[{type:'shield',amount:15}];}else if(g[0]==='回式')ev=[{type:'heal',amount:28}];else ev=[{type:'hit',dealt:g[0]==='五行式'?22:36,absorbed:0,el:x[2]||null,elMult:1}];LS.battleFx.play('my',card,ev,function(){},function(){if(g[0]==='守式')LS.battleFx.setShield('my',shield);});};controls.appendChild(b);});});
+    })();
+  </script>
+</body>
+</html>
