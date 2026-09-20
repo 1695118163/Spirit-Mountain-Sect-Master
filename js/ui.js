@@ -538,12 +538,11 @@
       if (ok) anyAffordable = true;
       const txt = (lv === 0 ? '建造' : '升级') + ' · ' + eco.costText(cost);
       if (lastStr.bbtn[b.id] !== txt) { btn.textContent = txt; lastStr.bbtn[b.id] = txt; }
-      // B3 首次买得起：登记 + toast 一次建议（tooltip 从此刻起追加建议行）
+      // 首次买得起：只登记 first_afford_seen（tooltip 从此刻起会追加「建议」一行，玩家自己查）
+      // 2026-09-19 去掉这里的 toast —— 破境解锁已有交互向导，不再用消息条把同一件事讲一遍
       if (ok && !(s.first_afford_seen || {})[b.id]) {
         if (!s.first_afford_seen) s.first_afford_seen = {};
         s.first_afford_seen[b.id] = true;
-        const sug = (bal.help && bal.help.building_suggest) || {};
-        if (sug[b.id] && lv === 0) toast('【' + b.name + '】' + sug[b.id], 4600);
       }
       // 建筑主动技能：冷却倒计时与可用态
       const abBtn = card.querySelector('.b-ability');
@@ -1479,32 +1478,113 @@
     if (!g.LS.page || g.LS.page._registered) return;
     g.LS.page._registered = true;
 
+    // 见闻区下方的舆图微缩：**与地图页同一份画**（竖屏 scene / 宽屏 wide），
+    // 不再另画一张 —— 这样两边看上去就是同一幅，标记百分比也天然一致
+    function buildMini() {
+      const mm = document.getElementById('map-mini');
+      if (!mm || !g.MAPART) return;
+      let st = mm.querySelector('.map-stage');
+      if (!st) {
+        st = document.createElement('div');
+        st.className = 'map-stage';
+        while (mm.firstChild) st.appendChild(mm.firstChild);
+        mm.appendChild(st);
+      }
+      const W = mapIsWide();
+      st.dataset.mode = W ? 'wide' : 'tall';
+      st.insertAdjacentHTML('afterbegin', W
+        ? (g.MAPART.wide ? g.MAPART.wide() : '')
+        : (g.MAPART.scene ? g.MAPART.scene() : ''));
+    }
+    if (!window.__miniBound) {
+      window.__miniBound = true;
+      window.addEventListener('resize', () => {
+        try {
+          const st = document.querySelector('#map-mini .map-stage');
+          if (!st) return;
+          if ((st.dataset.mode === 'wide') !== mapIsWide()) {
+            const svg = st.querySelector('.map-svg');
+            if (svg) svg.remove();
+            const W = mapIsWide();
+            st.dataset.mode = W ? 'wide' : 'tall';
+            st.insertAdjacentHTML('afterbegin', W
+              ? (g.MAPART.wide ? g.MAPART.wide() : '')
+              : (g.MAPART.scene ? g.MAPART.scene() : ''));
+          }
+        } catch (e) {}
+      });
+    }
+    try { buildMini(); } catch (e) {}
+
+    /* 舆图画卷自适应：画面按 390:720（手机竖幅）或 1200:600（宽屏横卷）等比，
+       宽屏时不再出现"竖画塞进横屏"的压扁/留白 */
+    function fitMapStage() {
+      const c = document.querySelector('.map-canvas');
+      if (!c) return;
+      const st = c.querySelector('.map-stage');
+      if (!st) return;
+      const r = c.getBoundingClientRect();
+      const K = (st.dataset.mode === 'wide') ? (1200 / 600) : (390 / 720);
+      let w = r.width, h = w / K;
+      if (h > r.height) { h = r.height; w = h * K; }
+      st.style.width = Math.max(1, Math.floor(w)) + 'px';
+      st.style.height = Math.max(1, Math.floor(h)) + 'px';
+    }
+    function mapIsWide() { return (window.innerWidth || 0) >= 900; }
+    if (!window.__mapStageBound) {
+      window.__mapStageBound = true;
+      window.addEventListener('resize', () => {
+        try {
+          const st = document.querySelector('.map-canvas .map-stage');
+          if (!st) return;
+          // 跨过宽窄阈值就整页重画（换构图也换点位），否则只重量尺寸
+          if ((st.dataset.mode === 'wide') !== mapIsWide()) g.LS.page.refresh();
+          else fitMapStage();
+        } catch (e) {}
+      });
+    }
+
     g.LS.page.register('map', { title: '灵 山 舆 图', render: () => {
-      const spots = [
-        { id: 'dannfang', name: '丹 房', x: 30, y: 38, desc: '炼丹服丹 · 丹毒调理' },
-        { id: 'market', name: '市 场', x: 62, y: 60, desc: '灵石买卖 · 散修集市' },
-        { id: 'arena', name: '擂 台', x: 55, y: 30, desc: '论道切磋 · 以武会友' },
-        { id: 'locked1', name: '？', x: 74, y: 26, locked: true },
-        { id: 'locked2', name: '？', x: 18, y: 68, locked: true },
-        { id: 'locked3', name: '？', x: 52, y: 14, locked: true },
-        { id: 'locked4', name: '？', x: 84, y: 80, locked: true }
+      // 两套构图两套坐标，各自对得上自己画布里的地物；不变的是落点 ——
+      // 擂台在山巅平台、丹房在西侧山腰瀑溪旁、市场在山脚溪口与灵田之间，
+      // 四个待开化点分别落在云中、左岸/西麓、泽心礁洲、近景坡地。
+      const W = mapIsWide();
+      const spots = W ? [
+        { id: 'dannfang', name: '丹 房', x: 43.3, y: 64.2, desc: '炼丹服丹 · 丹毒调理' },
+        { id: 'market', name: '市 场', x: 55.4, y: 78.3, desc: '灵石买卖 · 散修集市' },
+        { id: 'arena', name: '擂 台', x: 47.2, y: 39.3, desc: '论道切磋 · 以武会友' },
+        { id: 'locked1', name: '？', x: 88.3, y: 25.0, locked: true },
+        { id: 'locked2', name: '？', x: 10.0, y: 70.0, locked: true },
+        { id: 'locked3', name: '？', x: 90.8, y: 90.0, locked: true },
+        { id: 'locked4', name: '？', x: 20.8, y: 83.3, locked: true }
+      ] : [
+        { id: 'dannfang', name: '丹 房', x: 30.8, y: 59.2, desc: '炼丹服丹 · 丹毒调理' },
+        { id: 'market', name: '市 场', x: 64.6, y: 67.5, desc: '灵石买卖 · 散修集市' },
+        { id: 'arena', name: '擂 台', x: 60.0, y: 49.0, desc: '论道切磋 · 以武会友' },
+        { id: 'locked1', name: '？', x: 80.0, y: 18.3, locked: true },
+        { id: 'locked2', name: '？', x: 13.8, y: 58.3, locked: true },
+        { id: 'locked3', name: '？', x: 81.5, y: 88.6, locked: true },
+        { id: 'locked4', name: '？', x: 33.3, y: 86.4, locked: true }
       ];
+      // 山水与地点剪影都来自 js/mapart.js；未加载时退化成空背景，地点仍可点
+      const drawScene = (W && g.MAPART && g.MAPART.wide) ? g.MAPART.wide
+                     : ((g.MAPART && g.MAPART.scene) ? g.MAPART.scene : null);
+      const art = drawScene ? drawScene() : '';
+      const glyph = (id) => ((g.MAPART && g.MAPART.glyph) ? g.MAPART.glyph(id) : '');
       const spotHtml = spots.map(s => s.locked
-        ? '<div class="map-spot locked" style="left:' + s.x + '%;top:' + s.y + '%"><div class="ms-icon">？</div><span>待开化</span></div>'
-        : '<button class="map-spot" data-spot="' + s.id + '" style="left:' + s.x + '%;top:' + s.y + '%"><div class="ms-icon">' + escapeHtml(s.name[0]) + '</div><span>' + escapeHtml(s.name) + '</span><i>' + escapeHtml(s.desc) + '</i></button>'
+        ? '<div class="map-spot locked" style="left:' + s.x + '%;top:' + s.y + '%"><div class="ms-icon">' + glyph('locked') + '</div><span>待开化</span></div>'
+        : '<button class="map-spot" data-spot="' + s.id + '" style="left:' + s.x + '%;top:' + s.y + '%"><div class="ms-icon">' + glyph(s.id) + '</div><span>' + escapeHtml(s.name) + '</span><i>' + escapeHtml(s.desc) + '</i></button>'
       ).join('');
-      return '<div class="map-canvas">' +
-        '<svg viewBox="0 0 390 620" preserveAspectRatio="xMidYMid slice" class="map-svg">' +
-          '<path d="M0,120 Q80,40 160,110 T390,90 L390,0 L0,0 Z" fill="rgba(70,92,110,.18)"/>' +
-          '<path d="M0,190 Q120,90 230,170 T390,150 L390,60 L0,60 Z" fill="rgba(70,92,110,.13)"/>' +
-          '<path d="M-10,610 Q90,470 200,560 T400,520 L400,640 L-10,640 Z" fill="rgba(60,82,100,.20)"/>' +
-          '<ellipse cx="120" cy="300" rx="90" ry="16" fill="rgba(255,255,255,.10)"/>' +
-          '<ellipse cx="300" cy="420" rx="110" ry="18" fill="rgba(255,255,255,.08)"/>' +
-          '<path d="M120,240 Q160,320 130,430" stroke="rgba(120,100,70,.4)" stroke-width="2" stroke-dasharray="6 5" fill="none"/>' +
-          '<path d="M130,430 Q220,470 244,540" stroke="rgba(120,100,70,.4)" stroke-width="2" stroke-dasharray="6 5" fill="none"/>' +
-        '</svg>' + spotHtml +
-        '<div class="map-note">─── 山径所至，皆是机缘 ───</div></div>';
-    }});
+      return '<div class="map-canvas"><div class="map-stage" data-mode="' + (W ? 'wide' : 'tall') + '">' +
+        art + spotHtml + '<div class="map-note">─── 山径所至，皆是机缘 ───</div></div></div>';
+    },
+    mount: () => {
+      // 刚建视图时还没布局（宽高为 0），所以下一帧与稍后各再量一次
+      const run = () => { try { fitMapStage(); } catch (e) {} };
+      run();
+      if (window.requestAnimationFrame) requestAnimationFrame(run);
+      setTimeout(run, 150);
+    } });
 
     g.LS.page.register('dannfang', { title: '丹 房', render: () => {
       // 与丹房弹窗同一套内容（服丹/丹毒条）
