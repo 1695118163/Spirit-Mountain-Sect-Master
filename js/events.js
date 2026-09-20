@@ -257,6 +257,11 @@
     const ev = s.event_state.queue.shift();
     s.event_state.open = ev;
     s.event_state.opened_at = Date.now();
+    // 离线结算单：走卷轴样式（收益明细 + 收取），不是普通事件弹窗
+    if (ev.kind === 'settle' && g.LS.ui && g.LS.ui.showOfflinePopup) {
+      g.LS.ui.showOfflinePopup(ev.payload);
+      return;
+    }
     if (g.LS.ui && g.LS.ui.showEventModal) g.LS.ui.showEventModal(ev);
   }
 
@@ -459,6 +464,120 @@
         { key: 'C', text: BAL().texts.event_leave, slot: null, daoxin: 0, effect: 'none' }
       ]
     };
+  }
+
+  /* ── 离线归来独立事件池（2026-09-19）────────────────────────────────────
+     data/offline_events.json 与日常奇遇池互不影响。离线越久抽得越多
+     （count_by_hours），同一次离线不重复；结算单本身也作为队列首条事件。 */
+  function offlinePoolCfg() {
+    return (g.LS.BAL && g.LS.BAL.offline_events) || null;
+  }
+
+  /** 离线时长 → 抽几条（取最后一个满足的档） */
+  function offlineEventCount(gapSec) {
+    const cfg = offlinePoolCfg();
+    if (!cfg) return 0;
+    const hours = gapSec / 3600;
+    let n = 0;
+    for (const pair of (cfg.count_by_hours || [])) if (hours >= pair[0]) n = pair[1];
+    return n;
+  }
+
+  function offlineCondOk(ev) {
+    const c = ev.cond;
+    if (!c || c === 'always') return true;
+    const s = S();
+    if (c === 'tag') {
+      const tags = s.tags || {};
+      return Object.keys(tags).some(k => tags[k] && !tags[k].recycled && tags[k].weight >= 1);
+    }
+    if (c === 'lingshoulan') return !!(g.LS.economy && g.LS.economy.bLevel('lingshoulan') >= 1);
+    if (c === 'hushanzhen') return !!(g.LS.economy && g.LS.economy.bLevel('hushanzhen') >= 1);
+    if (c === 'xinmo') return (s.xinmo || 0) > 30;
+    if (c === 'daoxin') return (s.dao_heart || 0) >= 0;   // 道心不亏的人家才有人来上香
+    return true;
+  }
+
+  /** 抽离线事件（加权、不重复、按条件过滤）→ finalEv 数组，结构与托梦一致 */
+  /** 离线时长 → 口语化时间词（文案里用 {away} 占位，按真实离线时长替换） */
+  function awayWord(gapSec) {
+    const cfg = offlinePoolCfg();
+    const table = (cfg && cfg.away_words) || [[2, '这一两个时辰'], [8, '这半日'], [26, '这一夜'], [192, '这几日'], [99999, '这大半月']];
+    const h = (gapSec || 0) / 3600;
+    for (let i = 0; i < table.length; i++) if (h < table[i][0]) return table[i][1];
+    return table[table.length - 1][1];
+  }
+
+  function rollOfflineEvents(gapSec) {
+    const cfg = offlinePoolCfg();
+    if (!cfg || !cfg.events || !cfg.events.length) return [];
+    // 一次离线只讲一件事（2026-09-19 定）：不再按时长抽多条，避免归来就被事件刷屏
+    const n = cfg.count != null ? cfg.count : offlineEventCount(gapSec);
+    if (!n) return [];
+    const pool = cfg.events.filter(offlineCondOk);
+    const rarity = cfg.default_rarity || '灵';
+    const picked = [];
+    for (let i = 0; i < n && pool.length; i++) {
+      const total = pool.reduce((a, e) => a + (e.weight == null ? 1 : e.weight), 0);
+      let r = Math.random() * total, hit = pool.length - 1;
+      for (let j = 0; j < pool.length; j++) {
+        r -= (pool[j].weight == null ? 1 : pool[j].weight);
+        if (r <= 0) { hit = j; break; }
+      }
+      const e = pool.splice(hit, 1)[0];          // 同一次离线不重复
+      const away = awayWord(gapSec);
+      // 正/负随机：同一件事（比如弟子来报）可能是好事也可能是坏事。
+      // 权重 = 数据里的基线（这件事本身的倾向） + 玩家状态浮动：
+      //   道心厚则好事多，心魔重则坏事多 —— 「你修成什么样，山门就遇什么样的事」
+      const st0 = S();
+      const dx01 = Math.max(0, Math.min(120, st0.dao_heart || 0)) / 120;
+      const xm01 = Math.max(0, Math.min(100, st0.xinmo || 0)) / 100;
+      const shift = (dx01 - xm01) * 3;
+      const pw = Math.max(0.5, (e.pos_weight == null ? 5 : e.pos_weight) + shift);
+      const nw = Math.max(0.5, (e.neg_weight == null ? 5 : e.neg_weight) - shift);
+      const isGood = Math.random() * (pw + nw) < pw;
+      // 每个方向都是一组文案（好事也有好几种说法），随机挑一条，来回多挂几次不会老看同一句
+      const pickSide = (v) => Array.isArray(v) ? (v.length ? v[Math.floor(Math.random() * v.length)] : null) : (v || null);
+      const side = pickSide(isGood ? e.pos : e.neg) || pickSide(isGood ? e.neg : e.pos) || {};
+      const desc = String(side.desc || e.desc || '').split('{away}').join(away);   // 「离山这几日」按真实离线时长落字
+      const sideFits = side.fits || (isGood ? ['A'] : ['F']);
+      const stageEv = { id: e.id, pool: 'OFFLINE', rarity: rarity, title: e.title, desc: desc, options: [{ fits: sideFits }], tags: [] };
+      const slots = rollSlots(stageEv);
+      picked.push({
+        id: 'offline:' + e.id,
+        source: 'offline',
+        rarity: rarity,
+        recycle: null,
+        after: null,
+        builtinTags: [],
+        title: e.title,
+        desc: desc,
+        no_choice: true,        // 离线事件不给选择：看到的就是已经发生的事
+        good: isGood,
+        options: [
+          { key: 'A', text: '知道了', slot: slots[0], daoxin: side.daoxin || 0, effect: side.effect || 'none' },
+          { key: 'C', text: BAL().texts.event_leave, slot: null, daoxin: 0, effect: 'none' }   // 只作倒计时兜底，不渲染
+        ]
+      });
+    }
+    return picked;
+  }
+
+  /** 离线归来：结算单排第一，后面跟独立池事件 + 访客 / 托梦，然后开始依次弹 */
+  function queueOfflineReturn(settleResult) {
+    if (!settleResult) return;
+    const s = S();
+    const q = s.event_state.queue;
+    q.push({
+      id: 'offline:settle', source: 'offline', kind: 'settle', payload: settleResult,
+      rarity: '灵', title: (BAL().texts || {}).offline_title || '山中无甲子', desc: '', options: []
+    });
+    rollOfflineEvents(settleResult.gap).forEach(e => q.push(e));
+    const visitor = maybeVisitor('offline');
+    if (visitor) q.push(visitor);
+    const dream = rollDream(settleResult.gap);
+    if (dream) q.push(dream);
+    pumpQueue(0);
   }
 
   /* ── 山志（编年手札）：大事自动记行，飞升/转生时凝成碑文 ── */
@@ -676,6 +795,7 @@
   }
 
   g.LS.events = {
+    rollOfflineEvents, queueOfflineReturn,
     drawEvent, chooseOption, maybeTriggerEvent, scheduleNext, pumpQueue, maybeContinueChain, maybeAmbush,
     maybeVisitor, rollDream, isPastLife, chronicle, carveStele,
     rollSlots, rollRarity, pickByRarity, materializeSlot,

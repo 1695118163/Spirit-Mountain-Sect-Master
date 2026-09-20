@@ -46,6 +46,10 @@
             const r8 = await fetch('./data/story.json');
             if (r8.ok) balance.story = (await r8.json());
           } catch (e) {}
+          try {
+            const r9 = await fetch('./data/offline_events.json');
+            if (r9.ok) balance.offline_events = (await r9.json());
+          } catch (e) {}
           return { balance, events, chains };
         }
       }
@@ -56,6 +60,7 @@
       if (r && r.ok && r.balance && Array.isArray(r.balance.buildings)) {
         r.balance.pills = r.pills || {};
         r.balance.help = r.help || {}; r.balance.cultivation = r.cultivation || {};
+        r.balance.offline_events = r.offline_events || {};
         return { balance: r.balance, events: r.events, chains: r.chains || [] };
       }
     } catch (e) {}
@@ -82,7 +87,8 @@
     // 离线结算（先结算再开循环，防重复结算）
     const off = g.LS.tick.settleOffline();
     g.LS.ui.renderAll();
-    if (off) g.LS.ui.showOfflinePopup(off);
+    // 离线归来 = 一串事件：结算单打头，后面跟独立池事件 + 故人 / 托梦（依次弹）
+    if (off) g.LS.events.queueOfflineReturn(off);
 
     // 主循环 + 自动存档 + LLM 状态探测
     g.LS.tick.startLoop();
@@ -106,11 +112,20 @@
     if (!g.LS.S.settings.difficulty && g.LS.S.stats.play_seconds < 5) {
       setTimeout(() => g.LS.ui.showDifficultyPick(), 800);
     }
-    // 版本更新公告：balance.update_notes 版本变化时弹一次，点叉关（seen_update 记已读）
+    // 版本更新公告：只给老玩家看。
+    //   新档（没存档 / 刚进游戏没玩过）→ 直接把当前版本记成已读，不拿公告糊新手；
+    //   老玩家版本变了且没读过 → 弹一次；点「知道了 / ✕」写 seen_update，之后不再弹；
+    //   下次更新改 balance.update_notes.version 才会再弹。
     try {
       const notes = g.LS.BAL.update_notes;
-      if (notes && notes.version && g.LS.S.seen_update !== notes.version && g.LS.ui.showUpdateNotes) {
-        setTimeout(() => g.LS.ui.showUpdateNotes(notes), 2600); // 让离线卷轴/首引先走
+      if (notes && notes.version) {
+        const played = (g.LS.S.stats && g.LS.S.stats.play_seconds) || 0;
+        if (!r.ok || played < 60) {
+          g.LS.S.seen_update = notes.version;
+          if (g.LS.save && g.LS.save.save) g.LS.save.save();
+        } else if (g.LS.S.seen_update !== notes.version && g.LS.ui.showUpdateNotes) {
+          setTimeout(() => g.LS.ui.showUpdateNotes(notes), 2600); // 让离线卷轴/首引先走
+        }
       }
     } catch (e) {}
   }

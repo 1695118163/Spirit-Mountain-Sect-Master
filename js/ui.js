@@ -799,6 +799,7 @@
       (pastLife ? '<div class="past-life-line">（前尘旧影，依稀是故人来。）</div>' : '') +
       '<div class="modal-desc">' + escapeHtml(ev.desc) + '</div>';
     for (const opt of ev.options) {
+      if (ev.no_choice && opt.key !== 'A') continue;   // 离线事件不给选择，只留一个「知道了」
       const btn = document.createElement('button');
       btn.className = 'ev-option' + (opt.key === 'C' ? ' ev-leave' : '');
       // 效果方向徽章（不给数值，只给方向感）
@@ -810,7 +811,7 @@
         if (opt.daoxin > 0) badge += '<span class="ev-badge ev-badge-good">仁</span>';
         else if (opt.daoxin < 0) badge += '<span class="ev-badge ev-badge-bad">贪</span>';
       }
-      const tail = opt.key === 'C' ? '' : '（' + (opt.key === 'A' ? '其一' : '其二') + '）';
+      const tail = (opt.key === 'C' || ev.no_choice) ? '' : '（' + (opt.key === 'A' ? '其一' : '其二') + '）';
       btn.innerHTML = badge + ' ' + escapeHtml(opt.text) + tail;
       btn.addEventListener('click', () => g.LS.events.chooseOption(opt.key));
       card.appendChild(btn);
@@ -843,6 +844,20 @@
     removeModals();
     const { mask, card } = makeModal();
     card.classList.add('offline-scroll');
+    // 兜底：结算单被外部清掉（玩家中途打开别的面板 → removeModals）时别把事件队列卡死。
+    // 正常「收取」路径先清 open 再 remove，这里判 open 已归零就不会重复放行。
+    try {
+      const mo = new MutationObserver(() => {
+        if (document.body.contains(mask)) return;
+        mo.disconnect();
+        const st = g.LS.S && g.LS.S.event_state;
+        if (st && st.open && st.open.kind === 'settle') {
+          st.open = null;
+          setTimeout(() => { if (g.LS.events && g.LS.events.pumpQueue) g.LS.events.pumpQueue(0); }, 400);
+        }
+      });
+      mo.observe(refs.modalRoot, { childList: true });
+    } catch (e) {}
     const resName = (id) => { const r = bal.resources.find(x => x.id === id); return r ? r.name : id; };
     let rows = '';
     const order = ['lingqi', 'xiufu', 'lingshi', 'danyao'];
@@ -871,12 +886,9 @@
         // 只移除离线卷轴自己的弹窗（保留玩家可能打开的其他面板，如斗法/设置）
         mask.remove();
         if (g.LS.save) g.LS.save.save();
-        // 离线归来：故人候在山门外 / 弟子梦中来报——塞入事件队列随后弹出
-        const visitor = g.LS.events.maybeVisitor('offline');
-        if (visitor) { g.LS.S.event_state.queue.push(visitor); g.LS.S.stats.events_total += 1; }
-        const dream = g.LS.events.rollDream(result.gap);
-        if (dream) { g.LS.S.event_state.queue.push(dream); g.LS.S.stats.events_total += 1; }
-        if (g.LS.S.event_state.queue.length) setTimeout(() => g.LS.events.pumpQueue(0), 700);
+        // 离线归来：结算单是队列首条（见 events.queueOfflineReturn），看完就放下一条
+        g.LS.S.event_state.open = null;
+        setTimeout(() => g.LS.events.pumpQueue(0), 520);
       }, 520);
     });
     card.appendChild(btn);
@@ -953,7 +965,11 @@
     hint.textContent = '点击任意处继续';
     ov.appendChild(hint);
     if (!ov.parentNode) document.body.appendChild(ov); // 时序：突破爆发炸亮瞬间才挂载
-    const close = () => { ov.remove(); renderAll(); };
+    const close = () => {
+      ov.remove();
+      renderAll();
+      drainBtToastQueue();   // 过场看完，把排队等着的提示依次放出来
+    };
     ov.addEventListener('click', close); // 用户要求：过场画面点一下才关，不自动消失（动画照常播完，看完再点）
   }
 
@@ -1710,10 +1726,7 @@
       card.querySelectorAll('[data-claim]').forEach(btn => btn.addEventListener('click', () => {
         const [c, i] = btn.dataset.claim.split('_').map(Number);
         const r = g.LS.quest.claim(c, i);
-        if (r) {
-          if (r.gainText) toast(r.gainText);
-          if (r.chapter && r.chapter.outro) toast('【' + r.chapter.name + '】' + r.chapter.outro, 5000);
-        }
+        if (r) queueQuestClaimToast(r);   // 合并成一条，防连点刷屏
         render();
         renderAll();
       }));
@@ -1722,6 +1735,29 @@
   }
 
   /* ── 传承面板：亲传弟子 / 投喂 / 代际 ── */
+  /* ── 主线领奖提示合并（2026-09-19）────────────────────────────────────────
+     主线 10 章 31 个任务，补领制下可以积压一堆可领；连点领奖原本每个任务弹一条
+     「灵石 +XXX」、每章再弹一条章末长文案，一次领完能刷出 40 条、糊满手机屏。
+     这里把短时间内的多次领奖汇总成一条，500ms 静默后一起弹。
+     章末剧情文案不再弹 toast —— 同一句本来就在主线面板的章末块里渲染（showQuest），
+     弹到屏幕上属于同句重复。 */
+  let questClaimBuf = null;
+  function queueQuestClaimToast(r) {
+    const buf = questClaimBuf || (questClaimBuf = { n: 0, lingshi: 0, timer: null });
+    buf.n += 1;
+    const gain = (r.task && r.task.reward && r.task.reward.lingshi) || 0;
+    buf.lingshi += gain;
+    if (buf.timer) clearTimeout(buf.timer);
+    buf.timer = setTimeout(flushQuestClaimToast, 500);
+  }
+  function flushQuestClaimToast() {
+    const buf = questClaimBuf;
+    questClaimBuf = null;
+    if (!buf) return;
+    const head = buf.n > 1 ? '主线领奖 ×' + buf.n : '主线领奖';
+    toast(head + (buf.lingshi > 0 ? ' · 灵石 +' + fmtSafe(buf.lingshi) : ''), 3000);
+  }
+
   function showDisciple() {
     removeModals();
     const { card } = makeModal(removeModals);
@@ -1826,6 +1862,55 @@
       card.querySelector('#tu-next').addEventListener('click', () => { i += 1; if (i >= steps.length) finish(); else render(); });
     };
     const finish = () => { try { localStorage.setItem('lingshan_tutorial_done', '1'); } catch (e) {} removeModals(); };
+    render();
+  }
+
+  /* ── 破境解锁向导（2026-09-19）─────────────────────────────────────────
+     破境之后逐屏交代这一层新开了什么：本层概述 → 每个新解锁的建筑 / 功能一屏，
+     底部「知道了」点一下进下一屏，最后一屏「明白了」收尾。
+     过场（点击才关）看完之后才弹，避免两张大图叠一起。 */
+  function showRealmUnlockGuide(realmIdx) {
+    const bal = g.LS.BAL;
+    const realm = bal.realms[realmIdx];
+    if (!realm) return;
+    if (document.querySelector('.modal-mask')) { setTimeout(() => showRealmUnlockGuide(realmIdx), 2500); return; }
+    const steps = [];
+    const guides = (bal.texts && bal.texts.guide_by_realm) || [];
+    steps.push({ t: '破 境 · ' + realm.name, d: guides[realmIdx] || (realm.name + '境已成，山中气象一新。'), icon: null });
+    for (const bid of (realm.unlock_buildings || [])) {
+      const b = (bal.buildings || []).find(x => x.id === bid);
+      if (!b) continue;
+      steps.push({ t: '新解锁 · ' + b.name, d: b.desc, icon: bid, eff: specialEffectText(b) });
+    }
+    const traits = realm.traits || [];
+    if (traits.indexOf('unlock_rebirth') !== -1) {
+      steps.push({ t: '新解锁 · 转生', d: '兵解转世：修为换传承点，买永久加成，下一世快得多。右栏「转生」可查看与开转。', icon: null });
+    }
+    if (traits.indexOf('ascension') !== -1) {
+      steps.push({ t: '新解锁 · 碑林', d: '本世山志将刻入碑林，隔世的故人与传承都跟着你走。', icon: null });
+    }
+    if (steps.length <= 1) return;   // 这一层没开新东西就别打扰
+    removeModals();
+    let i = 0;
+    const { card } = makeModal(null);
+    const render = () => {
+      const st = steps[i];
+      const last = i >= steps.length - 1;
+      card.innerHTML =
+        '<div class="modal-title">' + escapeHtml(st.t) +
+          '<span style="font-size:12px;color:var(--ink-soft);margin-left:8px">' + (i + 1) + ' / ' + steps.length + '</span></div>' +
+        '<div class="modal-desc">' +
+          (st.icon ? '<svg class="b-icon" style="width:30px;height:30px;vertical-align:-6px;margin-right:8px;opacity:.9"><use href="#ic-' + st.icon + '"/></svg>' : '') +
+          escapeHtml(st.d) + '</div>' +
+        (st.eff && st.eff !== st.d ? '<div class="modal-desc" style="font-size:12px;color:var(--ink-soft)">效果：' + escapeHtml(st.eff) + '</div>' : '') +
+        '<div style="text-align:center;margin-top:10px"><button class="btn-primary" id="ug-ok" style="padding:7px 26px">' +
+          (last ? '明 白 了' : '知 道 了') + '</button></div>';
+      card.querySelector('#ug-ok').addEventListener('click', () => {
+        if (last) { removeModals(); return; }
+        i += 1;
+        render();
+      });
+    };
     render();
   }
 
@@ -2660,7 +2745,29 @@
   }
 
   /* ── toast 与数字补间 ── */
+  /* 突破过场期间的提示排队（2026-09-19）：过场是「点击任意处继续」的整屏大动画，
+     期间冒出来的提示（境界引导 / 飞升 / 转生 / 概念提示）原本直接叠在画面上。
+     改成静默入队，玩家点掉过场后按 1.2 秒间隔依次播，最多留 3 条。
+     判定走 DOM 存在性，过场一被移除就自动恢复，不需要额外状态位。 */
+  const btToastQueue = [];
+  function btOverlayShowing() { return !!document.getElementById('breakthrough-overlay'); }
+  function drainBtToastQueue() {
+    if (!btToastQueue.length) return;
+    const it = btToastQueue.shift();
+    toast(it.msg, it.dur);
+    if (btToastQueue.length) setTimeout(drainBtToastQueue, 1200);
+  }
+
+  /* 同屏提示条上限（2026-09-19，桌面/移动统一）：任何来源刷屏都顶掉最旧的，
+     防“主线连领 / 批量买建筑”这类瞬时多提示把屏幕铺满、压住境界名。 */
+  const TOAST_MAX = 3;
   function toast(msg, dur) {
+    // 突破过场期间：先入队，等过场关掉再依次播
+    if (btOverlayShowing()) {
+      btToastQueue.push({ msg: msg, dur: dur });
+      while (btToastQueue.length > 3) btToastQueue.shift();
+      return;
+    }
     // 顶栏换行变高时动态下移提示条，保证永不遮挡资源栏
     if (refs.topbar && refs.toastRoot) {
       refs.toastRoot.style.top = (refs.topbar.offsetHeight + 18) + 'px';
@@ -2669,6 +2776,9 @@
     el.className = 'toast';
     el.textContent = msg;
     refs.toastRoot.appendChild(el);
+    while (refs.toastRoot.childElementCount > TOAST_MAX) {
+      refs.toastRoot.removeChild(refs.toastRoot.firstElementChild);
+    }
     setTimeout(() => el.remove(), dur || 2600);
   }
 
@@ -2744,6 +2854,7 @@
     initRefs, renderAll, renderResources, renderBuildings, renderCenter,
     renderChronicle, renderPermList, pushLog, markNewBuildings, isModalOpen, hintOnce,
     showEventModal, closeEventModal, showOfflinePopup, showBreakthroughOverlay, showFailOverlay,
+    showRealmUnlockGuide,
     showSettings, showRebirthPanel, showTutorial, showPillHouse, showHelpPanel, showMarket, showFriends, showDeckEditor, showSeniorPick, showCodexPage, showUpdateNotes, playEmperorTribulation, showTrial, showXinmo, showAmbushModal, showQuest, showDisciple, showGenerationChoice, showTutorialSteps,
     showBattleArena, showBattleGuide, updateBattleHP, updateBattleShields, updateBattleQi, renderBattleHands, showBattleIntent,
     showBattleScreen, battleLog, battleAppend, showBattleResult,

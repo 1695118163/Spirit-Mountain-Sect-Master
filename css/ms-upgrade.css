@@ -502,7 +502,7 @@ html.night #map-mini span.locked{border-color:rgba(232,220,200,.3)}
 
 /* ── 弹窗层级：视图路由（900）之上，战斗/面板弹窗在任何页面都可见 ── */
 .modal-mask{z-index:1200 !important}
-#toast-root{z-index:1500 !important}
+#toast-root{z-index:1180 !important}   /* 弹窗（.modal-mask 1200）在上：toast 不该压住向导/公告 */
 
 /* ============================================================================
    突破爆发特效（v0.21.2）——把「整屏闪一下」换成「从吐纳钮向外扩散的一次爆发」

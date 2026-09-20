@@ -294,10 +294,14 @@
     s.stats.breakthroughs += 1;
     // 心魔被压下的余韵
     if (xinmoHit && g.LS.ui && g.LS.ui.toast) g.LS.ui.toast('心魔在气海翻腾——你咬牙把它压了下去，有惊无险。');
-    // 境界引导：每破一层讲一次这一层能干嘛（不熟悉修仙的玩家也能跟上）
-    const guides = bal.texts && bal.texts.guide_by_realm;
-    if (guides && guides[next.index] && g.LS.ui && g.LS.ui.toast) {
-      setTimeout(((t) => () => g.LS.ui.toast('【' + next.name + '】' + t, 5200))(guides[next.index]), 1600);
+    // 境界引导：破境后逐屏交代这层新开了什么。过场是「点击才关」的，
+    // 所以先轮询等它关掉，再弹向导（别让两张大图叠一起）。
+    if (g.LS.ui && g.LS.ui.showRealmUnlockGuide) {
+      const waitOverlay = () => {
+        if (document.getElementById('breakthrough-overlay')) { setTimeout(waitOverlay, 400); return; }
+        g.LS.ui.showRealmUnlockGuide(next.index);
+      };
+      setTimeout(waitOverlay, 1200);
     }
     // 新解锁建筑标记（卡片"新"角标置顶 30 秒）
     if (g.LS.ui && g.LS.ui.markNewBuildings) g.LS.ui.markNewBuildings(next.unlock_buildings || []);
@@ -311,14 +315,7 @@
       const gain2 = Math.floor(next.reward_lingshi * rewardMult);
       g.LS.ui.pushLog({ title: '破境 · ' + next.name, choice: '境界精进', gainText: gain2 ? '灵石 +' + g.LS.util.fmt(gain2) : '' });
     }
-    // 飞升结算：强烈引导转生（不强制）
-    if ((next.traits || []).indexOf('ascension') !== -1 && g.LS.ui && g.LS.ui.toast) {
-      g.LS.ui.toast('你已飞升。兵解转世，来世可携传承重修。');
-    }
-    // 化神解锁转生提示
-    if ((next.traits || []).indexOf('unlock_rebirth') !== -1 && g.LS.ui && g.LS.ui.toast) {
-      g.LS.ui.toast(bal.texts.rebirth_first_hint);
-    }
+    // 飞升 / 化神解锁转生的说明已并入破境向导（见 showRealmUnlockGuide），此处不再重复弹
     if (g.LS.save && g.LS.save.save) g.LS.save.save();
     return true;
   }
@@ -410,6 +407,7 @@
     fresh.tags = keepTags;
     fresh.dao_heart = keepDao;
     fresh.settings = keepSettings;
+    fresh.seen_update = s.seen_update || '';   // 更新公告已读跨转生保留，否则每次转生都再弹一遍
     fresh.collection = s.collection || {};   // 图鉴跨转生保留
     fresh.chain_seen = s.chain_seen || {};
     fresh.prestige.lifetime_best_realm = 0;
