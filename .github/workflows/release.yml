@@ -1,0 +1,46 @@
+name: Build tagged release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: write
+
+jobs:
+  package:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout tagged source
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Verify tag belongs to main
+        shell: bash
+        run: |
+          git fetch origin main
+          git merge-base --is-ancestor "$GITHUB_SHA" origin/main
+
+      - name: Stamp game version from tag
+        run: node tools/sync-version.js "${GITHUB_REF_NAME}"
+
+      - name: Build offline release archive
+        shell: bash
+        run: |
+          archive="Spirit-Mountain-Sect-Master-${GITHUB_REF_NAME}.zip"
+          zip -r "$archive" . \
+            -x '.git/*' '.github/*' 'config.json' 'data/feedback.jsonl' '*.zip'
+          echo "ARCHIVE=$archive" >> "$GITHUB_ENV"
+
+      - name: Create or update GitHub release
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          if gh release view "$GITHUB_REF_NAME" >/dev/null 2>&1; then
+            gh release upload "$GITHUB_REF_NAME" "$ARCHIVE" --clobber
+          else
+            gh release create "$GITHUB_REF_NAME" "$ARCHIVE" --generate-notes --title "$GITHUB_REF_NAME"
+          fi

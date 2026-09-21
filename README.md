@@ -37,6 +37,13 @@
 
 存档保存在浏览器 localStorage，支持游戏内一键导出/导入文本迁移。
 
+### 版本发布
+
+- 游戏版本只取 `main` 分支可达的最高 `v主版本.次版本.修订号` Tag；开发分支不单独生成版本号。
+- 推送新 Tag 后，GitHub Actions 会自动写入版本号并生成 `Spirit-Mountain-Sect-Master-vX.Y.Z.zip` 正式发布包。
+- 正式下载请使用 Release 附件中的上述 ZIP。GitHub 自动附带的 `Source code` 压缩包不会执行版本写入流程。
+- 本地需要手动同步时运行 `node tools/sync-version.js`，脚本同样只读取 `main` 的最新 Tag。
+
 ## 截图
 
 | | |
