@@ -58,6 +58,9 @@
     for (const [base, unit] of units) if (n >= base) return sign + (n / base).toFixed(2) + unit;
     return sign + n.toFixed(2);
   }
+  function fmtResourceById(res, v) {
+    return (res === 'danyao' || res === 'xinmo' || res === 'toxic') ? String(Math.floor(v || 0)) : fmtResource(v);
+  }
   // 丹毒提示：与 economy 的产量折损同口径（每 10 点 -3%，上限 -30%）
   function toxicHint(v) {
     const pct = Math.min(30, Math.floor((v || 0) / 10) * 3);
@@ -409,7 +412,7 @@
       const v = res === 'xinmo' ? (s.xinmo || 0)
         : res === 'toxic' ? Math.floor(s.pill_toxic || 0)
         : (res === 'danyao' && eco.pillTotal ? eco.pillTotal() : (s.resources[res] || 0));
-      const str = (res === 'xinmo' || res === 'toxic') ? String(Math.floor(v)) : fmtResource(v);
+      const str = fmtResourceById(res, v);
       if (lastStr['v_' + res] !== str) {
         if (lastStr['v_' + res] !== undefined) {
           r.val.classList.add('tick-flash');
@@ -426,6 +429,19 @@
         : (rate > 0 ? fmtResource(rate) + '/秒' : '');
       if (lastStr['r_' + res] !== rStr) { r.rate.textContent = rStr; lastStr['r_' + res] = rStr; }
     }
+    document.querySelectorAll('[data-live-resource]').forEach(el => {
+      const res = el.dataset.liveResource;
+      let value;
+      if (res === 'danyao') value = eco.pillTotal ? eco.pillTotal() : (s.resources.danyao || 0);
+      else if (res === 'toxic') value = s.pill_toxic || 0;
+      else if (res === 'xinmo') value = s.xinmo || 0;
+      else value = s.resources[res] || 0;
+      const text = fmtResourceById(res, value);
+      if (el.textContent !== text) el.textContent = text;
+    });
+    document.querySelectorAll('[data-market-cost]').forEach(btn => {
+      btn.disabled = (s.resources.lingshi || 0) < Number(btn.dataset.marketCost || 0);
+    });
     renderEquipmentSummary();
     checkHints(); // 概念即遇即讲
     updateBuffBar();
@@ -1751,13 +1767,13 @@
     }});
     g.LS.page.register('market', { title: '市 场', render: () => {
       const d = g.LS.market.renderData();
-      let html = '<div class="modal-desc">散修集市——价格随你的产业水涨船高，不会白送也不会天价。灵石 <b>' + g.LS.util.fmt(g.LS.S.resources.lingshi) + '</b></div>';
+      let html = '<div class="modal-desc">散修集市——价格随你的产业水涨船高，不会白送也不会天价。灵石 <b data-live-resource="lingshi">' + fmtResourceById('lingshi', g.LS.S.resources.lingshi) + '</b></div>';
       html += '<h3 class="panel-title" style="font-size:14px">购 买</h3>';
       html += d.items.map(it =>
         '<div class="rebirth-item"><div><b>' + escapeHtml(it.name) + '</b>' +
         (it.note ? '<span class="ev-badge ev-badge-buff">' + escapeHtml(it.note) + '</span>' : '') +
         '<div style="font-size:11px;color:var(--ink-soft)">' + escapeHtml(it.desc) + '</div></div>' +
-        '<button class="icon-btn" data-mbuy="' + it.id + '" ' + (g.LS.S.resources.lingshi >= it.price ? '' : 'disabled') + '>' + g.LS.util.fmt(it.price) + ' 灵石</button></div>').join('');
+        '<button class="icon-btn" data-mbuy="' + it.id + '" data-market-cost="' + it.price + '" ' + (g.LS.S.resources.lingshi >= it.price ? '' : 'disabled') + '>' + g.LS.util.fmt(it.price) + ' 灵石</button></div>').join('');
       html += '<h3 class="panel-title" style="font-size:14px;margin-top:12px">卖 出</h3>';
       html += d.sellable.length ? d.sellable.map(p =>
         '<div class="rebirth-item"><div style="font-size:12.5px">' + escapeHtml(p.name) + '</div>' +
@@ -2360,9 +2376,12 @@
           const used = r.id === 'huanhunjia' && !!own.huanhunjia_used;
           const has = !!own[r.id] && !broken;
           let act;
-          if (broken) act = '<button class="icon-btn" data-reforge="' + r.id + '">重铸 ' + g.LS.util.fmt(r.reforge_price || Math.round(r.price / 2)) + ' 灵石</button>';
+          if (broken) {
+            const fee = r.reforge_price || Math.round(r.price / 2);
+            act = '<button class="icon-btn" data-reforge="' + r.id + '" data-market-cost="' + fee + '" ' + (s.resources.lingshi >= fee ? '' : 'disabled') + '>重铸 ' + g.LS.util.fmt(fee) + ' 灵石</button>';
+          }
           else if (has) act = '<span class="stamp">随 身</span>' + (used ? '<div style="font-size:10px;color:var(--ink-soft)">本世已触发</div>' : '');
-          else act = '<button class="icon-btn" data-buyrelic="' + r.id + '" ' + (s.resources.lingshi >= r.price ? '' : 'disabled') + '>' + g.LS.util.fmt(r.price) + ' 灵石</button>';
+          else act = '<button class="icon-btn" data-buyrelic="' + r.id + '" data-market-cost="' + r.price + '" ' + (s.resources.lingshi >= r.price ? '' : 'disabled') + '>' + g.LS.util.fmt(r.price) + ' 灵石</button>';
           rows += '<div class="rebirth-item"><div><b>' + escapeHtml(r.name) + '</b>' +
             '<span class="ev-badge ev-badge-chain">保命</span>' +
             '<div style="font-size:11px;color:var(--ink-soft)">' + escapeHtml(r.desc) + '</div></div>' +
@@ -2380,7 +2399,7 @@
             '<div style="font-size:11px;color:var(--ink-soft)">' + escapeHtml(c.desc) + '（' + c.cost + ' 行动点' +
             (c.dmg ? ' 杀' : '') + (c.shield ? ' 护' + c.shield : '') + (c.heal ? ' 回' + c.heal : '') + (c.dmg ? ' ' + c.dmg : '') + '）</div></div>' +
             '<div>' + (has ? '<span class="stamp">已 参 悟</span>'
-              : '<button class="icon-btn" data-buycard="' + c.id + '" ' + (canBuy ? '' : 'disabled') + '>' + g.LS.util.fmt(c.price) + ' 灵石</button>') + '</div></div>';
+              : '<button class="icon-btn" data-buycard="' + c.id + '" data-market-cost="' + (c.price || 0) + '" ' + (canBuy ? '' : 'disabled') + '>' + g.LS.util.fmt(c.price) + ' 灵石</button>') + '</div></div>';
         }
         rows += '<div class="modal-desc" style="font-size:11px;color:var(--ink-soft)">秘传牌参悟后自动进抽牌池：斗法每回合从「已参悟的招 + 基础牌」里按行动点摸牌，不用手动编入。</div>';
       } else {
@@ -2398,12 +2417,12 @@
             (it.sharp ? '<br>锋锐 ' + it.sharp : '') + '</div></div>' +
             '<div>' + (owned
               ? (equippedNow ? '<span class="stamp">装 备 中</span>' : '<button class="icon-btn" data-equip="' + it.id + '" data-kind="' + tabName + '">装备</button>')
-              : '<button class="icon-btn" data-buy="' + it.id + '" data-kind="' + tabName + '" ' + (canBuy ? '' : 'disabled') + '>' + g.LS.util.fmt(it.price) + ' 灵石</button>') + '</div></div>';
+              : '<button class="icon-btn" data-buy="' + it.id + '" data-kind="' + tabName + '" data-market-cost="' + (it.price || 0) + '" ' + (canBuy ? '' : 'disabled') + '>' + g.LS.util.fmt(it.price) + ' 灵石</button>') + '</div></div>';
         }
       }
       card.innerHTML =
         '<div class="modal-title">坊 市<button class="icon-btn" id="mk-close" style="float:right;font-size:12px;padding:3px 12px">离 开</button></div>' +
-        '<div class="modal-desc">灵石 <b>' + g.LS.util.fmt(s.resources.lingshi) + '</b>　·　斗法用的兵器、功法与秘传牌在此置办——五行相克，未必越贵越好。</div>' +
+        '<div class="modal-desc">灵石 <b data-live-resource="lingshi">' + fmtResourceById('lingshi', s.resources.lingshi) + '</b>　·　斗法用的兵器、功法与秘传牌在此置办——五行相克，未必越贵越好。</div>' +
         '<div class="set-row" style="justify-content:center">' +
         '<button class="icon-btn" data-tab="weapon" style="' + (tabName === 'weapon' ? 'border-color:var(--cinnabar);color:var(--cinnabar)' : '') + '">兵 器</button>' +
         '<button class="icon-btn" data-tab="tech" style="' + (tabName === 'tech' ? 'border-color:var(--cinnabar);color:var(--cinnabar)' : '') + '">功 法</button>' +

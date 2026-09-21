@@ -644,7 +644,7 @@ html.night body #version-mark { opacity: .3; }
 
 @media (min-width: 1101px) {
   #topbar { flex-wrap:nowrap; gap:10px; padding:7px 10px; }
-  #res-bar { flex:1 1 auto; flex-wrap:nowrap; gap:clamp(6px,.65vw,11px); overflow:hidden; }
+  #res-bar { flex:1 1 auto; flex-wrap:nowrap; gap:clamp(6px,.65vw,11px); overflow:visible; }
   #res-bar .res-row { flex:0 0 auto; min-width:0; gap:3px; overflow:visible; white-space:nowrap; }
   #res-bar .res-name { flex:0 0 auto; }
   #res-bar .res-val { flex:0 0 auto; min-width:0; overflow:visible; white-space:nowrap; font-size:17px; font-variant-numeric:tabular-nums; }
