@@ -18,27 +18,49 @@
     return g.LS.util.weightedPick(pool, t => S().path === 'xie' && t.polarity < 0 ? (CFG().negative_weight_xie || 2) : 1);
   }
 
-  function makeCandidate() {
+  function makeCandidate(profile) {
+    profile = typeof profile === 'string' ? { source: profile } : (profile || {});
     const traits = [], count = g.LS.util.randInt(2, 4);
     while (traits.length < count) {
-      const def = weightedTrait(traits.map(t => t.key));
+      const excluded = traits.map(t => t.key);
+      const pool = (DATA().traits || []).filter(def => excluded.indexOf(def.key) === -1);
+      const preferred = profile.traits || [];
+      const def = g.LS.util.weightedPick(pool, item => {
+        const base = preferred.indexOf(item.key) !== -1 ? 2.2 : 1;
+        return S().path === 'xie' && item.polarity < 0 ? base * (CFG().negative_weight_xie || 2) : base;
+      });
       if (!def) break;
       traits.push({ key: def.key, revealed: false });
     }
-    const skillPool = (DATA().skills || []).filter(sk => !sk.path || sk.path === S().path);
-    const skills = [], skillCount = g.LS.util.randInt(1, Math.min(3, skillPool.length));
+    const skillPool = (DATA().skills || []).filter(sk => S().path === 'xie' ? sk.path === 'xie' : !sk.path);
+    const skills = [], skillMin = Math.max(1, profile.skill_min || 1);
+    const skillCount = g.LS.util.randInt(skillMin, Math.min(3, skillPool.length));
     while (skills.length < skillCount) {
-      const def = skillPool[g.LS.util.randInt(0, skillPool.length - 1)];
+      const def = g.LS.util.weightedPick(skillPool.filter(item => !skills.some(skill => skill.id === item.id)), item => {
+        const matched = (item.affinity || []).some(key => traits.some(trait => trait.key === key));
+        const preferred = (profile.skills || []).indexOf(item.id) !== -1;
+        return (matched ? 4 : 1) * (preferred ? 1.5 : 1);
+      });
       if (def && !skills.some(sk => sk.id === def.id)) skills.push({ id: def.id, revealed: false, used_in_battle: false });
     }
+    const rootRank = { '伪': 0, '真': 1, '异': 2, '天': 3 };
+    let root = g.LS.state.rollSpiritRoot();
+    for (let i = 1; i < (profile.root_rolls || 1); i++) {
+      const rolled = g.LS.state.rollSpiritRoot();
+      if ((rootRank[rolled.key] || 0) > (rootRank[root.key] || 0)) root = rolled;
+    }
+    if (profile.reveal_trait && traits[0]) traits[0].revealed = true;
+    const revealSkills = Math.min(skills.length, profile.reveal_skills || 0);
+    for (let i = 0; i < revealSkills; i++) skills[i].revealed = true;
     const hintTrait = traitDef(traits[0] && traits[0].key);
     const names = DATA().names || [];
     return {
       id: g.LS.util.uid(),
       name: names.length ? names[g.LS.util.randInt(0, names.length - 1)] : '无名弟子',
-      root: g.LS.state.rollSpiritRoot(), stage: 0, progress: 0, traits, skills,
+      root, stage: 0, progress: profile.progress || 0, traits, skills,
       suspicion: 0, mood: 'normal', events_log: [], betray_warned: false,
       status: 'active', fed: 0, agent: false, realm: 0,
+      battle_selected: false, battle_skill_id: null, source: profile.source || '山门来投',
       hidden_hint: hintTrait ? hintTrait.hidden_hint : '沉默地候在山门外。'
     };
   }
@@ -50,7 +72,10 @@
     const picked = (candidates || []).slice(0, room);
     for (const candidate of picked) {
       delete candidate.hidden_hint;
+      if (typeof candidate.battle_selected !== 'boolean') candidate.battle_selected = false;
+      if (candidate.battle_skill_id === undefined) candidate.battle_skill_id = null;
       s.disciples.push(candidate);
+      revealToStage(candidate, candidate.stage || 0);
     }
     syncLegacy();
     s.disciple_recruit_at = Date.now() + (((CFG().recruit || {}).interval_s || 900) * 1000);
@@ -65,6 +90,104 @@
       progress: first.progress || 0, realm: first.realm || 0,
       agent: !!first.agent, fed: first.fed || 0, id: first.id
     } : null;
+  }
+
+  function normalizeBattleParty() {
+    const list = active();
+    const max = ((CFG().battle_slots || {}).max || 3);
+    if (list.length && !list.some(d => typeof d.battle_selected === 'boolean')) {
+      list.forEach((d, index) => { d.battle_selected = index < max; });
+    }
+    let used = 0;
+    for (const disciple of list) {
+      if (disciple.battle_selected && used++ >= max) disciple.battle_selected = false;
+      const revealed = (disciple.skills || []).filter(skill => skill.revealed);
+      if (!revealed.some(skill => skill.id === disciple.battle_skill_id)) {
+        disciple.battle_skill_id = revealed.length ? revealed[0].id : null;
+      }
+    }
+    return list.filter(d => d.battle_selected).slice(0, max);
+  }
+
+  function battleParty() { return normalizeBattleParty(); }
+
+  function configureBattle(id, selected, skillId) {
+    const disciple = byId(id);
+    if (!disciple) return { ok: false, msg: '弟子不在门中。' };
+    if (skillId != null) {
+      const skill = (disciple.skills || []).find(item => item.id === skillId && item.revealed);
+      if (!skill) return { ok: false, msg: '这门术法尚未领悟。' };
+      disciple.battle_skill_id = skillId;
+    }
+    if (selected != null) {
+      const others = active().filter(d => d.id !== id && d.battle_selected).length;
+      if (selected && others >= (((CFG().battle_slots || {}).max) || 3)) return { ok: false, msg: '出战弟子最多三人。' };
+      disciple.battle_selected = !!selected;
+    }
+    if (g.LS.save && g.LS.save.save) g.LS.save.save();
+    return { ok: true, msg: disciple.battle_selected ? disciple.name + '已列入出战阵容。' : disciple.name + '已退出出战阵容。' };
+  }
+
+  function profileForSource(source, exams) {
+    if (source === 'village') return { source: '村镇寻访', traits: ['zhonghou', 'shanliang', 'qinmian'], reveal_trait: true };
+    if (source === 'market') return { source: '坊市访贤', traits: ['conghui', 'tanlan'], skill_min: 2, reveal_trait: true };
+    if (source === 'secret') return { source: '秘境相逢', traits: ['yinren', 'aoman'], root_rolls: 3, skill_min: 2, reveal_skills: 1 };
+    if (source === 'event_orphan') return { source: '奇遇收徒', traits: ['shanliang', 'zhonghou'], reveal_trait: true };
+    if (source === 'event_rogue') return { source: '点化散修', traits: ['conghui', 'yinren'], root_rolls: 2, skill_min: 2, reveal_skills: 1 };
+    if (source === 'event_dark') return { source: '收服邪修', traits: ['shisha', 'yinhen'], skill_min: 2, reveal_trait: true, reveal_skills: 1 };
+    const picked = exams || [];
+    const profile = { source: '宗门试炼', traits: [], reveal_trait: false, root_rolls: 1, skill_min: 1, progress: 0 };
+    if (picked.indexOf('heart') !== -1) { profile.traits.push('zhonghou', 'shanliang'); profile.reveal_trait = true; }
+    if (picked.indexOf('root') !== -1) profile.root_rolls = 4;
+    if (picked.indexOf('battle') !== -1) { profile.skill_min = 3; profile.reveal_skills = 1; }
+    if (picked.indexOf('endure') !== -1) { profile.traits.push('qinmian', 'yinren'); profile.progress = 12; }
+    return profile;
+  }
+
+  function seekCandidates(location) {
+    const s = S(), max = CFG().max_slots || 20;
+    if (active().length >= max) return { ok: false, msg: '门下已满二十人。' };
+    s.disciple_seek_ready_day = s.disciple_seek_ready_day || {};
+    const ready = s.disciple_seek_ready_day[location] || 0;
+    if ((s.game_days || 0) < ready) return { ok: false, msg: '此地人缘未复，还需 ' + Math.ceil(ready - (s.game_days || 0)) + ' 日。' };
+    s.game_days = (s.game_days || 0) + 30;
+    s.disciple_seek_ready_day[location] = s.game_days + 90;
+    const candidates = [];
+    for (let i = 0; i < 3; i++) candidates.push(makeCandidate(profileForSource(location)));
+    if (g.LS.save && g.LS.save.save) g.LS.save.save();
+    return { ok: true, candidates, days: 30 };
+  }
+
+  function referralCandidate(id) {
+    const disciple = byId(id), day = S().game_days || 0;
+    if (!disciple || disciple.stage < 2) return { ok: false, msg: '亲传弟子方可举荐同道。' };
+    if (day < (disciple.referral_ready_day || 0)) return { ok: false, msg: '还需 ' + Math.ceil(disciple.referral_ready_day - day) + ' 日才有新的举荐。' };
+    disciple.referral_ready_day = day + 180;
+    const traits = (disciple.traits || []).filter(t => t.revealed).map(t => t.key);
+    const inheritedSkills = (disciple.skills || []).filter(skill => skill.revealed).map(skill => skill.id);
+    const candidate = makeCandidate({ source: disciple.name + '举荐', traits, skills: inheritedSkills, skill_min: 2, reveal_trait: true });
+    if (g.LS.save && g.LS.save.save) g.LS.save.save();
+    return { ok: true, candidates: [candidate], referrer: disciple.name };
+  }
+
+  function trialCandidates(exams) {
+    const picked = Array.from(new Set(exams || []));
+    if (picked.length !== 2) return { ok: false, msg: '须选定两项考核。' };
+    if (active().length >= (CFG().max_slots || 20)) return { ok: false, msg: '门下已满二十人。' };
+    const cost = 3000 + active().length * 250;
+    if ((S().resources.lingshi || 0) < cost) return { ok: false, msg: '举办试炼需灵石 ' + cost + '。' };
+    S().resources.lingshi -= cost;
+    const profile = profileForSource('trial', picked), candidates = [];
+    for (let i = 0; i < 5; i++) candidates.push(makeCandidate(profile));
+    if (g.LS.save && g.LS.save.save) g.LS.save.save();
+    return { ok: true, candidates, cost };
+  }
+
+  function recruitFromEvent(source) {
+    if (active().length >= (CFG().max_slots || 20)) return { ok: false, msg: '门下已满二十人。' };
+    const candidate = makeCandidate(profileForSource(source));
+    recruit([candidate]);
+    return { ok: true, disciple: candidate, msg: candidate.name + '已拜入山门。' };
   }
 
   function scheduleRecruit(now) {
@@ -182,6 +305,12 @@
   }
 
   function applyEvent(eventId, effect, optionKey, requires) {
+    if (!effect) return false;
+    if (effect.recruit && (!effect.recruit_on || effect.recruit_on.indexOf(optionKey) !== -1)) {
+      const joined = recruitFromEvent(effect.recruit);
+      if (g.LS.ui && g.LS.ui.toast) g.LS.ui.toast(joined.msg);
+      return joined.ok;
+    }
     const candidates = active().filter(disciple => {
       if (requires && requires.trait && !(disciple.traits || []).some(t => t.key === requires.trait)) return false;
       if (requires && requires.suspicion_min != null && (disciple.suspicion || 0) < requires.suspicion_min) return false;
@@ -189,7 +318,7 @@
       return true;
     });
     const disciple = candidates[0] || active()[0];
-    if (!disciple || !effect) return false;
+    if (!disciple) return false;
     if (effect.drift) driftTrait(disciple, effect.drift[0], effect.drift[1], eventId);
     if (effect.suspicion) addSuspicion(disciple.id, effect.suspicion, eventId);
     if (effect.reveal_trait) revealOneTrait(disciple, false);
@@ -246,6 +375,7 @@
   g.LS.disciples = {
     active, byId, traitDef, skillDef, makeCandidate, recruit, scheduleRecruit, tick, syncLegacy,
     revealOneTrait, revealOneSkill, revealAfterBattle, askHeart, addSuspicion, driftTrait, applyEvent,
-    expel, transmitMagic, feed, betrayScore
+    expel, transmitMagic, feed, betrayScore, battleParty, configureBattle, seekCandidates,
+    referralCandidate, trialCandidates, recruitFromEvent
   };
 })(typeof window !== 'undefined' ? window : globalThis);

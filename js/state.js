@@ -61,6 +61,7 @@
       disciple: null,
       disciples: [],
       disciple_recruit_at: 0,
+      disciple_seek_ready_day: {},
       disciple_revenge: [],
       generation: 0,
       heirloom: null,

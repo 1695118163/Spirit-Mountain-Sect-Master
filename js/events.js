@@ -36,6 +36,7 @@
     if (req.not_flag && s.flags && s.flags[req.not_flag]) return false;
     const active = (s.disciples || []).filter(d => d.status === 'active');
     if (req.active_disciple && !active.length) return false;
+    if (req.disciple_room && active.length >= (((BAL().disciple || {}).max_slots) || 20)) return false;
     if (req.trait && !active.some(d => (d.traits || []).some(t => t.key === req.trait))) return false;
     if (req.suspicion_min != null && !active.some(d => (d.suspicion || 0) >= req.suspicion_min)) return false;
     if (req.suspicion_range && !active.some(d => (d.suspicion || 0) >= req.suspicion_range[0] && (d.suspicion || 0) <= req.suspicion_range[1])) return false;
@@ -379,6 +380,8 @@
           recycle: null,
           after: null,
           builtinTags: ev.tags || [],
+          disciple_effect: ev.disciple_effect || null,
+          requires: ev.requires || null,
           title: useLLMResult.title,
           desc: useLLMResult.desc,
           five_choice: true,

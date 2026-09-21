@@ -469,6 +469,39 @@
       { "text": "将手按入凹槽", "fits": ["D", "B"], "daoxin": -3 },
       { "text": "重燃祭坛幽火", "fits": ["A", "E"], "daoxin": -2 } ] },
 
+  { "id": "recruit_orphan", "pool": "B", "rarity": "灵", "title": "雨夜孤灯", "min_realm": 1,
+    "desc": "山下暴雨冲垮旧屋，一个无亲无故的孩子抱着半卷经书，在山门石阶下坐到天明。",
+    "requires": { "disciple_room": true }, "disciple_effect": { "recruit": "event_orphan", "recruit_on": ["A"] },
+    "options": [
+      { "text": "收为门下", "fits": ["A"], "daoxin": 2 },
+      { "text": "赠盘缠送往善堂", "fits": ["B"], "daoxin": 1 },
+      { "text": "先留在外院考察", "fits": ["C"] },
+      { "text": "请山民代为照料", "fits": ["A"] },
+      { "text": "查明经书来历", "fits": ["E"] }
+    ] },
+
+  { "id": "recruit_rogue", "pool": "C", "rarity": "珍", "title": "散修问道", "min_realm": 2,
+    "desc": "一名年轻散修在擂台连败七场仍不肯走，只求你指出他功法里那一道走岔的气机。",
+    "requires": { "disciple_room": true }, "disciple_effect": { "recruit": "event_rogue", "recruit_on": ["A"] },
+    "options": [
+      { "text": "点化后收入门墙", "fits": ["D"], "daoxin": 1 },
+      { "text": "只替他纠正功法", "fits": ["C"] },
+      { "text": "让亲传弟子代为指教", "fits": ["A"] },
+      { "text": "邀他留山论道三日", "fits": ["E"] },
+      { "text": "以败局磨他的锐气", "fits": ["B"] }
+    ] },
+
+  { "id": "recruit_dark_adept", "pool": "DARK", "rarity": "珍", "title": "断刃投山", "min_realm": 1,
+    "desc": "一名被正邪两道同时追杀的少年将断刃插在山门前，说愿献出旧名，只求一条能活下去的路。",
+    "requires": { "disciple_room": true, "not_flag": "refused_dark" }, "disciple_effect": { "recruit": "event_dark", "recruit_on": ["A"] },
+    "options": [
+      { "text": "收服为门下暗刃", "fits": ["A", "E"], "daoxin": -2 },
+      { "text": "索要他的仇家名册", "fits": ["E"], "daoxin": -1 },
+      { "text": "替他另寻藏身之地", "fits": ["B"], "daoxin": 1 },
+      { "text": "夺下断刃逐出山门", "fits": ["A", "B"], "daoxin": -1 },
+      { "text": "旁观追兵如何处置", "fits": ["F"], "daoxin": -2 }
+    ] },
+
   { "id": "ds_bei_fuyu", "pool": "DISCIPLE", "rarity": "凡", "title": "一诺成灰", "min_realm": 1,
     "desc": "你应允给弟子的修行资源迟迟未到，他把失望压进笑里，眼神却从此冷了。",
     "requires": { "active_disciple": true }, "disciple_effect": { "drift": ["shanliang", "yinhen"], "suspicion": 15 },

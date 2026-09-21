@@ -492,9 +492,7 @@
     if (!a) return;
     a.my.blood_offering = 0;
     a.my.atk_buff_pct = 0;
-    const slotCfg = ((g.LS.BAL.disciple || {}).battle_slots || {});
-    const slots = S().realm.index >= 4 ? (slotCfg.realm_4_plus || 2) : (slotCfg.default || 1);
-    a.disciples = g.LS.disciples ? g.LS.disciples.active().slice(0, slots) : [];
+    a.disciples = g.LS.disciples && g.LS.disciples.battleParty ? g.LS.disciples.battleParty() : [];
     a.my.betrayed_once = false;
     a.disciples.forEach(d => (d.skills || []).forEach(skill => { skill.used_in_battle = false; }));
     g.LS.ui.showBattleScreen(a.my, a.op);
@@ -588,13 +586,17 @@
     return unit.hp - cost >= floor;
   }
 
-  function discipleSkillMult(disciple) {
+  function discipleSkillMult(disciple, skillDef) {
     let mult = 1;
     for (const trait of disciple.traits || []) {
       if (!trait.revealed) continue;
       const def = g.LS.disciples && g.LS.disciples.traitDef(trait.key);
       if (!def || !def.skill_mult) continue;
       mult *= def.polarity > 0 ? def.skill_mult : 1 / def.skill_mult;
+    }
+    if (skillDef && skillDef.affinity) {
+      const affinity = (disciple.traits || []).some(trait => trait.revealed && skillDef.affinity.indexOf(trait.key) !== -1);
+      if (affinity) mult *= skillDef.affinity_mult || 1.12;
     }
     return mult;
   }
@@ -607,7 +609,7 @@
     const def = skill && g.LS.disciples && g.LS.disciples.skillDef(skill.id);
     if (!disciple || !skill || !def) return { ok: false, msg: '此术尚未显露。' };
     if (skill.used_in_battle || disciple.battle_betrayed || disciple.skill_blocked_round === a.round) return { ok: false, msg: '此战已无法再用这道弟子术。' };
-    const mult = discipleSkillMult(disciple), evs = [];
+    const mult = discipleSkillMult(disciple, def), evs = [];
     if (def.kind === 'heal') evs.push(applyHeal(a.my, Math.max(1, Math.round(a.my.hpMax * def.base * mult)), def.name, true));
     else if (def.kind === 'qi') { const gain = Math.max(1, Math.round(def.base * mult)); a.my.qi = Math.min(a.my.qiMax, a.my.qi + gain); evs.push({ type: 'note', side: 'my', text: disciple.name + '施「' + def.name + '」，行动点 +' + gain + '。' }); }
     else if (def.kind === 'shield') evs.push(applyShield(a.my, Math.max(1, Math.round(a.my.hpMax * def.base * mult)), def.name, true, {}));
@@ -803,9 +805,14 @@
     })));
     if (g.LS.ui.renderDiscipleSkills) g.LS.ui.renderDiscipleSkills((a.disciples || []).map((disciple, slotIdx) => ({
       slotIdx, name: disciple.name, betrayed: !!disciple.battle_betrayed, blocked: disciple.skill_blocked_round === a.round,
-      skills: (disciple.skills || []).filter(skill => skill.revealed).map(skill => {
+      skills: (disciple.skills || []).filter(skill => skill.revealed && skill.id === disciple.battle_skill_id).map(skill => {
         const def = g.LS.disciples && g.LS.disciples.skillDef(skill.id);
-        return { id: skill.id, name: def ? def.name : skill.id, used: !!skill.used_in_battle };
+        return {
+          id: skill.id,
+          name: def ? def.name : skill.id,
+          desc: def ? def.desc : '',
+          used: !!skill.used_in_battle
+        };
       })
     })));
   }

@@ -1944,10 +1944,11 @@
     }
   ],
   "disciple": {
-    "max_slots": 5,
+    "max_slots": 20,
     "battle_slots": {
-      "default": 1,
-      "realm_4_plus": 2
+      "default": 3,
+      "realm_4_plus": 3,
+      "max": 3
     },
     "recruit": {
       "first_delay_s": 600,
