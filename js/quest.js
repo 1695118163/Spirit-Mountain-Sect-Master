@@ -85,10 +85,48 @@
     for (let c = 0; c < chapters.length; c++)
       for (let i = 0; i < chapters[c].tasks.length; i++)
         if (taskState(c, i) === 'claimable') return true;
+    if (S().path === 'xie') {
+      const xie = STORY().xie_chapters || [];
+      for (let c = 0; c < xie.length; c++)
+        for (let i = 0; i < xie[c].tasks.length; i++)
+          if (xieTaskState(c, i) === 'claimable') return true;
+    }
     return false;
   }
 
   function poll() { return hasClaimable(); }
+
+  function checkXieTask(task) {
+    const s = S(), c = task.check || [];
+    switch (c[0]) {
+      case 'path': return s.path === c[1];
+      case 'xie_act': return ((s.xie_stats || {})[c[1]] || 0) >= c[2];
+      case 'revenge_kill': return ((s.xie_stats || {}).revenge_kill || 0) >= c[1];
+      case 'demonic_disciple': return ((s.xie_stats || {}).demonic_disciple || 0) >= c[1];
+      case 'mo_realm': return ((s.mo_realm || {}).index || 0) >= c[1];
+      default: return false;
+    }
+  }
+
+  function xieTaskState(chIdx, idx) {
+    const ch = (STORY().xie_chapters || [])[chIdx];
+    if (!ch || !ch.tasks[idx]) return 'claimed';
+    if (S().xie_claimed && S().xie_claimed[chIdx + '_' + idx]) return 'claimed';
+    return checkXieTask(ch.tasks[idx]) ? 'claimable' : 'progress';
+  }
+
+  function xieClaim(chIdx, idx) {
+    const ch = (STORY().xie_chapters || [])[chIdx];
+    if (!ch || !ch.tasks[idx] || xieTaskState(chIdx, idx) !== 'claimable') return null;
+    const s = S(), task = ch.tasks[idx], reward = task.reward || {};
+    s.xie_claimed = s.xie_claimed || {};
+    s.xie_claimed[chIdx + '_' + idx] = 1;
+    if (reward.xuesha && g.LS.path) g.LS.path.addXuesha(reward.xuesha);
+    const complete = ch.tasks.every((item, i) => s.xie_claimed[chIdx + '_' + i]);
+    if (complete) s.xie_chapter = Math.max(s.xie_chapter || 1, chIdx + 2);
+    if (g.LS.save && g.LS.save.save) g.LS.save.save();
+    return { task, chapter: ch, complete, gainText: reward.xuesha ? '血煞 +' + reward.xuesha : '' };
+  }
 
   /** 章进度 {claimed, total, allClaimed} */
   function chapterProgress(chIdx) {
@@ -102,8 +140,8 @@
   /** 章完成一次性钩子 */
   function chapterHooks(chIdx) {
     const s = S();
-    if (chIdx === 1 && (!s.disciple || !s.disciple.recruited)) recruitDisciple();
-    if (chIdx === 4 && s.disciple && s.disciple.recruited && !s.disciple.agent) promoteElder();
+    if (chIdx === 1 && !(s.disciples || []).some(d => d.status === 'active')) recruitDisciple();
+    if (chIdx === 4 && (s.disciples || []).some(d => d.status === 'active' && !d.agent)) promoteElder();
   }
 
   /** 领奖：达标+未领 → 发奖+标记；章全领触发钩子一次（hooked 记录防重） */
@@ -139,14 +177,17 @@
   /* ── 传承钩子 ── */
   function recruitDisciple() {
     const s = S();
-    s.disciple = s.disciple || { recruited: true, progress: 0, realm: 0, agent: false, fed: 0 };
-    s.disciple.recruited = true;
+    if (g.LS.disciples && !(s.disciples || []).some(d => d.status === 'active')) {
+      g.LS.disciples.recruit([g.LS.disciples.makeCandidate()]);
+    }
     if (g.LS.ui && g.LS.ui.toast) g.LS.ui.toast('【亲传弟子】首位亲传入门——传承面板可查看与投喂。', 5200);
   }
   function promoteElder() {
     const s = S();
-    if (!s.disciple || !s.disciple.recruited || s.disciple.agent) return;
-    s.disciple.agent = true;
+    const disciple = (s.disciples || []).find(d => d.status === 'active');
+    if (!disciple || disciple.agent) return;
+    disciple.agent = true;
+    if (g.LS.disciples) g.LS.disciples.syncLegacy();
     if (g.LS.ui && g.LS.ui.toast) g.LS.ui.toast('【传位大典】你升任太上长老，亲传弟子升代理掌门——弟子成长加倍。', 5200);
   }
 
@@ -162,31 +203,29 @@
         recruitDisciple();
       }
     }
-    if (!s.disciple || !s.disciple.recruited) return;
-    const rate = 0.02 * (s.realm.index + 1) * (s.disciple.agent ? 2 : 1);
-    s.disciple.progress = Math.min(100, (s.disciple.progress || 0) + rate);
-    s.disciple.realm = Math.min(s.realm.index, Math.floor((s.disciple.progress || 0) / 10));
+    if (g.LS.disciples) g.LS.disciples.syncLegacy();
   }
 
   /** 投喂 */
-  function feedDisciple(pillId, quality) {
+  function feedDisciple(pillId, quality, discipleId) {
     const s = S();
-    if (!s.disciple || !s.disciple.recruited) return { ok: false, msg: '尚无亲传弟子' };
+    const disciple = g.LS.disciples && (discipleId ? g.LS.disciples.byId(discipleId) : g.LS.disciples.active()[0]);
+    if (!disciple) return { ok: false, msg: '尚无亲传弟子' };
     const eco = g.LS.economy;
     const key = eco.pillStockKey ? eco.pillStockKey(pillId, quality) : pillId + '_' + quality;
     if (!(s.pill_stock || {})[key]) return { ok: false, msg: '没有这颗丹' };
     s.pill_stock[key] -= 1;
     if (s.pill_stock[key] <= 0) delete s.pill_stock[key];
-    const add = { '劣': 0.5, '凡': 1, '灵': 2, '珍': 4, '仙': 8 }[quality] || 1;
-    s.disciple.fed = (s.disciple.fed || 0) + 1;
-    s.disciple.progress = Math.min(100, (s.disciple.progress || 0) + add);
-    s.disciple.realm = Math.min(s.realm.index, Math.floor((s.disciple.progress || 0) / 10));
+    const result = g.LS.disciples.feed(disciple.id, quality);
+    disciple.realm = Math.min(s.realm.index, Math.floor((disciple.progress || 0) / 10));
+    g.LS.disciples.syncLegacy();
     g.LS.save.save();
-    return { ok: true, msg: '弟子服下丹药，修为精进（进度 +' + add + '%）' };
+    return result.ok ? { ok: true, msg: disciple.name + '服下丹药，修为精进（' + result.msg + '）' } : result;
   }
 
   g.LS.quest = {
     state, taskState, hasClaimable, poll, chapterProgress, claim,
-    checkTask, recruitDisciple, promoteElder, tickDisciple, feedDisciple, isClaimed
+    checkTask, recruitDisciple, promoteElder, tickDisciple, feedDisciple, isClaimed,
+    checkXieTask, xieTaskState, xieClaim
   };
 })(typeof window !== 'undefined' ? window : globalThis);

@@ -1,6 +1,6 @@
 {
   "version": "v0.22.2",
-  "value_ceiling": 9000000000000000,
+  "value_ceiling": 27000000000000000,
   "resources": [
     {
       "id": "lingqi",
@@ -303,7 +303,7 @@
     {
       "index": 1,
       "name": "筑基",
-      "need_xp": 150,
+      "need_xp": 450,
       "reward_lingshi": 100,
       "mult_passive": 2,
       "unlock_buildings": [
@@ -320,7 +320,7 @@
     {
       "index": 2,
       "name": "金丹",
-      "need_xp": 1500,
+      "need_xp": 4500,
       "reward_lingshi": 500,
       "mult_passive": 3,
       "unlock_buildings": [
@@ -339,7 +339,7 @@
     {
       "index": 3,
       "name": "元婴",
-      "need_xp": 15000,
+      "need_xp": 45000,
       "reward_lingshi": 2500,
       "mult_passive": 4,
       "unlock_buildings": [
@@ -358,7 +358,7 @@
     {
       "index": 4,
       "name": "化神",
-      "need_xp": 200000,
+      "need_xp": 600000,
       "reward_lingshi": 12500,
       "mult_passive": 6,
       "unlock_buildings": [
@@ -376,7 +376,7 @@
     {
       "index": 5,
       "name": "炼虚",
-      "need_xp": 3000000,
+      "need_xp": 9000000,
       "reward_lingshi": 60000,
       "mult_passive": 10,
       "unlock_buildings": [
@@ -392,7 +392,7 @@
     {
       "index": 6,
       "name": "合体",
-      "need_xp": 50000000,
+      "need_xp": 150000000,
       "reward_lingshi": 300000,
       "mult_passive": 15,
       "unlock_buildings": [
@@ -408,7 +408,7 @@
     {
       "index": 7,
       "name": "大乘",
-      "need_xp": 4000000000,
+      "need_xp": 12000000000,
       "reward_lingshi": 1500000,
       "mult_passive": 25,
       "unlock_buildings": [],
@@ -424,7 +424,7 @@
     {
       "index": 8,
       "name": "渡劫",
-      "need_xp": 300000000000,
+      "need_xp": 900000000000,
       "reward_lingshi": 7500000,
       "mult_passive": 40,
       "unlock_buildings": [],
@@ -440,7 +440,7 @@
     {
       "index": 9,
       "name": "飞升",
-      "need_xp": 25000000000000,
+      "need_xp": 75000000000000,
       "reward_lingshi": 37500000,
       "mult_passive": 100,
       "unlock_buildings": [],
@@ -456,7 +456,7 @@
     {
       "index": 10,
       "name": "大帝",
-      "need_xp": 6000000000000000,
+      "need_xp": 18000000000000000,
       "reward_lingshi": 150000000,
       "mult_passive": 200,
       "unlock_pool": "K",
@@ -572,15 +572,27 @@
       "name": "仙界回响",
       "unlock_realm": 9,
       "no_negative": false
+    },
+    {
+      "id": "DARK",
+      "name": "魔心暗涌",
+      "unlock_realm": 1,
+      "no_negative": false
+    },
+    {
+      "id": "DISCIPLE",
+      "name": "弟子因果",
+      "unlock_realm": 1,
+      "no_negative": false
     }
   ],
   "events": {
-    "first_delay_s": 150,
-    "interval_base_s": 240,
+    "first_delay_s": 60,
+    "interval_base_s": 120,
     "interval_jitter_s": 30,
-    "interval_min_s": 120,
+    "interval_min_s": 60,
     "modal_timeout_s": 30,
-    "pick_count": 5,
+    "choice_count": 5,
     "rarity": {
       "keys": [
         "凡",
@@ -693,6 +705,15 @@
         "B",
         "C",
         "H"
+      ],
+      "xinmo_high_threshold": 12,
+      "pools_xinmo_high": [
+        "DARK"
+      ],
+      "xinmo_boost_mult": 2.5,
+      "xinmo_linear_cap": 3.5,
+      "pools_disciple": [
+        "DISCIPLE"
       ]
     },
     "briefs": {
@@ -1500,6 +1521,7 @@
       "dream": "{date}，梦中山事，醒来怅然。",
       "rebirth": "{date}，兵解转世，此世终。",
       "ascension": "{date}，飞升，山鸣谷应。"
+      ,"disciple_expel": "{date}，逐{name}出山门，师徒缘尽。"
     },
     "stele_title": "灵曜{year}年 · 第{n}世",
     "stele_max_lines": 10,
@@ -1586,7 +1608,14 @@
         "min": 300,
         "name": "仙品"
       }
-    ]
+    ],
+    "endgame": {
+      "mode": "ko",
+      "exhaust_on": true,
+      "exhaust_start_round": 13,
+      "exhaust_pct_per_round": 0.03,
+      "exhaust_cap_pct": 0.3
+    }
   },
   "difficulty": {
     "easy": {
@@ -1644,24 +1673,50 @@
   ],
   "xinmo": {
     "unlock": 30,
-    "decay_per_game_year": 1,
+    "decay_per_game_year": 0.5,
+    "intrusion_base": 0.05,
+    "intrusion_xinmo_add": 0.1,
+    "intrusion_cap_xinmo": 60,
+    "intrusion_rate_penalty": 0.15,
+    "rage_chance": 0.15,
+    "rage_xiufu_loss_pct": 0.5,
     "acts": {
+      "guanxiang": {
+        "name": "妄念观想",
+        "cd_s": 180,
+        "xinmo": 3,
+        "unlock_xinmo": 0,
+        "min_realm": 0,
+        "xiufu_pct": 0.005,
+        "desc": "放任杂念游走一周天——少量增长心魔，并取得些许修为"
+      },
+      "jinyan": {
+        "name": "偷阅禁卷",
+        "cd_s": 480,
+        "xinmo": 5,
+        "unlock_xinmo": 0,
+        "min_realm": 1,
+        "daoxin": -1,
+        "xiufu_pct": 0.01,
+        "desc": "翻阅封存禁法——增长心魔与修为，道心略损"
+      },
       "lve": {
         "name": "下山劫掠",
-        "cd_s": 600,
+        "cd_s": 480,
         "xinmo": 12,
         "desc": "拦路夺过路修士的灵石袋——灵石（120~240息产量×心魔加成）+修为（下境需求3%）"
       },
       "xueji": {
         "name": "血祭修炼",
         "cd_s": 1800,
-        "xinmo": 18,
-        "desc": "以生魂祭鼎——全局产量×2，一炷香（120秒）"
+        "xinmo": 20,
+        "desc": "以生魂祭鼎——全局产量×2，一炷香（120秒）",
+        "no_decay_s": 120
       },
       "heishi": {
         "name": "黑市购丹",
         "cd_s": 1800,
-        "xinmo": 4,
+        "xinmo": 6,
         "desc": "来路不明的便宜丹——两颗劣/凡品丹，半价"
       }
     },
@@ -1681,6 +1736,291 @@
         "name": "入魔",
         "desc": "帝劫 −20%；突破 −20%；每次突破 15% 心魔暴走（修为−50%）"
       }
-    ]
+    ],
+    "decay_ms_per_year": 120000
+  },
+  "path": {
+    "enter": {
+      "name": "堕魔",
+      "xinmo_min": 50,
+      "chain_xinmo_min": 40,
+      "chapter_min": 2,
+      "chain_id": "mo_xin_chu_dong",
+      "dark_pool": "DARK",
+      "once_per_life": true,
+      "refuse_flag": "refused_dark",
+      "desc": "心魔积到一定程度，夜半自有人叩门。走完「魔心初动」三幕，末幕由你决定跳不跳。"
+    },
+    "xie": {
+      "name": "魔道",
+      "deep_xinmo": 85,
+      "deep_daoxing_cost": 0.3,
+      "deep_optional": true,
+      "battle_pool": "replace",
+      "rebirth_gain_per_entry": 0.1,
+      "breakthrough": {
+        "base": 0.6,
+        "xinmo_step": 20,
+        "xinmo_add": 0.05,
+        "cap": 0.9,
+        "fail_xinmo": 15
+      },
+      "tribulation": {
+        "base_p": 0.65,
+        "strikes": 9,
+        "death_layers": 3,
+        "fail_xiufu_pct_per_layer": 0.35
+      },
+      "exit": {
+        "xinmo_max": 29,
+        "daoxin_penalty": 5,
+        "xuesha_zero": true,
+        "building_seal": true
+      },
+      "xinmo_as_currency": {
+        "per_breakthrough_cost": 40,
+        "desc": "渡魔劫时献祭 40 心魔，换一次必成（不可逆）"
+      },
+      "rebirth_reset": {
+        "clears": [
+          "path",
+          "xuesha",
+          "xinmo",
+          "xie_chapter",
+          "mo_realm",
+          "mo_buildings_level",
+          "mo_cards_owned",
+          "refused_dark"
+        ],
+        "keeps": [
+          "steles",
+          "chronicle_lines"
+        ],
+        "note": "转生后回到练气、正道、心魔 0。每一世重新决定是否堕魔。"
+      }
+    },
+    "zheng": {
+      "name": "正道"
+    }
+  },
+  "xuesha": {
+    "cap": 100000,
+    "sources": {
+      "lve": 8,
+      "xueji": 25,
+      "heishi": 0,
+      "kill_ambush": 12,
+      "disciple_devour": 30
+    },
+    "decay_per_game_day": 0.5,
+    "desc": "血煞：拦路、血祭、斩杀强敌所凝的凶煞之气。魔道建筑与魔道突破皆用它。"
+  },
+  "mo_realms": [
+    {
+      "key": 0,
+      "name": "炼血",
+      "need_xp_mult": 0.15,
+      "need_xuesha": 20,
+      "xinmo_suppress": 0.12,
+      "xuesha_rate_mult": 1.2,
+      "cp_mult": 1.1,
+      "unlock_cards": []
+    },
+    {
+      "key": 1,
+      "name": "凝血",
+      "need_xp_mult": 0.25,
+      "need_xuesha": 45,
+      "xinmo_suppress": 0.12,
+      "xuesha_rate_mult": 1.4,
+      "cp_mult": 1.2,
+      "unlock_cards": []
+    },
+    {
+      "key": 2,
+      "name": "噬魂",
+      "need_xp_mult": 0.4,
+      "need_xuesha": 90,
+      "xinmo_suppress": 0.12,
+      "xuesha_rate_mult": 1.6,
+      "cp_mult": 1.3,
+      "unlock_cards": [
+        "shi_xue_shu"
+      ]
+    },
+    {
+      "key": 3,
+      "name": "魔胎",
+      "need_xp_mult": 0.6,
+      "need_xuesha": 180,
+      "xinmo_suppress": 0.12,
+      "xuesha_rate_mult": 1.8,
+      "cp_mult": 1.4,
+      "unlock_cards": [
+        "mo_yin"
+      ]
+    },
+    {
+      "key": 4,
+      "name": "化魔",
+      "need_xp_mult": 0.9,
+      "need_xuesha": 360,
+      "xinmo_suppress": 0.12,
+      "xuesha_rate_mult": 2,
+      "cp_mult": 1.55,
+      "unlock_cards": [
+        "zhou_sha"
+      ]
+    },
+    {
+      "key": 5,
+      "name": "魔君",
+      "need_xp_mult": 1.3,
+      "need_xuesha": 720,
+      "xinmo_suppress": 0.12,
+      "xuesha_rate_mult": 2.2,
+      "cp_mult": 1.7,
+      "unlock_cards": [
+        "duo_xiuwei"
+      ]
+    }
+  ],
+  "mo_realms_note": "魔道境界是独立六阶，始终从炼血起步；心魔压制逐阶累加，上限 60%。",
+  "mo_buildings": [
+    {
+      "id": "xuechi",
+      "name": "血池",
+      "unlock_realm": 2,
+      "unlock_path": "xie",
+      "base_cost": {
+        "lingshi": 5000,
+        "xuesha": 20
+      },
+      "cost_growth": 2.4,
+      "sells": [
+        "凡",
+        "灵"
+      ],
+      "sell_kinds": [
+        "weapon",
+        "technique"
+      ],
+      "effects": {
+        "rate": {
+          "xuesha": 0.05
+        },
+        "all_mult_per_level": 0.02,
+        "note": "血煞自产；同时给产量 +2%/级；售卖凡/灵品魔道法宝秘籍"
+      }
+    },
+    {
+      "id": "hunhfan",
+      "name": "魂幡",
+      "unlock_realm": 3,
+      "unlock_path": "xie",
+      "base_cost": {
+        "lingshi": 20000,
+        "xuesha": 40
+      },
+      "cost_growth": 2.6,
+      "effects": {
+        "perm_all_pct": 0.03,
+        "xinmo_per_min": 0.2
+      }
+    },
+    {
+      "id": "lianhungu",
+      "name": "炼魂窟",
+      "unlock_realm": 4,
+      "unlock_path": "xie",
+      "base_cost": {
+        "lingshi": 120000,
+        "xuesha": 80
+      },
+      "cost_growth": 2.8,
+      "effects": {
+        "xinmo_cd_mult": 0.8
+      }
+    }
+  ],
+  "disciple": {
+    "max_slots": 20,
+    "battle_slots": {
+      "default": 3,
+      "realm_4_plus": 3,
+      "max": 3
+    },
+    "recruit": {
+      "first_delay_s": 600,
+      "interval_s": 900,
+      "candidates": 3,
+      "briefs": [
+        "山门外有人长跪不起…",
+        "三个孩子结伴上山，说要拜师。"
+      ]
+    },
+    "stages": [
+      {
+        "key": 0,
+        "name": "入门",
+        "realm_min": 0,
+        "reveal_traits": 1,
+        "reveal_skills": 1
+      },
+      {
+        "key": 1,
+        "name": "受箓",
+        "realm_min": 1,
+        "reveal_traits": 2,
+        "reveal_skills": 1
+      },
+      {
+        "key": 2,
+        "name": "亲传",
+        "realm_min": 2,
+        "reveal_traits": 3,
+        "reveal_skills": 2
+      },
+      {
+        "key": 3,
+        "name": "大成",
+        "realm_min": 3,
+        "reveal_traits": 4,
+        "reveal_skills": 3
+      }
+    ],
+    "betray": {
+      "suspicion_max": 100,
+      "warn_threshold": 55,
+      "trigger_hp_pct": 0.3,
+      "warn_only_first": true,
+      "per_battle_cap": 0.25,
+      "real_dmg_pct": 0.1,
+      "path_xie_mult": 1.5,
+      "desc": "首次只迟疑不出手，第二次才真正背刺"
+    },
+    "expel": {
+      "daoxin_cost": 5,
+      "revenge_chance": 0.5,
+      "revenge_delay_days": 240,
+      "desc": "逐出师门：道心 -5，半数弟子日后会回来寻仇"
+    },
+    "growth": {
+      "base_rate": 0.02,
+      "agent_mult": 2,
+      "negative_reveal_delay_chance": 0.3,
+      "feed_progress": {
+        "劣": 0.5,
+        "凡": 1,
+        "灵": 2,
+        "珍": 4,
+        "仙": 8
+      }
+    },
+    "ask_heart": {
+      "lingshi_cost": 5000,
+      "progress_cost": 10
+    },
+    "negative_weight_xie": 2
   }
 }

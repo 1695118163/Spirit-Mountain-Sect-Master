@@ -73,16 +73,15 @@ const SYSTEM_PROMPT = [
   '你是一部修仙放置游戏《灵山掌门》的奇遇执笔人，化名"山海客"。你的文风：志怪笔记体，古白话，',
   '克制、有画面感，写具体的人与物（货郎、断碑、井底剑鸣、檐下纸鸢），不写空泛套话。',
   '',
-  '任务：为玩家（一位修仙宗门的掌门）写一张奇遇卡。玩家会看到标题、描述和两个选项。',
+  '任务：为玩家（一位修仙宗门的掌门）写一张奇遇卡。玩家会看到标题、描述和五个选项。',
   '',
   '硬性规则（违反即作废）：',
   '1. 只输出一个 JSON 对象，不要输出任何解释、不要使用 markdown 代码围栏以外的多余文字。',
-  '2. JSON 格式：{"title":"…","desc":"…","optionA":"…","optionB":"…"}',
-  '3. 字数上限：title 不超过 12 个汉字；desc 不超过 80 个汉字；optionA/optionB 各不超过 16 个汉字。',
+  '2. JSON 格式：{"title":"…","desc":"…","optionA":"…","optionB":"…","optionD":"…","optionE":"…","optionF":"…"}',
+  '3. 字数上限：title 不超过 12 个汉字；desc 不超过 80 个汉字；五个 option 字段各不超过 16 个汉字。',
   '4. 全部字段禁止出现阿拉伯数字、百分号、"倍"字，禁止出现任何具体效果数值或收益描述',
   '   （效果由系统结算，你只负责叙事）。',
-  '5. optionA 与 optionB 必须是两个不同行动，语义上分别对应"用户消息"里 slots.A 与 slots.B 的',
-  '   含义（如 A 是拾取/接受、B 是拒绝/离开之类的对仗，以 slots 实际含义为准），选项文案要能',
+  '5. 五个选项必须是五种不同的行动，语义上分别对应"用户消息"里同名 slots 的含义，选项文案要能',
   '   让玩家预感代价或收获的方向，但不许写出量。',
   '6. 呼应玩家的过往：参考"tags"（恩/怨/缘/债）与"recent"（近期奇遇）。若存在高权重 tag，',
   '   描述或选项中点到一处分歧或回响即可（老熟人、旧怨上门、前缘再续），不许堆砌复述历史。',
@@ -90,7 +89,7 @@ const SYSTEM_PROMPT = [
   '8. 称呼玩家用"你"。不要出现"玩家""系统""游戏"字样。',
   '',
   '输出示例（仅示意格式与文风，不要照抄内容）：',
-  '{"title":"雨夜叩门人","desc":"山雨骤急，一名湿透的货郎叩门借宿，担中隐约有铃音。你说铃是旧物，他笑而不答。","optionA":"留他一夜","optionB":"闭门谢客"}'
+  '{"title":"雨夜叩门人","desc":"山雨骤急，一名湿透的货郎叩门借宿，担中隐约有铃音。你说铃是旧物，他笑而不答。","optionA":"留他一夜","optionB":"闭门谢客","optionD":"查验担中旧物","optionE":"问清青铃来历","optionF":"召弟子暗中盯梢"}'
 ].join('\n');
 
 /* ── 健壮解析与校验 ── */
@@ -108,16 +107,16 @@ function extractJSON(text) {
 }
 
 function validateLLM(obj) {
-  const F = ['title', 'desc', 'optionA', 'optionB'];
+  const F = ['title', 'desc', 'optionA', 'optionB', 'optionD', 'optionE', 'optionF'];
   if (!obj || F.some(k => typeof obj[k] !== 'string')) return 'field_missing';
-  const caps = { title: 12, desc: 80, optionA: 16, optionB: 16 };
+  const caps = { title: 12, desc: 80, optionA: 16, optionB: 16, optionD: 16, optionE: 16, optionF: 16 };
   for (const k of F) {
     const s = obj[k].trim();
     if (!s) return 'empty';
     if ([...s].length > caps[k]) return 'too_long';
     if (/[\d%]|×\s*\d|倍/.test(s)) return 'contains_numbers';
   }
-  if (obj.optionA.trim() === obj.optionB.trim()) return 'same_options';
+  if (new Set(F.slice(2).map(k => obj[k].trim())).size !== 5) return 'same_options';
   return null;
 }
 
@@ -208,7 +207,7 @@ async function callArk(payload) {
       err.code = 'VALIDATION_FAIL';
       throw err;
     }
-    return { ok: true, latency_ms: latency, title: obj.title, desc: obj.desc, optionA: obj.optionA, optionB: obj.optionB };
+    return { ok: true, latency_ms: latency, title: obj.title, desc: obj.desc, optionA: obj.optionA, optionB: obj.optionB, optionD: obj.optionD, optionE: obj.optionE, optionF: obj.optionF };
   } catch (e) {
     if (e.code) throw e;
     if (e.name === 'AbortError') {
@@ -295,6 +294,7 @@ async function handle(req, res) {
       let pills = {};
       let help = {};
       let cultivation = {};
+      let disciples = {};
       let offlineEvents = {};
       let changelog = null;
       try {
@@ -310,12 +310,15 @@ async function handle(req, res) {
         cultivation = JSON.parse(fs.readFileSync(path.join(ROOT, 'data', 'cultivation.json'), 'utf8'));
       } catch (e) { /* cultivation.json 可选 */ }
       try {
+        disciples = JSON.parse(fs.readFileSync(path.join(ROOT, 'data', 'disciples.json'), 'utf8'));
+      } catch (e) { /* disciples.json 可选 */ }
+      try {
         offlineEvents = JSON.parse(fs.readFileSync(path.join(ROOT, 'data', 'offline_events.json'), 'utf8'));
       } catch (e) { /* offline_events.json 可选 */ }
       try {
         changelog = JSON.parse(fs.readFileSync(path.join(ROOT, 'data', 'changelog.json'), 'utf8'));
       } catch (e) { /* changelog.json 可选，旧版客户端仍可从 balance.update_notes 回退 */ }
-      return sendJSON(res, 200, { ok: true, balance, events, chains, pills, help, cultivation, offline_events: offlineEvents, changelog, game_version: gameVersion() });
+      return sendJSON(res, 200, { ok: true, balance, events, chains, pills, help, cultivation, disciples, offline_events: offlineEvents, changelog, game_version: gameVersion() });
     } catch (e) {
       return sendJSON(res, 500, { ok: false, message: '读取数据文件失败：' + e.message });
     }

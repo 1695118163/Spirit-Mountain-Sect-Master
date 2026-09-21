@@ -18,6 +18,8 @@ const path = require('path');
 
 const ROOT = __dirname;
 const BAL = JSON.parse(fs.readFileSync(path.join(ROOT, 'data', 'balance.json'), 'utf8'));
+BAL.cultivation = JSON.parse(fs.readFileSync(path.join(ROOT, 'data', 'cultivation.json'), 'utf8'));
+BAL.disciples = JSON.parse(fs.readFileSync(path.join(ROOT, 'data', 'disciples.json'), 'utf8'));
 
 /* 复用浏览器同一套经济代码（经典脚本 + globalThis 守卫，require 即挂载） */
 require('./js/util.js');
@@ -247,6 +249,30 @@ if (idle24h.rateSamples.length) {
   console.log(`\n【速率曲线】灵气速率: ${fmt(early)}/s → ${fmt(late)}/s` + (runawayWarn ? '（存在连续倍增窗，WARN 级提示）' : ''));
 }
 warn(!runawayWarn, '灵气速率存在连续 600s 倍增窗（叠乘设计下前期正常，仅提示）');
+
+/* 正道 / 邪修 / 带两名弟子的邪修：按各境界真实可用牌与魔道境界锁生成相对战力曲线。 */
+console.log('\n【战斗画像相对曲线（正道练气=1.000）】');
+console.log('  境界       正道流    邪修流    邪修+2弟子');
+const cards = (((BAL.cultivation || {}).battle_cards || {}).my_cards || []);
+const skills = ((BAL.disciples || {}).skills || []).filter(skill => skill.base > 0 && skill.base < 1);
+const discipleSupport = skills.length ? skills.reduce((sum, skill) => sum + skill.base, 0) / skills.length : 0;
+let baseline = 1;
+for (let realm = 0; realm <= Math.min(9, BAL.realms.length - 1); realm++) {
+  const ap = realm + 1;
+  const moRealm = Math.min(5, Math.floor(realm * 6 / 10));
+  const best = pathName => {
+    const usable = cards.filter(card => (pathName === 'xie' ? card.path === 'xie' : card.path !== 'xie')
+      && card.dmg > 0 && (card.unlock_realm || 0) <= realm && (card.unlock_mo_realm || 0) <= moRealm && (card.cost || 0) <= ap);
+    return Math.max(1, ...usable.map(card => card.dmg + realm * 2));
+  };
+  const zheng = best('zheng');
+  if (realm === 0) baseline = zheng;
+  const xie = best('xie');
+  const slots = realm >= 4 ? (((BAL.disciple || {}).battle_slots || {}).realm_4_plus || 2) : (((BAL.disciple || {}).battle_slots || {}).default || 1);
+  const withDisciples = xie * (1 + discipleSupport * slots);
+  const pad = value => value.toFixed(3).padStart(9);
+  console.log('  ' + (BAL.realms[realm].name || String(realm)).padEnd(8) + pad(zheng / baseline) + pad(xie / baseline) + pad(withDisciples / baseline));
+}
 
 /* 汇总 */
 console.log('\n================ ================');

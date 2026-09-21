@@ -81,12 +81,28 @@
   /* ── 卡组构筑（皇室战争式）：四类各带 1 张，从已拥有中选 ── */
   const KINDS = ['attack', 'element', 'defense', 'heal'];
   const KIND_NAME = { attack: '攻式', element: '五行', defense: '守式', heal: '回式' };
+  const XIE_KIND_NAME = { attack: '攻式', element: '劫掠', defense: '守式', heal: '血祭' };
+
+  function cardInPath(c) {
+    if (!c) return false;
+    if (S().path !== 'xie') return c.path !== 'xie';
+    const policy = ((((g.LS.BAL || {}).path || {}).xie || {}).battle_pool || 'replace');
+    return policy === 'merge' || c.path === 'xie';
+  }
+
+  function cardUnlocked(c) {
+    if (!cardInPath(c)) return false;
+    if ((c.unlock_realm || 0) > S().realm.index) return false;
+    if (c.path === 'xie' && (c.unlock_mo_realm || 0) > ((S().mo_realm || {}).index || 0)) return false;
+    return true;
+  }
 
   /** 牌是否已参悟：默认牌 / cards_owned / 境界达标自动参悟（本命飞剑类） */
   function ownsCard(c) {
-    if (!c) return false;
-    if (c.default || (S().cards_owned || []).indexOf(c.id) !== -1) return true;
-    return !!(c.unlock_realm && S().realm.index >= c.unlock_realm);
+    if (!c || !cardUnlocked(c)) return false;
+    const owned = c.path === 'xie' ? (S().mo_cards_owned || []) : (S().cards_owned || []);
+    if (c.default || owned.indexOf(c.id) !== -1) return true;
+    return c.path !== 'xie' && !!(c.unlock_realm && S().realm.index >= c.unlock_realm);
   }
 
   /** 卡组槽位（乙§3.2）：攻3/五2/守2/回1 = 8 槽 */
@@ -102,7 +118,7 @@
     const picked = [], counts = {};
     // 先按玩家在招式录中的全局顺序入池；这个顺序就是战斗手牌的位置。
     for (const id of deck) {
-      const c = pool.find(x => x.id === id && (!x.unlock_realm || S().realm.index >= x.unlock_realm));
+      const c = pool.find(x => x.id === id && cardUnlocked(x));
       if (!c || !ownsCard(c) || picked.indexOf(c) !== -1) continue;
       const limit = KIND_LIMITS[c.kind] || 1;
       if ((counts[c.kind] || 0) >= limit) continue;
@@ -115,8 +131,7 @@
       // 按强度排序（伤害+护盾+回气，同分看费用），保证出战池尽量满 8 槽、且会带重手
       if (taken < limit) {
         const qiCap = S().realm.index + 1;
-        const auto = pool.filter(x => x.kind === kind && ownsCard(x)
-            && (!x.unlock_realm || S().realm.index >= x.unlock_realm)
+        const auto = pool.filter(x => x.kind === kind && ownsCard(x) && cardUnlocked(x)
             && (x.cost || 0) <= qiCap && picked.indexOf(x) === -1);
         // 够格的牌不超过槽数就全给；多了就随机抽（洗牌取前 N）——不按强度挑，免得每局都是同样那几张
         for (let i = auto.length - 1; i > 0; i--) {
@@ -152,7 +167,7 @@
     // 手牌池＝「已参悟的招式 + 基础牌」全集；出战手牌由 resolveDeck 从 S().deck（招式录编成）取，
     // 空槽才从这里自动补位；行动点是「可驭招式上限」（2026-09-21 改回自配卡组）
     const handPool = (CARDS().my_cards || [])
-      .filter(c => ownsCard(c) && (!c.unlock_realm || realm >= c.unlock_realm))
+      .filter(c => ownsCard(c) && cardUnlocked(c))
       .map(c => Object.assign({}, c, {
         dmgFinal: c.dmg ? Math.round((c.dmg + realm * 2 + (c.weapon ? sharp * 0.3 : 0)) * Math.min(1.25, rootMult)) : 0,
         // 武器牌五行随装备武器（兼修武器为数组，克制判定取最有利行）
@@ -227,8 +242,9 @@
     }
     if (weather && weather.fire != null && el === '火') mult *= weather.fire;
     if (weather && weather.water != null && el === '水') mult *= weather.water;
-    const raw = Math.round((move.dmgFinal || 0) * mult * (0.92 + Math.random() * 0.16));
-    let dealt = 0, absorbed = 0, thornsDealt = 0, steal = 0;
+    const offeringMult = 1 + (src.blood_offering || 0) * ((src.atk_buff_pct || 0) / 100);
+    const raw = Math.round((move.dmgFinal || 0) * offeringMult * mult * (0.92 + Math.random() * 0.16));
+    let dealt = 0, absorbed = 0, thornsDealt = 0, steal = 0, blockHeal = 0;
     if (dst.shield > 0 && !move.pierce) {
       absorbed = Math.min(dst.shield, raw);
       dst.shield -= absorbed;
@@ -237,11 +253,16 @@
         thornsDealt = Math.max(1, Math.round(absorbed * at.thorns_pct / 100));
         src.hp -= thornsDealt;
       }
+      if (at && at.block_heal_pct && absorbed > 0) {
+        blockHeal = Math.max(1, Math.round(absorbed * at.block_heal_pct / 100));
+        dst.hp = Math.min(dst.hpMax, dst.hp + blockHeal);
+      }
     }
     dealt = raw - absorbed;
     dst.hp -= dealt;
     if (move.lifesteal_pct && dealt > 0) { // 沧海吞：伤害 30% 转回气
-      steal = Math.max(1, Math.round(dealt * move.lifesteal_pct / 100));
+      const offeringSteal = 1 + 0.5 * (src.blood_offering || 0);
+      steal = Math.max(1, Math.round(dealt * move.lifesteal_pct / 100 * offeringSteal));
       src.hp += steal;
       if (src.hpMax && src.hp > src.hpMax) src.hp = src.hpMax;
     }
@@ -253,9 +274,10 @@
     if (move.pierce && dst.shield > 0) parts.push('（真伤破罡）');
     if (thornsDealt > 0) parts.push('罡气反噬 ' + (isMe ? '你' : '对方') + ' ' + thornsDealt + ' 点');
     if (steal > 0) parts.push('化伤为气回复 ' + steal + ' 点');
+    if (blockHeal > 0) parts.push('血罡反哺回复 ' + blockHeal + ' 点');
     return {
       type: 'hit', side: isMe ? 'my' : 'op', target: isMe ? 'op' : 'my',
-      name: move.name, el, dealt, absorbed, thornsDealt, steal,
+      name: move.name, el, dealt, absorbed, thornsDealt, steal, blockHeal,
       pierce: !!move.pierce, elMult,
       text: (isMe ? '' : '对方') + '施放「' + move.name + '」' + relTxt + '，' + parts.join('、') + '。'
     };
@@ -364,10 +386,11 @@
     const bal = g.LS.BAL;
     const w = (bal.cultivation.weapons || []).find(x => x.id === s.equip.weapon);
     const sharp = (w ? w.sharp : 5) + shopSharp();
-    const cp = 100 * Math.pow(2.05, s.realm.index)
+    let cp = 100 * Math.pow(2.05, s.realm.index)
       * (1 + Math.min(0.6, sharp / 400))
       * Math.max(0.8, 1 - (s.pill_toxic || 0) * 0.002)
       * (1 + 0.03 * (s.prestige && s.prestige.count || 0)); // 转生加战力口子
+    if (s.path === 'xie' && g.LS.path && g.LS.path.moRealm()) cp *= g.LS.path.moRealm().cp_mult || 1;
     return Math.round(cp);
   }
 
@@ -467,6 +490,11 @@
   function beginFight() {
     const a = active;
     if (!a) return;
+    a.my.blood_offering = 0;
+    a.my.atk_buff_pct = 0;
+    a.disciples = g.LS.disciples && g.LS.disciples.battleParty ? g.LS.disciples.battleParty() : [];
+    a.my.betrayed_once = false;
+    a.disciples.forEach(d => (d.skills || []).forEach(skill => { skill.used_in_battle = false; }));
     g.LS.ui.showBattleScreen(a.my, a.op);
     syncUI();
     var startLine = '斗法开始——' + a.my.dao + ' 对 ' + a.op.dao + (a.mode === 'senior' ? '（大师兄指教）' : '') + '！';
@@ -506,6 +534,7 @@
     a.round += 1;
     a.phase = 'my';
     a.busy = false;
+    if (g.LS.ui.updateBattleRound) g.LS.ui.updateBattleRound(a.round, false);
     // 行动点不再每回合自动回满：出招按费用扣，用光了靠「调息 · 让招」恢复（用户口径 2026-09-13）
     if (a.round === 1) a.my.qi = a.my.qiMax;
     a.my.shield = 0;
@@ -513,6 +542,17 @@
     dealDeck(a.my);   // 手牌＝自配卡组（不再每回合随机抽 8 张）
     rollIntent(a.op);   // 敌方行动点同样不自动回满，买不起任何一招时它这一手只能调息
     const evs = [];
+    const endgame = (CUL().battle || {}).endgame || {};
+    if (endgame.exhaust_on && a.round >= (endgame.exhaust_start_round || 13)) {
+      const pct = Math.min(endgame.exhaust_cap || 0.3, a.round * (endgame.exhaust_pct_per_round || 0.03));
+      const myBurn = Math.max(1, Math.round(a.my.hpMax * pct));
+      const opBurn = Math.max(1, Math.round(a.op.hpMax * pct));
+      a.my.hp -= myBurn;
+      a.op.hp -= opBurn;
+      evs.push({ type: 'poison', side: 'my', target: 'my', dealt: myBurn, text: '久战不决，气机枯竭——' + a.my.dao + '气血 -' + myBurn + '。' });
+      evs.push({ type: 'poison', side: 'op', target: 'op', dealt: opBurn, text: '久战不决，气机枯竭——' + a.op.dao + '气血 -' + opBurn + '。' });
+      if (g.LS.ui.updateBattleRound) g.LS.ui.updateBattleRound(a.round, true);
+    }
     if (a.my.toxic >= 10) {
       // 丹毒自伤按气血百分比（2026-09-14 用户口径）：每满 10 点毒＝1 档，每档扣 2% 气血，
       // 下限 1 点、上限 12 点——免得低境界（练气 34 血）被固定 6 点/回合直接毒死，高境界又毫无感觉
@@ -523,6 +563,7 @@
     logEvents(evs);
     if (evs.length && g.LS.battleFx) g.LS.battleFx.float('my', '-' + evs[0].dealt, 'poison');
     if (a.my.hp <= 0) { fallIfDead('my'); finish(false, []); return; }
+    if (a.op.hp <= 0) { fallIfDead('op'); finish(true, []); return; }
     // 卡组里全是境界压不住的招：提示一次，别让玩家干看着
     if (a.round === 1 && (a.my.hand || []).length && !a.my.hand.some(c => (c.cost || 0) <= a.my.qi)) {
       g.LS.ui.toast('行动点不足——手头的招都使不动了，先点「调息 · 让招」把行动点回满。', 4600);
@@ -533,6 +574,94 @@
   }
 
   /** 我方出招：一回合只放一招，放完立刻把回合交给对方（2026-09-13 用户口径） */
+  function cardHpCost(unit, card) {
+    return card && card.hp_cost_pct ? Math.max(1, Math.round(unit.hpMax * card.hp_cost_pct / 100)) : 0;
+  }
+
+  function canPayCard(card, unit) {
+    unit = unit || (active && active.my);
+    if (!unit || !card) return false;
+    const cost = cardHpCost(unit, card);
+    const floor = Math.ceil(unit.hpMax * (card.hp_cost_floor_pct || 0));
+    return unit.hp - cost >= floor;
+  }
+
+  function discipleSkillMult(disciple, skillDef) {
+    let mult = 1;
+    for (const trait of disciple.traits || []) {
+      if (!trait.revealed) continue;
+      const def = g.LS.disciples && g.LS.disciples.traitDef(trait.key);
+      if (!def || !def.skill_mult) continue;
+      mult *= def.polarity > 0 ? def.skill_mult : 1 / def.skill_mult;
+    }
+    if (skillDef && skillDef.affinity) {
+      const affinity = (disciple.traits || []).some(trait => trait.revealed && skillDef.affinity.indexOf(trait.key) !== -1);
+      if (affinity) mult *= skillDef.affinity_mult || 1.12;
+    }
+    return mult;
+  }
+
+  function useDiscipleSkill(slotIdx, skillId) {
+    const a = active;
+    if (!a || a.busy || a.phase !== 'my') return { ok: false, msg: '此刻无法传令。' };
+    const disciple = (a.disciples || [])[slotIdx];
+    const skill = disciple && (disciple.skills || []).find(item => item.id === skillId && item.revealed);
+    const def = skill && g.LS.disciples && g.LS.disciples.skillDef(skill.id);
+    if (!disciple || !skill || !def) return { ok: false, msg: '此术尚未显露。' };
+    if (skill.used_in_battle || disciple.battle_betrayed || disciple.skill_blocked_round === a.round) return { ok: false, msg: '此战已无法再用这道弟子术。' };
+    const mult = discipleSkillMult(disciple, def), evs = [];
+    if (def.kind === 'heal') evs.push(applyHeal(a.my, Math.max(1, Math.round(a.my.hpMax * def.base * mult)), def.name, true));
+    else if (def.kind === 'qi') { const gain = Math.max(1, Math.round(def.base * mult)); a.my.qi = Math.min(a.my.qiMax, a.my.qi + gain); evs.push({ type: 'note', side: 'my', text: disciple.name + '施「' + def.name + '」，行动点 +' + gain + '。' }); }
+    else if (def.kind === 'shield') evs.push(applyShield(a.my, Math.max(1, Math.round(a.my.hpMax * def.base * mult)), def.name, true, {}));
+    else if (def.kind === 'cleanse') { const cut = Math.max(1, Math.round(def.base * mult)); a.my.toxic = Math.max(0, a.my.toxic - cut); S().pill_toxic = Math.max(0, (S().pill_toxic || 0) - cut); evs.push({ type: 'note', side: 'my', text: disciple.name + '施「' + def.name + '」，丹毒 -' + cut + '。' }); }
+    else if (def.kind === 'delay') { a.op.disciple_delayed = true; evs.push({ type: 'note', side: 'op', text: disciple.name + '结「' + def.name + '」，镇住敌手一息。' }); }
+    else if (def.kind === 'drain') {
+      const dealt = Math.max(1, Math.round(a.op.hpMax * def.base * mult));
+      a.op.hp -= dealt;
+      const healed = Math.min(Math.max(1, Math.round(dealt * (def.heal_pct || 0))), a.my.hpMax - a.my.hp);
+      a.my.hp += healed;
+      if (g.LS.disciples) g.LS.disciples.addSuspicion(disciple.id, def.suspicion || 0, def.name);
+      evs.push({ type: 'hit', side: 'my', target: 'op', name: def.name, dealt, steal: healed, text: disciple.name + '施「' + def.name + '」，夺血 ' + dealt + '，反哺 ' + healed + '。' });
+    }
+    skill.used_in_battle = true;
+    logEvents(evs);
+    syncUI({ skipHP: true });
+    const after = () => { if (active === a) { syncHP(); syncUI(); } };
+    if (g.LS.battleFx) g.LS.battleFx.play('my', { name: def.name, el: null }, evs, after, syncHP);
+    else setTimeout(after, 180);
+    return { ok: true, disciple: disciple.name, skill: def.name };
+  }
+
+  function maybeBetray(a) {
+    if (!a || a.my.betrayed_once || a.my.hp >= a.my.hpMax * ((((g.LS.BAL.disciple || {}).betray || {}).trigger_hp_pct) || 0.3)) return null;
+    const cfg = (g.LS.BAL.disciple || {}).betray || {};
+    for (const disciple of a.disciples || []) {
+      if (disciple.battle_betrayed) continue;
+      const suspicion = g.LS.disciples ? g.LS.disciples.betrayScore(disciple) : (disciple.suspicion || 0);
+      let chance = U().clamp((suspicion - 50) / 200, 0, cfg.per_battle_cap || 0.25);
+      if (S().path === 'xie') chance = Math.min(cfg.per_battle_cap || 0.25, chance * (cfg.path_xie_mult || 1.5));
+      if (Math.random() >= chance) continue;
+      a.my.betrayed_once = true;
+      a.betrayDiscipleId = disciple.id;
+      if (!disciple.betray_warned) {
+        disciple.betray_warned = true;
+        disciple.skill_blocked_round = a.round;
+        const text = disciple.name + '握紧了手里的东西，又松开了。';
+        logEvents([{ type: 'note', side: 'my', text }]);
+        if (g.LS.ui && g.LS.ui.toast) g.LS.ui.toast(text, 4200);
+        return { warned: true, disciple };
+      }
+      const damage = Math.max(1, Math.round(a.my.hpMax * (cfg.real_dmg_pct || 0.1)));
+      a.my.hp -= damage;
+      disciple.battle_betrayed = true;
+      logEvents([{ type: 'hit', side: 'op', target: 'my', name: '背刺', dealt: damage, text: disciple.name + '骤然背刺，掌门气血 -' + damage + '。' }]);
+      if (g.LS.ui && g.LS.ui.toast) g.LS.ui.toast('【背刺】' + disciple.name + '反戈一击！', 4200);
+      syncHP();
+      return { betrayed: true, damage, disciple };
+    }
+    return null;
+  }
+
   function playCard(idx) {
     const a = active;
     if (!a || a.busy || a.phase !== 'my') return;
@@ -540,16 +669,29 @@
     if (!card) return;
     if (a.my.qi < (card.cost || 0)) { g.LS.ui.toast('行动点不足——此招需 ' + (card.cost || 0) + ' 点，先「调息 · 让招」回满'); return; }
     if ((card._cdLeft || 0) > 0) return;
+    if (!canPayCard(card, a.my)) { g.LS.ui.toast('气血不足——此招会跌破气血下限，无法催动。'); return; }
+    const betrayal = maybeBetray(a);
+    if (betrayal && betrayal.betrayed && a.my.hp <= 0) { fallIfDead('my'); finish(false, []); return; }
+    if (!canPayCard(card, a.my)) { syncUI(); return; }
     a.busy = true;
     a.phase = 'resolving-my';
     a.busySince = Date.now();
     a.my.qi -= card.cost || 0;   // 出招消耗行动点（用光了得靠「调息」回满）
+    const hpCost = cardHpCost(a.my, card);
+    if (hpCost) a.my.hp -= hpCost;
     if (card.cd) card._cdLeft = card.cd + 1; // 出招进 CD（下回合 startTurn -1 抵消）
     if (card.ap_next) a.my.apBonus = (a.my.apBonus || 0) + card.ap_next; // 下回合行功更盛
     const evs = [];
+    if (hpCost) evs.push({ type: 'note', side: 'my', text: a.my.dao + '以气血催招（-' + hpCost + '）。' });
+    if (card.blood_offering_gain) {
+      const maxLayers = (CUL().battle && CUL().battle.blood_offering_max_layers) || 5;
+      a.my.blood_offering = Math.min(maxLayers, (a.my.blood_offering || 0) + card.blood_offering_gain);
+      a.my.atk_buff_pct = Math.max(a.my.atk_buff_pct || 0, card.atk_buff_pct || 0);
+      evs.push({ type: 'note', side: 'my', text: '血祭叠至 ' + a.my.blood_offering + ' 层，攻势翻涌。' });
+    }
     if (card.dmg) evs.push(applyHit(a.my, a.op, card, true));
     if (card.heal) evs.push(applyHeal(a.my, card.heal, card.name, true));
-    if (card.shield) evs.push(applyShield(a.my, card.shield, card.name, true, { thorns_pct: card.thorns_pct || 0, block_heal: card.block_heal || 0 }));
+    if (card.shield) evs.push(applyShield(a.my, card.shield, card.name, true, { thorns_pct: card.thorns_pct || 0, block_heal: card.block_heal || 0, block_heal_pct: card.block_heal_pct || 0 }));
     if (card.ap_drain) { a.op.apBonus = (a.op.apBonus || 0) - card.ap_drain; evs.push({ type: 'note', side: 'op', text: '青藤缠身——' + a.op.dao + '下回合约少一分行功。' }); }
     if (!card.dmg && !card.heal && !card.shield) evs.push({ type: 'note', side: 'my', text: a.my.dao + '运功调整气息。' });
     logEvents(evs);
@@ -593,7 +735,10 @@
     const it = a.op.intent;
     a.op.shield = 0; // 对方回合开始先散旧罡气，出招再凝新罩
     const evs = [];
-    if (it) {
+    if (a.op.disciple_delayed) {
+      a.op.disciple_delayed = false;
+      evs.push({ type: 'note', side: 'op', text: a.op.dao + '神魂受镇，这一手未能出招。' });
+    } else if (it) {
       if (it.rest) {
         // 与玩家「调息 · 让招」同构：本手不出招，把行动点回满（apBonus 的增减在此结算）
         a.op.qi = Math.max(1, a.op.qiMax + (a.op.apBonus || 0));
@@ -626,14 +771,6 @@
       syncHP();
       if (a.my.hp <= 0) { fallIfDead('my'); finish(false, []); return; }
       if (a.op.hp <= 0) { fallIfDead('op'); finish(true, []); return; }
-      // 天道裁定（乙§2）：12 回合未分胜负，按剩余气血百分比判，防双龟流与 AI 卡壳死局
-      if (a.round >= 12) {
-        const myPct = a.my.hp / a.my.hpMax, opPct = a.op.hp / a.op.hpMax;
-        const line = '十二回合已满，天道裁定：' + (myPct > opPct ? a.my.dao + '气机更完足，判胜！' : (myPct < opPct ? a.op.dao + '气机更完足，判胜。' : '气机相当，挑战方让半招——判负。'));
-        logEvents([{ text: line }]);
-        finish(myPct > opPct, []);
-        return;
-      }
       setTimeout(startTurn, 260);
     };
     const watchdog = setTimeout(after, 6000);
@@ -664,7 +801,19 @@
       dmg: c.dmg ? c.dmgFinal : 0, heal: c.heal || 0, shield: c.shield || 0,
       el: c.el === 'root' ? (a.my.element || '五行') : (c.el || null),
       cdLeft: c._cdLeft || 0,
-      disabled: a.my.qi < (c.cost || 0) || (c._cdLeft || 0) > 0
+      disabled: a.my.qi < (c.cost || 0) || (c._cdLeft || 0) > 0 || !canPayCard(c, a.my)
+    })));
+    if (g.LS.ui.renderDiscipleSkills) g.LS.ui.renderDiscipleSkills((a.disciples || []).map((disciple, slotIdx) => ({
+      slotIdx, name: disciple.name, betrayed: !!disciple.battle_betrayed, blocked: disciple.skill_blocked_round === a.round,
+      skills: (disciple.skills || []).filter(skill => skill.revealed && skill.id === disciple.battle_skill_id).map(skill => {
+        const def = g.LS.disciples && g.LS.disciples.skillDef(skill.id);
+        return {
+          id: skill.id,
+          name: def ? def.name : skill.id,
+          desc: def ? def.desc : '',
+          used: !!skill.used_in_battle
+        };
+      })
     })));
   }
 
@@ -674,6 +823,18 @@
     syncHP();   // 收尾时血条归位（最后一击可能没走完整演出）
     const diff = Math.max(0, (a.op.realm || 0) - S().realm.index);
     const cfg = CUL().battle || {};
+    for (const disciple of a.disciples || []) {
+      if (g.LS.disciples) g.LS.disciples.revealAfterBattle(disciple.id);
+      delete disciple.skill_blocked_round;
+      delete disciple.battle_betrayed;
+    }
+    if (a.betrayDiscipleId && g.LS.disciples) {
+      const disciple = g.LS.disciples.byId(a.betrayDiscipleId);
+      if (disciple) {
+        g.LS.disciples.addSuspicion(disciple.id, 10, '战后离心');
+        if (disciple.suspicion >= 80) g.LS.disciples.applyEvent('ds_li_men', { leave: true }, 'A', { suspicion_min: 80 });
+      }
+    }
     let honor = 0;
     if (win) {
       honor = (cfg.win_honor_base || 12) + diff * (cfg.win_honor_per_realm_diff || 6);
@@ -727,8 +888,8 @@
 
   g.LS.battle = {
     makeCard, cardPower, elementMult, myDaoHao,
-    prepareBattle, challengeSenior, playCard, endTurn, skip, abort,
-    resolveDeck, ownsCard, KINDS, KIND_NAME, KIND_LIMITS, SENIOR_TIERS, combatPower, talentLv, startTrialFight, startAmbushFight,
+    prepareBattle, challengeSenior, playCard, useDiscipleSkill, endTurn, skip, abort,
+    resolveDeck, ownsCard, cardInPath, cardUnlocked, canPayCard, KINDS, KIND_NAME, XIE_KIND_NAME, KIND_LIMITS, SENIOR_TIERS, combatPower, talentLv, startTrialFight, startAmbushFight,
     get active() { return active; }
   };
 })(typeof window !== 'undefined' ? window : globalThis);

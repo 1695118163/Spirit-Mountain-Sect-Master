@@ -70,7 +70,7 @@
       tags,
       recent,
       stats: { play_seconds: Math.floor(s.stats.play_seconds), total_events: s.stats.events_total },
-      slots: slots.map((sl, i) => ({ key: i === 0 ? 'A' : 'B', type: sl.type, rarity: sl.rarity || '', brief: briefFor(sl) })),
+      slots: slots.map((sl, i) => ({ key: ['A', 'B', 'D', 'E', 'F'][i], type: sl.type, rarity: sl.rarity || '', brief: briefFor(sl) })),
       hint: hint || ''
     };
   }
@@ -92,16 +92,16 @@
 
   /** 页面侧二道校验（与代理同规则，双保险） */
   function validateLLMJson(obj) {
-    const F = ['title', 'desc', 'optionA', 'optionB'];
+    const F = ['title', 'desc', 'optionA', 'optionB', 'optionD', 'optionE', 'optionF'];
     if (!obj || F.some(k => typeof obj[k] !== 'string')) return 'field_missing';
-    const caps = { title: 12, desc: 80, optionA: 16, optionB: 16 };
+    const caps = { title: 12, desc: 80, optionA: 16, optionB: 16, optionD: 16, optionE: 16, optionF: 16 };
     for (const k of F) {
       const s = obj[k].trim();
       if (!s) return 'empty';
       if ([...s].length > caps[k]) return 'too_long';
       if (/[\d%]|×\s*\d|倍/.test(s)) return 'contains_numbers';
     }
-    if (obj.optionA.trim() === obj.optionB.trim()) return 'same_options';
+    if (new Set(F.slice(2).map(k => obj[k].trim())).size !== 5) return 'same_options';
     return null;
   }
 
@@ -137,7 +137,7 @@
     const bad = validateLLMJson(j);
     if (bad) { setStatus('degraded'); throw new Error('validate: ' + bad); }
     setStatus('ok');
-    return { title: j.title, desc: j.desc, optionA: j.optionA, optionB: j.optionB };
+    return { title: j.title, desc: j.desc, optionA: j.optionA, optionB: j.optionB, optionD: j.optionD, optionE: j.optionE, optionF: j.optionF };
   }
 
   function mergeLLMEvent(obj, slots, rarity) {
@@ -149,7 +149,10 @@
       desc: obj.desc,
       options: [
         { text: obj.optionA, fits: [slots[0].type], daoxin: 0 },
-        { text: obj.optionB, fits: [slots[1].type], daoxin: 0 }
+        { text: obj.optionB, fits: [slots[1].type], daoxin: 0 },
+        { text: obj.optionD, fits: [slots[2].type], daoxin: 0 },
+        { text: obj.optionE, fits: [slots[3].type], daoxin: 0 },
+        { text: obj.optionF, fits: [slots[4].type], daoxin: 0 }
       ]
     };
   }

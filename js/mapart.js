@@ -559,6 +559,9 @@
              '<path d="M7.6,4.4 L13.6,7 L7.6,9.6 Z" fill="currentColor" stroke="none" opacity=".85"/>' +
              '<path d="M16.4,4.4 L10.4,7 L16.4,9.6 Z" fill="currentColor" stroke="none" opacity=".85"/>' +
              '<path d="M6.4,20.4 L17.6,20.4" stroke-width="1.1" opacity=".8"/>';
+    } else if (id === 'seek') {
+      body = '<circle cx="9" cy="8" r="3"/><path d="M4.5,18.5 C5,14 7,12 9,12 C11,12 13,14 13.5,18.5"/>' +
+             '<circle cx="17" cy="14" r="3.2"/><path d="M19.4,16.4 L22,19"/>';
     } else {
       return '<svg viewBox="0 0 24 24" class="ms-glyph ms-glyph-mist" fill="currentColor" stroke="none">' +
              '<ellipse cx="9" cy="14.4" rx="6.4" ry="3.6" opacity=".7"/>' +

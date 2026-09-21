@@ -376,5 +376,179 @@
     "desc": "夜半天顶裂开一线，门后光景一闪即逝，像谁忘了关门。",
     "options": [
       { "text": "探手入门", "fits": ["A", "B"] },
-      { "text": "记其方位", "fits": ["E"] } ] }
+      { "text": "记其方位", "fits": ["E"] } ] },
+
+  { "id": "dark_whisper", "pool": "DARK", "rarity": "凡", "title": "识海私语", "min_realm": 1,
+    "desc": "打坐时有陌生声音贴着识海低语，替你念出一段不敢承认的欲望。",
+    "requires": { "not_flag": "refused_dark" }, "special": { "xinmo": 10, "next_xp_pct": 0.08 },
+    "options": [
+      { "text": "听它说完", "fits": ["A"], "daoxin": 0 },
+      { "text": "追问来处", "fits": ["E"], "daoxin": 0 } ] },
+
+  { "id": "dark_mirror", "pool": "DARK", "rarity": "凡", "title": "镜中血影", "min_realm": 1,
+    "desc": "铜镜里的人比你慢了半拍，随后从镜背递出一颗带着血纹的丹。",
+    "requires": { "not_flag": "refused_dark" }, "special": { "xinmo": 12 },
+    "options": [
+      { "text": "吞下血丹", "fits": ["A", "B"], "daoxin": 0, "special": { "free_pill": "凡", "toxic": 5 } },
+      { "text": "击碎铜镜", "fits": ["B"], "daoxin": 0 } ] },
+
+  { "id": "dark_blood_price", "pool": "DARK", "rarity": "灵", "title": "血价", "min_realm": 1,
+    "desc": "黑袍客把灵石铺成一条路，只说每一块石头都要用日后的血来偿。",
+    "requires": { "not_flag": "refused_dark" }, "special": { "xinmo": 15, "lingshi_seconds": 300 },
+    "options": [
+      { "text": "收下血契", "fits": ["A", "B"], "daoxin": -1 },
+      { "text": "只取一半", "fits": ["A"], "daoxin": 0 } ] },
+
+  { "id": "dark_disciple", "pool": "DARK", "rarity": "灵", "title": "弟子眼中的你", "min_realm": 1,
+    "desc": "弟子替你擦拭兵刃，刀面映出的不是掌门，而是一道被血光拖长的影子。",
+    "requires": { "not_flag": "refused_dark" }, "special": { "xinmo": 8, "disciple_suspicion": 5 },
+    "options": [
+      { "text": "让他继续擦", "fits": ["C"], "daoxin": 0 },
+      { "text": "收刀入鞘", "fits": ["A"], "daoxin": 1 } ] },
+
+  { "id": "dark_offer", "pool": "DARK", "rarity": "珍", "title": "引魂灯", "min_realm": 1,
+    "desc": "不知谁在山门放下一盏惨白的灯。灯焰向山外倾斜，像在为你指一条旧路之外的路。",
+    "requires": { "not_flag": "refused_dark" }, "special": { "xinmo": 8, "start_chain": "mo_xin_chu_dong" },
+    "options": [
+      { "text": "提灯上路", "fits": ["E"], "daoxin": 0 },
+      { "text": "以血养灯", "fits": ["B", "E"], "daoxin": -2 } ] },
+
+  { "id": "dark_dream_flame", "pool": "DARK", "rarity": "凡", "title": "梦里残烛", "min_realm": 0,
+    "desc": "梦中有一截黑烛烧在丹田里，醒来后火光未灭，反把经脉照得纤毫毕现。",
+    "requires": { "not_flag": "refused_dark" }, "special": { "xinmo": 5, "next_xp_pct": 0.02 },
+    "options": [
+      { "text": "闭目续上残梦", "fits": ["A", "C"], "daoxin": -1 },
+      { "text": "记下烛火走向", "fits": ["E"], "daoxin": 0 } ] },
+
+  { "id": "dark_forbidden_page", "pool": "DARK", "rarity": "凡", "title": "禁页自翻", "min_realm": 1,
+    "desc": "藏经阁最底层的禁书无风自翻，停在一页被前人用墨涂黑的吐纳法上。",
+    "requires": { "not_flag": "refused_dark" }, "special": { "xinmo": 6, "next_xp_pct": 0.03 },
+    "options": [
+      { "text": "照着黑字行气", "fits": ["A", "B"], "daoxin": -1 },
+      { "text": "拓下经脉图", "fits": ["E"], "daoxin": 0 } ] },
+
+  { "id": "dark_well_echo", "pool": "DARK", "rarity": "凡", "title": "井底回声", "min_realm": 1,
+    "desc": "废井里传来你的声音，一遍遍问若不守戒律，这一身修为还能走多快。",
+    "requires": { "not_flag": "refused_dark" }, "special": { "xinmo": 5 },
+    "options": [
+      { "text": "俯身回答它", "fits": ["C", "E"], "daoxin": -1 },
+      { "text": "垂下绳索探井", "fits": ["A", "B"], "daoxin": 0 } ] },
+
+  { "id": "dark_bone_charm", "pool": "DARK", "rarity": "灵", "title": "白骨签", "min_realm": 1,
+    "desc": "山门石阶上多了一枚白骨签，正面刻着你的名，背面写着一桩尚未发生的横财。",
+    "requires": { "not_flag": "refused_dark" }, "special": { "xinmo": 9, "lingshi_seconds": 120 },
+    "options": [
+      { "text": "收签静候横财", "fits": ["A", "E"], "daoxin": -2 },
+      { "text": "循刻痕寻找来人", "fits": ["C", "E"], "daoxin": 0 } ] },
+
+  { "id": "dark_shadow_trade", "pool": "DARK", "rarity": "灵", "title": "影中交易", "min_realm": 1,
+    "desc": "月下影子忽然朝你伸手，说愿替你苦修一夜，只取走一段不愿再想起的旧事。",
+    "requires": { "not_flag": "refused_dark" }, "special": { "xinmo": 10, "next_xp_pct": 0.05 },
+    "options": [
+      { "text": "与影子击掌", "fits": ["A", "B"], "daoxin": -2 },
+      { "text": "先问它要哪段旧事", "fits": ["E"], "daoxin": 0 } ] },
+
+  { "id": "dark_blood_seed", "pool": "DARK", "rarity": "灵", "title": "血莲种", "min_realm": 2,
+    "desc": "药圃泥土里结出一粒暗红莲种，靠近时能听见它随你的心跳轻轻开裂。",
+    "requires": { "not_flag": "refused_dark" }, "special": { "xinmo": 11, "next_xp_pct": 0.06 },
+    "options": [
+      { "text": "以指尖血浇灌", "fits": ["A", "B"], "daoxin": -2 },
+      { "text": "移入密室培育", "fits": ["C", "E"], "daoxin": -1 } ] },
+
+  { "id": "dark_heart_calamity", "pool": "DARK", "rarity": "珍", "title": "心湖倒影", "min_realm": 2,
+    "desc": "入定时心湖映出的你已白骨加身，那道倒影却比现实中的你更早一步睁眼。",
+    "requires": { "not_flag": "refused_dark" }, "special": { "xinmo": 14, "next_xp_pct": 0.08 },
+    "options": [
+      { "text": "与倒影互换一息", "fits": ["D", "B"], "daoxin": -3 },
+      { "text": "向它讨教捷径", "fits": ["A", "E"], "daoxin": -1 } ] },
+
+  { "id": "dark_nameless_altar", "pool": "DARK", "rarity": "珍", "title": "无名祭坛", "min_realm": 2,
+    "desc": "后山塌方露出一座无名祭坛，供桌积灰千年，中央却留着一个与你掌纹相合的凹槽。",
+    "requires": { "not_flag": "refused_dark" }, "special": { "xinmo": 16, "lingshi_seconds": 240 },
+    "options": [
+      { "text": "将手按入凹槽", "fits": ["D", "B"], "daoxin": -3 },
+      { "text": "重燃祭坛幽火", "fits": ["A", "E"], "daoxin": -2 } ] },
+
+  { "id": "recruit_orphan", "pool": "B", "rarity": "灵", "title": "雨夜孤灯", "min_realm": 1,
+    "desc": "山下暴雨冲垮旧屋，一个无亲无故的孩子抱着半卷经书，在山门石阶下坐到天明。",
+    "requires": { "disciple_room": true }, "disciple_effect": { "recruit": "event_orphan", "recruit_on": ["A"] },
+    "options": [
+      { "text": "收为门下", "fits": ["A"], "daoxin": 2 },
+      { "text": "赠盘缠送往善堂", "fits": ["B"], "daoxin": 1 },
+      { "text": "先留在外院考察", "fits": ["C"] },
+      { "text": "请山民代为照料", "fits": ["A"] },
+      { "text": "查明经书来历", "fits": ["E"] }
+    ] },
+
+  { "id": "recruit_rogue", "pool": "C", "rarity": "珍", "title": "散修问道", "min_realm": 2,
+    "desc": "一名年轻散修在擂台连败七场仍不肯走，只求你指出他功法里那一道走岔的气机。",
+    "requires": { "disciple_room": true }, "disciple_effect": { "recruit": "event_rogue", "recruit_on": ["A"] },
+    "options": [
+      { "text": "点化后收入门墙", "fits": ["D"], "daoxin": 1 },
+      { "text": "只替他纠正功法", "fits": ["C"] },
+      { "text": "让亲传弟子代为指教", "fits": ["A"] },
+      { "text": "邀他留山论道三日", "fits": ["E"] },
+      { "text": "以败局磨他的锐气", "fits": ["B"] }
+    ] },
+
+  { "id": "recruit_dark_adept", "pool": "DARK", "rarity": "珍", "title": "断刃投山", "min_realm": 1,
+    "desc": "一名被正邪两道同时追杀的少年将断刃插在山门前，说愿献出旧名，只求一条能活下去的路。",
+    "requires": { "disciple_room": true, "not_flag": "refused_dark" }, "disciple_effect": { "recruit": "event_dark", "recruit_on": ["A"] },
+    "options": [
+      { "text": "收服为门下暗刃", "fits": ["A", "E"], "daoxin": -2 },
+      { "text": "索要他的仇家名册", "fits": ["E"], "daoxin": -1 },
+      { "text": "替他另寻藏身之地", "fits": ["B"], "daoxin": 1 },
+      { "text": "夺下断刃逐出山门", "fits": ["A", "B"], "daoxin": -1 },
+      { "text": "旁观追兵如何处置", "fits": ["F"], "daoxin": -2 }
+    ] },
+
+  { "id": "ds_bei_fuyu", "pool": "DISCIPLE", "rarity": "凡", "title": "一诺成灰", "min_realm": 1,
+    "desc": "你应允给弟子的修行资源迟迟未到，他把失望压进笑里，眼神却从此冷了。",
+    "requires": { "active_disciple": true }, "disciple_effect": { "drift": ["shanliang", "yinhen"], "suspicion": 15 },
+    "options": [{ "text": "坦言失约", "fits": ["C"] }, { "text": "斥他贪心", "fits": ["B"], "daoxin": -1 }] },
+
+  { "id": "ds_jian_si", "pool": "DISCIPLE", "rarity": "凡", "title": "袖手见死", "min_realm": 1,
+    "desc": "败阵的同门倒在面前，弟子攥着袖口退了半步，那一步后来再也没能迈回去。",
+    "requires": { "active_disciple": true }, "disciple_effect": { "drift": ["zhonghou", "qienuo"] },
+    "options": [{ "text": "带他敛尸", "fits": ["C"] }, { "text": "命他忘掉", "fits": ["B"] }] },
+
+  { "id": "ds_jing_chi", "pool": "DISCIPLE", "rarity": "凡", "title": "久困一境", "min_realm": 1,
+    "desc": "同门接连破境，他仍停在原地。勤勉渐渐变成盘算，目光也总落在别人的丹瓶上。",
+    "requires": { "active_disciple": true }, "disciple_effect": { "drift": ["qinmian", "tanlan"] },
+    "options": [{ "text": "分他丹药", "fits": ["A"] }, { "text": "令其自省", "fits": ["C"] }] },
+
+  { "id": "ds_shou_ren", "pool": "DISCIPLE", "rarity": "灵", "title": "刃上旧仇", "min_realm": 1,
+    "desc": "仇敌倒下后，他仍握刀站了很久。血从刃尖滴尽时，隐忍也跟着滴尽了。",
+    "requires": { "active_disciple": true }, "disciple_effect": { "drift": ["yinren", "shisha"] },
+    "options": [{ "text": "替他收刀", "fits": ["C"] }, { "text": "赞他果断", "fits": ["A"], "daoxin": -1 }] },
+
+  { "id": "ds_zi_xing", "pool": "DISCIPLE", "rarity": "灵", "title": "败后观心", "min_realm": 1,
+    "desc": "大师兄一剑点在眉心，他终于低头。夜里重抄的经卷上，第一次写满了自己的疑问。",
+    "requires": { "active_disciple": true }, "disciple_effect": { "drift": ["aoman", "conghui"] },
+    "options": [{ "text": "陪他复盘", "fits": ["C"] }, { "text": "让他独悟", "fits": ["A"] }] },
+
+  { "id": "ds_fen_zi", "pool": "DISCIPLE", "rarity": "灵", "title": "分炉", "min_realm": 1,
+    "desc": "你把仅余的修行资源分给他一半。弟子看了许久，终于把库房钥匙放回原处。",
+    "requires": { "active_disciple": true }, "disciple_effect": { "drift": ["tanlan", "zhonghou"] },
+    "options": [{ "text": "与他分用", "fits": ["A"] }, { "text": "记在账上", "fits": ["B"] }] },
+
+  { "id": "ds_tou_dan", "pool": "DISCIPLE", "rarity": "凡", "title": "丹房少药", "min_realm": 1,
+    "desc": "丹房封条完好，瓶底却少了几颗丹。弟子袖口残着药香，见你时先移开了眼。",
+    "requires": { "active_disciple": true, "trait": "tanlan", "pill_min": 20 }, "disciple_effect": { "suspicion": 10, "lose_pills": 3 },
+    "options": [{ "text": "当面问他", "fits": ["B"] }, { "text": "暗中记下", "fits": ["E"] }] },
+
+  { "id": "ds_li_men", "pool": "DISCIPLE", "rarity": "珍", "title": "离门", "min_realm": 1,
+    "desc": "晨钟响过，弟子的房门敞着。榻上只留一枚裂开的门牌，山道脚印已被夜雨冲淡。",
+    "requires": { "active_disciple": true, "suspicion_min": 80 }, "disciple_effect": { "leave": true },
+    "options": [{ "text": "派人去追", "fits": ["E"] }, { "text": "由他离去", "fits": ["C"] }] },
+
+  { "id": "ds_qiu_dan", "pool": "DISCIPLE", "rarity": "凡", "title": "夜叩丹房", "min_realm": 1,
+    "desc": "弟子深夜来求一颗破境丹。他说得恭敬，指节却因用力过度而发白。",
+    "requires": { "active_disciple": true, "suspicion_range": [40, 70] }, "disciple_effect": { "calm_if_given": 15 },
+    "options": [{ "text": "赐他一丹", "fits": ["B"] }, { "text": "劝他缓修", "fits": ["C"] }] },
+
+  { "id": "ds_zhen_cha", "pool": "DISCIPLE", "rarity": "灵", "title": "掌门审视", "min_realm": 1,
+    "desc": "你让弟子坐到灯下，从入门旧事一路问到近日行止。他答得滴水不漏，却不敢看你。",
+    "requires": { "active_disciple": true }, "disciple_effect": { "reveal_trait": 1, "suspicion": 5 },
+    "options": [{ "text": "继续追问", "fits": ["E"] }, { "text": "暂且作罢", "fits": ["C"] }] }
 ]

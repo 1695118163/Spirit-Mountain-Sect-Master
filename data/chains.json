@@ -90,6 +90,37 @@
             { "text": "留一手核心火候", "fits": ["A"], "daoxin": -2 }
           ] }
       ]
+    },
+    {
+      "id": "mo_xin_chu_dong",
+      "trigger_event": "dark_offer",
+      "trigger_option": "any",
+      "trigger_chance": 1,
+      "continue_chance": 1,
+      "once_per_life": true,
+      "stages": [
+        { "title": "夜半叩门", "rarity": "灵",
+          "desc": "夜半无月，山门外有人隔门与你说话，说的都是你藏在心底、从未出口的念头。",
+          "options": [
+            { "text": "开门相迎", "fits": ["C"], "daoxin": 0, "xinmo_add": 2 },
+            { "text": "隔门问名", "fits": ["E"], "daoxin": 0, "xinmo_add": 2 },
+            { "text": "闭门不理", "action": "refuse_dark" }
+          ] },
+        { "title": "诱你以利", "rarity": "灵",
+          "desc": "门外人摊开掌心，血光里尽是捷径。来得快，代价却密密麻麻写在每一道影子背后。",
+          "options": [
+            { "text": "伸手接过", "fits": ["A"], "daoxin": 0, "xinmo_add": 2 },
+            { "text": "只问代价", "fits": ["E"], "daoxin": 0, "xinmo_add": 2 },
+            { "text": "转身便走", "action": "refuse_dark" }
+          ] },
+        { "title": "献祭试炼", "rarity": "珍",
+          "desc": "最后一盏灯熄灭，那人要你亲手割断旧路。血写的门已经打开，只等你决定是否踏进去。",
+          "options": [
+            { "text": "堕魔", "fits": ["D"], "daoxin": 0, "xinmo_add": 2, "action": "enter_xie", "requires_xinmo": 50 },
+            { "text": "堕魔·深潜", "fits": ["B"], "daoxin": 0, "xinmo_add": 2, "action": "enter_xie_deep", "requires_xinmo": 50 },
+            { "text": "收手", "action": "refuse_dark" }
+          ] }
+      ]
     }
   ]
 }

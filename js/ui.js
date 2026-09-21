@@ -33,6 +33,29 @@
   let buildingSig = '';
   let audioCtx = null;
 
+  function toggleDeckCard(deck, card, pool, limits) {
+    const next = Array.isArray(deck) ? deck.slice() : [];
+    const existing = next.indexOf(card.id);
+    if (existing !== -1) {
+      next.splice(existing, 1);
+      return { ok: true, deck: next, removed: true };
+    }
+    const cap = (limits || {})[card.kind] || 1;
+    const used = next.reduce((count, id) => {
+      const entry = pool.find(item => item.id === id);
+      return count + (entry && entry.kind === card.kind ? 1 : 0);
+    }, 0);
+    if (used >= cap) return { ok: false, deck: next, full: true };
+    next.push(card.id);
+    return { ok: true, deck: next, removed: false };
+  }
+
+  function removeDeckCardAt(deck, index) {
+    const source = Array.isArray(deck) ? deck : [];
+    if (!Number.isInteger(index) || index < 0 || index >= source.length) return source.slice();
+    return source.slice(0, index).concat(source.slice(index + 1));
+  }
+
   function $id(id) { return document.getElementById(id); }
   // 心魔阶段标签（滋生/缠身/入魔）：阈值与名称取 balance.xinmo.thresholds，与 #dao-heart 小字同源
   function xinmoStage(v) {
@@ -59,7 +82,7 @@
     return sign + n.toFixed(2);
   }
   function fmtResourceById(res, v) {
-    return (res === 'danyao' || res === 'xinmo' || res === 'toxic') ? String(Math.floor(v || 0)) : fmtResource(v);
+    return (res === 'danyao' || res === 'xinmo' || res === 'toxic' || res === 'daoxin') ? String(Math.floor(v || 0)) : fmtResource(v);
   }
   // 丹毒提示：与 economy 的产量折损同口径（每 10 点 -3%，上限 -30%）
   function toxicHint(v) {
@@ -69,7 +92,7 @@
 
   /* ── WebAudio 合成音效（零素材） ── */
   function sfx(type) {
-    if (!g.LS.S || !g.LS.S.settings || !g.LS.S.settings.sound) return;
+    if (document.hidden || !g.LS.S || !g.LS.S.settings || !g.LS.S.settings.sound) return;
     try {
       const AC = window.AudioContext || window.webkitAudioContext;
       if (!AC) return;
@@ -227,7 +250,7 @@
     });
     // 面板按钮统一事件委托（document 级）：元素被任何方式重建/替换都不会丢绑定
     document.addEventListener('click', (e) => {
-      const t = e.target.closest('#btn-market, #btn-friends, #btn-deck, #btn-help, #btn-codex, #btn-pillhouse, #btn-settings, #btn-updates, #btn-codexpage, #btn-trial, #btn-xinmo, #btn-map, #btn-quest, #btn-disciple, .map-spot');
+      const t = e.target.closest('#btn-market, #btn-friends, #btn-deck, #btn-help, #btn-codex, #btn-pillhouse, #btn-settings, #btn-updates, #btn-codexpage, #btn-trial, #btn-xinmo, #btn-mo, #btn-map, #btn-quest, #btn-disciple, .map-spot');
       if (!t) return;
       if (t.id === 'btn-market') showMarket();
       else if (t.id === 'btn-map') g.LS.page.go('map');
@@ -243,8 +266,11 @@
       else if (t.id === 'btn-codexpage') showCodexPage();
       else if (t.id === 'btn-trial') showTrial();
       else if (t.id === 'btn-xinmo') showXinmo();
+      else if (t.id === 'btn-mo') showMoPanel();
       else if (t.dataset && t.dataset.spot && t.closest('.map-spot')) {
         const spot = t.dataset.spot;
+        if (spot === 'modao') { showMoPanel(); return; }
+        if (spot === 'seek') { showDiscipleSeek(); return; }
         if (['dannfang', 'market', 'arena'].indexOf(spot) !== -1) g.LS.page.go(spot);
       }
     });
@@ -410,6 +436,7 @@
       const r = refs.resRows[res];
       // 丹药行显示细分库存总数（各品类丹药之和）；心魔行显示心境计量（0~100，非资源产量）
       const v = res === 'xinmo' ? (s.xinmo || 0)
+        : res === 'daoxin' ? Math.trunc(s.dao_heart || 0)
         : res === 'toxic' ? Math.floor(s.pill_toxic || 0)
         : (res === 'danyao' && eco.pillTotal ? eco.pillTotal() : (s.resources[res] || 0));
       const str = fmtResourceById(res, v);
@@ -423,8 +450,9 @@
         if (res === 'toxic') r.val.style.color = v >= 30 ? 'var(--cinnabar)' : '';   // 与丹房同口径：30 起标红
         lastStr['v_' + res] = str;
       }
-      const rate = (res === 'xinmo' || res === 'toxic') ? 0 : eco.computePerSecond(res);
+      const rate = (res === 'xinmo' || res === 'toxic' || res === 'daoxin') ? 0 : eco.computePerSecond(res);
       const rStr = res === 'xinmo' ? xinmoStage(s.xinmo || 0)
+        : res === 'daoxin' ? ''
         : res === 'toxic' ? toxicHint(s.pill_toxic || 0)
         : (rate > 0 ? fmtResource(rate) + '/秒' : '');
       if (lastStr['r_' + res] !== rStr) { r.rate.textContent = rStr; lastStr['r_' + res] = rStr; }
@@ -915,7 +943,9 @@
       btn.className = 'ev-option' + (opt.key === 'C' ? ' ev-leave' : '');
       // 选项不再挂效果方向标签（势/仁/益/耗/恒/缘/异/贪 一律去掉，2026-09-21 玩家口径）
       const tail = (opt.key === 'C' || ev.no_choice || ev.five_choice) ? '' : '（' + (opt.key === 'A' ? '其一' : '其二') + '）';
-      btn.innerHTML = escapeHtml(opt.text) + tail;
+      const missingXinmo = opt.requires_xinmo ? Math.max(0, opt.requires_xinmo - (g.LS.S.xinmo || 0)) : 0;
+      btn.disabled = missingXinmo > 0;
+      btn.innerHTML = escapeHtml(opt.text) + tail + (missingXinmo ? '<small>（再积 ' + missingXinmo + ' 点心魔）</small>' : '');
       btn.addEventListener('click', () => g.LS.events.chooseOption(opt.key));
       card.appendChild(btn);
     }
@@ -1354,10 +1384,12 @@
           ' <span class="bh-shield" id="bh-op-shield" style="display:none"></span></div></div></div>' +
       '<div id="battle-intent" class="battle-intent is-empty"></div>' +
       '<div id="battle-stage" class="battle-stage"></div>' +
-      '<div class="battle-qi">行动点 <span id="battle-qi-stars"></span><span class="battle-qi-note">出招消耗 · 调息回满</span></div>' +
+      '<div class="battle-qi"><span id="battle-round">第 1 回合</span> · 行动点 <span id="battle-qi-stars"></span><span class="battle-qi-note">出招消耗 · 调息回满</span></div>' +
       '<div class="battle-note">手牌 · 点一张打出（每回合限一张）</div>' +
       '<div id="battle-hands" class="battle-hands"></div>' +
-      '<div style="text-align:center"><button class="btn-primary" id="battle-end" title="不出招，行动点回满——对方趁机出手">调 息 · 让 招</button>' +
+      '<div class="battle-note">弟子术 · 回合外施放（每人每战一次）</div>' +
+      '<div id="battle-disciple-skills" class="battle-hands battle-disciple-skills"></div>' +
+      '<div class="battle-rest-wrap"><button class="btn-primary" id="battle-end" title="不出招，行动点回满——对方趁机出手">调 息 · 让 招</button>' +
         '<div class="battle-note">不出招 · 行动点回满，本回合让给对方</div></div>';
     card.querySelector('#battle-end').addEventListener('click', () => { g.LS.battle.endTurn(); });
     // 舞台：两位小人上场（演出层 battle_fx.js）
@@ -1382,7 +1414,7 @@
         '<li>出招消耗 <b>行动点</b>（= 自身境界 + 1）；用光了点「调息 · 让招」回满，代价是白让一手。</li>' +
         '<li>对手吃同一套行动条：他的点数也会耗光，耗光那一手只能调息（意图里会写出来）——那是你的机会。</li>' +
         '<li>对方头顶的<b>意图</b>就是他这一手要出的招——据此决定攻还是守。</li>' +
-        '<li>罡气护罩只保当回合；气血尽者判负。</li>' +
+        '<li>罡气护罩只保当回合；胜负只看气血归零。第 13 回合起双方进入<b>气机枯竭</b>，每回合承受递增自伤。</li>' +
       '</ul>' +
       '<div class="bg-sub">界 面 怎 么 看</div>' +
       '<ul class="bg-list bg-list-2">' +
@@ -1434,11 +1466,16 @@
     for (let i = 0; i < max; i++) html += '<span class="qi-dot' + (i < qi ? ' on' : '') + '">●</span>';
     box.innerHTML = html;
   }
+  function updateBattleRound(round, exhausted) {
+    const box = document.getElementById('battle-round');
+    if (!box) return;
+    box.innerHTML = '第 ' + round + ' 回合' + (exhausted ? ' <span class="ev-badge" style="color:var(--cinnabar)">气机枯竭</span>' : '');
+  }
   function renderBattleHands(cards) {
     const box = document.getElementById('battle-hands');
     if (!box) return;
-    box.innerHTML = cards.map(c =>
-      '<button class="hand-card' + (c.disabled ? ' hand-card-off' : '') + '" data-idx="' + c.idx + '"' + (c.disabled ? ' disabled' : '') + '>' +
+    const skillCards = cards.map(c =>
+      '<button class="hand-card' + (c.disabled ? ' hand-card-off' : '') + '" data-idx="' + c.idx + '" ' + (c.disabled ? 'disabled' : '') + '>' +
         '<span class="hc-cost">' + c.cost + '</span><b>' + escapeHtml(c.name) + '</b>' +
         '<span class="hc-el">' + fmtEl(c.el) + '</span>' +
         '<span class="hc-eff">' +
@@ -1447,7 +1484,8 @@
           (!c.dmg && !c.heal && !c.shield ? '—' : '')) + '</span>' +
       '</button>'
     ).join('');
-    box.querySelectorAll('.hand-card').forEach(btn => {
+    box.innerHTML = skillCards;
+    box.querySelectorAll('.hand-card[data-idx]').forEach(btn => {
       btn.addEventListener('click', () => { g.LS.battle.playCard(Number(btn.dataset.idx)); });
     });
   }
@@ -1550,6 +1588,7 @@
           const gain = Math.max(50, Math.floor(g.LS.economy.computePerSecond('lingshi') * 180));
           s.resources.lingshi += gain;
           s.xinmo = Math.min(100, (s.xinmo || 0) + 5);
+          if (g.LS.path && s.path === 'xie') g.LS.path.addXuesha(((g.LS.BAL.xuesha || {}).sources || {}).kill_ambush || 0);
           g.LS.save.save();
           g.LS.ui.toast('斩杀' + info.name + '——夺其囊中灵石 +' + g.LS.util.fmt(gain) + '，心魔 +5。', 4200);
           g.LS.ui.renderAll();
@@ -1589,16 +1628,16 @@
         { id: 'market', name: '市 场', x: 49.6, y: 83.2, desc: '灵石买卖' },
         { id: 'arena', name: '擂 台', x: 45.3, y: 56.6, desc: '论道切磋' },
         { id: 'locked1', name: '？', x: 85.7, y: 24.8, locked: true },
-        { id: 'locked2', name: '？', x: 7.4, y: 69.8, locked: true },
-        { id: 'locked3', name: '？', x: 88.2, y: 89.8, locked: true },
+        { id: 'modao', name: '魔 道', x: 7.4, y: 69.8, desc: '血祭与魔功', locked: g.LS.S.path !== 'xie' },
+        { id: 'seek', name: '寻 徒', x: 88.2, y: 89.8, desc: '下山访贤' },
         { id: 'locked4', name: '？', x: 18.2, y: 83.1, locked: true }
       ] : [
         { id: 'dannfang', name: '丹 房', x: 17.3, y: 81.4, desc: '炼丹服丹' },
         { id: 'market', name: '市 场', x: 41.8, y: 85.9, desc: '灵石买卖' },
         { id: 'arena', name: '擂 台', x: 49.2, y: 52.7, desc: '论道切磋' },
         { id: 'locked1', name: '？', x: 68.9, y: 18.0, locked: true },
-        { id: 'locked2', name: '？', x: 5.9, y: 58.0, locked: true },
-        { id: 'locked3', name: '？', x: 70.4, y: 88.3, locked: true },
+        { id: 'modao', name: '魔 道', x: 5.9, y: 58.0, desc: '血祭与魔功', locked: g.LS.S.path !== 'xie' },
+        { id: 'seek', name: '寻 徒', x: 70.4, y: 88.3, desc: '下山访贤' },
         { id: 'locked4', name: '？', x: 58.9, y: 73.7, locked: true }
       ];
     }
@@ -1874,6 +1913,7 @@
   function showQuest() {
     removeModals();
     const { card } = makeModal(removeModals);
+    card.classList.add('quest-card');
     const chapters = (g.LS.BAL.story || {}).chapters || [];
     const render = () => {
       const T = g.LS.quest;
@@ -1909,9 +1949,8 @@
         if (isOpen && prog.allClaimed) html += '<div class="modal-desc" style="border:1px dashed rgba(192,57,43,.4);border-radius:8px"><b>章末</b><br>' + escapeHtml(ch.outro) + '</div>';
         html += '</div></div>';
       }
-      html += '<div style="text-align:center;margin-top:8px"><button class="icon-btn" id="q-close">合 上</button></div>';
       card.innerHTML = html;
-      card.querySelector('#q-close').addEventListener('click', removeModals);
+      card.querySelectorAll('#q-close').forEach(btn => btn.addEventListener('click', removeModals));
       card.querySelectorAll('[data-toggle]').forEach(hd => hd.addEventListener('click', () => {
         const bd = hd.parentElement.querySelector('.quest-ch-bd');
         bd.style.display = bd.style.display === 'none' ? '' : 'none';
@@ -1952,39 +1991,144 @@
     toast(head + (buf.lingshi > 0 ? ' · 灵石 +' + fmtSafe(buf.lingshi) : ''), 3000);
   }
 
+  function showDiscipleSeek() {
+    removeModals();
+    const { card } = makeModal(removeModals);
+    const routes = [
+      { id: 'village', name: '村镇访孤', desc: '偏向忠厚、善良与勤勉之人。' },
+      { id: 'market', name: '坊市访贤', desc: '偏向聪慧之人，也可能遇到逐利之徒。' },
+      { id: 'secret', name: '秘境寻缘', desc: '灵根与术法更佳，心性却更难预料。' }
+    ];
+    card.innerHTML = '<div class="modal-title">下 山 寻 徒</div><div class="modal-desc">每次寻访耗时三十日，同一地点九十日后才会再有新人。三名候选中只能带回一人。</div>' +
+      '<div class="disciple-route-grid">' + routes.map(route => '<button class="disciple-route" data-seek="' + route.id + '"><b>' + route.name + '</b><span>' + route.desc + '</span></button>').join('') + '</div>' +
+      '<div class="disciple-modal-actions"><button class="icon-btn" id="seek-close">暂不下山</button></div>';
+    card.querySelector('#seek-close').addEventListener('click', removeModals);
+    card.querySelectorAll('[data-seek]').forEach(btn => btn.addEventListener('click', () => {
+      const result = g.LS.disciples.seekCandidates(btn.dataset.seek);
+      if (!result.ok) { toast(result.msg); return; }
+      showDiscipleRecruit(result.candidates, {
+        title: '寻 徒 归 山',
+        desc: '此行耗时三十日。择一人收入门下，亦可空手而归。',
+        maxSelect: 1,
+        acceptText: '收为弟子',
+        rejectText: '空手归山'
+      });
+      renderAll();
+    }));
+  }
+
+  function showDiscipleTrial() {
+    removeModals();
+    const { card } = makeModal(removeModals);
+    const n = g.LS.disciples.active().length;
+    const cost = 3000 + n * 250;
+    const exams = [
+      { id: 'heart', name: '问心', desc: '更易选出忠厚善良之人' },
+      { id: 'root', name: '测灵根', desc: '从多次测定中保留更佳灵根' },
+      { id: 'battle', name: '斗法', desc: '候选人掌握更多术法' },
+      { id: 'endure', name: '耐性', desc: '偏向勤勉隐忍，成熟度更高' }
+    ];
+    card.innerHTML = '<div class="modal-title">宗 门 试 炼</div><div class="modal-desc">选择两项考核，遴选五名候选，最终可录取一至三人。举办本次试炼需灵石 ' + fmtSafe(cost) + '。</div>' +
+      '<div class="disciple-exam-grid">' + exams.map(exam => '<label class="disciple-exam"><input type="checkbox" value="' + exam.id + '"><b>' + exam.name + '</b><span>' + exam.desc + '</span></label>').join('') + '</div>' +
+      '<div class="disciple-modal-actions"><button class="btn-primary" id="trial-start">开 试</button><button class="icon-btn" id="trial-close">取 消</button></div>';
+    card.querySelectorAll('.disciple-exam input').forEach(input => input.addEventListener('change', () => {
+      const checked = card.querySelectorAll('.disciple-exam input:checked');
+      if (checked.length > 2) { input.checked = false; toast('只能选择两项考核。'); }
+    }));
+    card.querySelector('#trial-close').addEventListener('click', showDisciple);
+    card.querySelector('#trial-start').addEventListener('click', () => {
+      const picked = Array.from(card.querySelectorAll('.disciple-exam input:checked')).map(input => input.value);
+      const result = g.LS.disciples.trialCandidates(picked);
+      if (!result.ok) { toast(result.msg); return; }
+      showDiscipleRecruit(result.candidates, {
+        title: '试 炼 放 榜',
+        desc: '试炼已毕，可录取一至三人。未选中者自行下山。',
+        maxSelect: 3,
+        acceptText: '收入门下',
+        rejectText: '本届不录'
+      });
+      renderAll();
+    });
+  }
+
   function showDisciple() {
     removeModals();
     const { card } = makeModal(removeModals);
+    card.classList.add('disciple-manager-card');
     const render = () => {
       const s = g.LS.S;
-      const d = s.disciple;
+      const disciples = g.LS.disciples ? g.LS.disciples.active() : [];
+      const party = g.LS.disciples && g.LS.disciples.battleParty ? g.LS.disciples.battleParty() : [];
       let html = '<div class="modal-title">传 承 · 掌 门 亲 传<button class="icon-btn" id="d-close" style="float:right;font-size:12px;padding:3px 12px">合 上</button></div>';
-      html += '<div class="modal-desc">第 ' + ((s.generation || 0) + 1) + ' 代掌门 · 历代传承加成：' + (s.heirloom ? Object.keys(s.heirloom).length + ' 项生效' : '尚无（转正后选定）') + '</div>';
-      if (!d || !d.recruited) {
+      html += '<div class="disciple-manager-head"><div><b>门下 ' + disciples.length + ' / 20</b><span>出战 ' + party.length + ' / 3 · 每人携带一项术法</span></div><button class="btn-primary" id="d-trial" ' + (disciples.length >= 20 ? 'disabled' : '') + '>宗门试炼</button></div>';
+      html += '<div class="modal-desc disciple-generation">第 ' + ((s.generation || 0) + 1) + ' 代掌门 · 历代传承加成：' + (s.heirloom ? Object.keys(s.heirloom).length + ' 项生效' : '尚无（转正后选定）') + '</div>';
+      if (!disciples.length) {
         html += '<div class="modal-desc">尚未收徒——推进主线「第一章·开山立派」，首位亲传弟子将叩山门。</div>';
       } else {
-        const pct = Math.floor(d.progress || 0);
-        html += '<div class="rebirth-item"><div><b>亲传弟子</b>' + (d.agent ? '<span class="ev-badge ev-badge-buff">代理掌门</span>' : '') +
-          '<div style="font-size:11px;color:var(--ink-soft)">境界 ' + escapeHtml((g.LS.BAL.realms[d.realm] || {}).name || '练气') +
-          '（跟随掌门）· 投喂 ' + (d.fed || 0) + ' 颗</div>' +
-          '<div class="bh-hp" style="margin-top:6px"><div class="bh-fill" style="width:' + pct + '%"></div></div>' +
-          '<div style="font-size:10.5px;color:var(--ink-soft)">成熟度 ' + pct + '%/100%，每满 10% 升一小境；自动 ' + (0.02 * (s.realm.index + 1) * (d.agent ? 2 : 1) * 60).toFixed(1) + '%/分钟</div></div></div>';
-        html += '<div class="modal-desc" style="font-size:11px">投喂丹药加速成长（劣+0.5% 凡+1% 灵+2% 珍+4% 仙+8%）：</div>';
-        html += '<div style="text-align:center"><button class="btn-primary" id="d-feed" style="padding:7px 22px">投喂一颗库存丹（仙→劣优先）</button></div>';
+        const stages = (g.LS.BAL.disciple || {}).stages || [];
+        const traitText = d => (d.traits || []).map(t => {
+          const def = g.LS.disciples.traitDef(t.key);
+          return t.revealed ? escapeHtml(def ? def.name : t.key) : '?';
+        }).join(' · ');
+        const skillText = d => (d.skills || []).map(sk => {
+          const def = g.LS.disciples.skillDef(sk.id);
+          return sk.revealed ? escapeHtml(def ? def.name : sk.id) : '?';
+        }).join(' · ');
+        html += '<div class="disciple-list">' + disciples.map(d => {
+          const pct = Math.floor(d.progress || 0);
+          const mayTransmit = s.path === 'xie' && (d.mood === 'resentful' || (d.traits || []).some(t => (g.LS.disciples.traitDef(t.key) || {}).polarity < 0));
+          const revealedSkills = (d.skills || []).filter(skill => skill.revealed);
+          const skillOptions = revealedSkills.map(skill => {
+            const def = g.LS.disciples.skillDef(skill.id);
+            return '<option value="' + skill.id + '" ' + (skill.id === d.battle_skill_id ? 'selected' : '') + '>' + escapeHtml(def ? def.name : skill.id) + '</option>';
+          }).join('');
+          const referReady = d.stage >= 2 && (s.game_days || 0) >= (d.referral_ready_day || 0);
+          return '<article class="disciple-card' + (d.battle_selected ? ' is-battle' : '') + '"><div class="disciple-card-main"><div class="disciple-name"><b>' + escapeHtml(d.name) + '</b>' + (d.agent ? '<span class="ev-badge ev-badge-buff">代理掌门</span>' : '') + (d.battle_selected ? '<span class="ev-badge">出战</span>' : '') + '</div>' +
+            '<div style="font-size:11px;color:var(--ink-soft)">' + escapeHtml((stages[d.stage] || {}).name || '入门') + ' · 境界 ' + escapeHtml((g.LS.BAL.realms[d.realm] || {}).name || '练气') + ' · 怀疑 ' + Math.floor(d.suspicion || 0) + '</div>' +
+            '<div style="font-size:10.5px;color:var(--ink-soft)">来处：' + escapeHtml(d.source || '山门来投') + '</div>' +
+            '<div style="font-size:11px;margin-top:4px">性情：' + traitText(d) + '</div><div style="font-size:11px">术法：' + skillText(d) + '</div>' +
+            '<div class="bh-hp" style="margin-top:6px"><div class="bh-fill" style="width:' + pct + '%"></div></div>' +
+            '<div style="font-size:10.5px;color:var(--ink-soft)">成熟度 ' + pct + '% · 投喂 ' + (d.fed || 0) + ' 颗 · 自动 ' + (0.02 * (s.realm.index + 1) * (d.agent ? 2 : 1) * 60).toFixed(1) + '%/分钟</div>' +
+            '<div class="disciple-battle-config"><label><input type="checkbox" data-d-battle="' + d.id + '" ' + (d.battle_selected ? 'checked' : '') + (revealedSkills.length ? '' : ' disabled') + '>出战</label><select data-d-skill="' + d.id + '" ' + (revealedSkills.length ? '' : 'disabled') + '>' + (skillOptions || '<option>尚无术法</option>') + '</select></div>' +
+            '<div class="disciple-card-actions"><button class="icon-btn" data-d-feed="' + d.id + '">投喂</button><button class="icon-btn" data-d-heart="' + d.id + '">问心</button>' +
+            (d.stage >= 2 ? '<button class="icon-btn" data-d-refer="' + d.id + '" title="' + (referReady ? '请这名亲传弟子举荐一名新人' : '还需 ' + Math.ceil((d.referral_ready_day || 0) - (s.game_days || 0)) + ' 日') + '" ' + (referReady ? '' : 'disabled') + '>举荐</button>' : '') +
+            (mayTransmit ? '<button class="icon-btn" data-d-magic="' + d.id + '">传魔功</button>' : '') + '<button class="icon-btn" data-d-expel="' + d.id + '">逐出</button></div></div></article>';
+        }).join('') + '</div>';
       }
-      if (d && d.agent) html += '<div class="modal-desc" style="margin-top:8px"><b>太上长老纪要</b><br>你已传位垂帘。弟子升至化神大圆满时，将触发「代际传承」四选一。</div>';
+      if (disciples.some(d => d.agent)) html += '<div class="modal-desc" style="margin-top:8px"><b>太上长老纪要</b><br>你已传位垂帘。代理掌门升至化神大圆满时，将触发「代际传承」四选一。</div>';
       card.innerHTML = html;
       const dc = card.querySelector('#d-close');
       if (dc) dc.addEventListener('click', removeModals);
-      const df = card.querySelector('#d-feed');
-      if (df) df.addEventListener('click', () => {
+      const trial = card.querySelector('#d-trial');
+      if (trial) trial.addEventListener('click', showDiscipleTrial);
+      card.querySelectorAll('[data-d-battle]').forEach(input => input.addEventListener('change', () => {
+        const done = g.LS.disciples.configureBattle(input.dataset.dBattle, input.checked, null);
+        if (!done.ok) { input.checked = !input.checked; toast(done.msg); return; }
+        render();
+      }));
+      card.querySelectorAll('[data-d-skill]').forEach(select => select.addEventListener('change', () => {
+        const done = g.LS.disciples.configureBattle(select.dataset.dSkill, null, select.value);
+        toast(done.ok ? '出战术法已更换。' : done.msg);
+      }));
+      card.querySelectorAll('[data-d-refer]').forEach(btn => btn.addEventListener('click', () => {
+        const done = g.LS.disciples.referralCandidate(btn.dataset.dRefer);
+        if (!done.ok) { toast(done.msg); return; }
+        showDiscipleRecruit(done.candidates, {
+          title: '弟 子 举 荐',
+          desc: done.referrer + '带来一位相识之人。可收入门下，也可婉拒。',
+          maxSelect: 1,
+          acceptText: '收为弟子',
+          rejectText: '婉拒举荐'
+        });
+      }));
+      card.querySelectorAll('[data-d-feed]').forEach(df => df.addEventListener('click', () => {
         const order = ['仙', '珍', '灵', '凡', '劣'];
         const stock = s.pill_stock || {};
         let done = null;
         for (const q of order) {
           for (const key of Object.keys(stock)) {
             if (key.slice(-(q.length + 1)) === '_' + q && stock[key] > 0) {
-              done = g.LS.quest.feedDisciple(key.slice(0, key.length - q.length - 1), q);
+              done = g.LS.quest.feedDisciple(key.slice(0, key.length - q.length - 1), q, df.dataset.dFeed);
               break;
             }
           }
@@ -1993,9 +2137,62 @@
         if (!done) done = { ok: false, msg: '丹房无丹可喂' };
         toast(done.msg);
         if (done.ok) { sfx('guqin'); render(); }
-      });
+      }));
+      card.querySelectorAll('[data-d-heart]').forEach(btn => btn.addEventListener('click', () => {
+        const done = g.LS.disciples.askHeart(btn.dataset.dHeart); toast(done.msg); if (done.ok) { g.LS.save.save(); render(); }
+      }));
+      card.querySelectorAll('[data-d-magic]').forEach(btn => btn.addEventListener('click', () => {
+        const done = g.LS.disciples.transmitMagic(btn.dataset.dMagic); toast(done.msg); if (done.ok) { g.LS.save.save(); render(); }
+      }));
+      card.querySelectorAll('[data-d-expel]').forEach(btn => btn.addEventListener('click', () => {
+        const d = g.LS.disciples.byId(btn.dataset.dExpel);
+        if (!d || !window.confirm('逐出' + d.name + '？此举损伤道心，且可能埋下寻仇因果。')) return;
+        const done = g.LS.disciples.expel(d.id); toast(done.msg); if (done.ok) { g.LS.save.save(); render(); }
+      }));
     };
     render();
+  }
+
+  function renderDiscipleSkills(disciples) {
+    const box = document.getElementById('battle-disciple-skills');
+    if (!box) return;
+    box.innerHTML = (disciples || []).map(d => {
+      const skills = (d.skills || []).map(skill => {
+        const disabled = skill.used || d.betrayed || d.blocked;
+        const status = skill.used ? '本战已用' : (d.betrayed ? '背刺离阵' : (d.blocked ? '迟疑不出' : '所属：' + d.name));
+        return '<button class="hand-card disciple-skill-card' + (disabled ? ' hand-card-off' : '') + '" data-disciple-slot="' + d.slotIdx + '" data-disciple-skill="' + skill.id + '" ' + (disabled ? 'disabled' : '') + '><b>' + escapeHtml(skill.name) + '</b><span class="disciple-skill-desc">' + escapeHtml(skill.desc || '暂无效果说明') + '</span><span class="hc-eff">' + escapeHtml(status) + '</span></button>';
+      }).join('');
+      return skills || '<span class="battle-note">' + escapeHtml(d.name) + '尚无已揭示术法</span>';
+    }).join('') || '<span class="battle-note">此战未带弟子</span>';
+    box.querySelectorAll('[data-disciple-skill]').forEach(btn => btn.addEventListener('click', () => {
+      const result = g.LS.battle.useDiscipleSkill(Number(btn.dataset.discipleSlot), btn.dataset.discipleSkill);
+      if (!result.ok) toast(result.msg);
+    }));
+  }
+
+  function showDiscipleRecruit(candidates, options) {
+    options = options || {};
+    removeModals();
+    const { card } = makeModal(null);
+    card.classList.add('disciple-recruit-card');
+    const room = Math.max(0, ((g.LS.BAL.disciple || {}).max_slots || 20) - g.LS.disciples.active().length);
+    const maxSelect = Math.min(room, options.maxSelect || 3);
+    card.innerHTML = '<div class="modal-title">' + escapeHtml(options.title || '山 门 来 投') + '</div><div class="modal-desc">' + escapeHtml(options.desc || '三名来客候在山门。外相可察，心性与所学仍藏在雾中。可收一至三人，也可尽数遣返。') + '</div>' +
+      '<div class="senior-row">' + candidates.map((d, i) => '<label class="senior-tier disciple-recruit-option"><input type="checkbox" data-recruit="' + i + '">' +
+        '<b>' + escapeHtml(d.name) + '</b><span class="st-desc">灵根：' + escapeHtml((d.root && d.root.key) || '未知') + ' · 性情 ? · 术法 ' + ((d.skills || []).length || '?') + ' 门</span><span class="st-rel">' + escapeHtml(d.hidden_hint || d.source || '') + '</span></label>').join('') + '</div>' +
+      '<div class="disciple-modal-actions"><button class="btn-primary" id="dr-accept">' + escapeHtml(options.acceptText || '收入门下') + '</button><button class="icon-btn" id="dr-reject">' + escapeHtml(options.rejectText || '尽数遣返') + '</button></div>';
+    const finish = selected => { g.LS.disciples.recruit(selected); removeModals(); renderAll(); };
+    card.querySelectorAll('[data-recruit]').forEach(input => input.addEventListener('change', () => {
+      const checked = card.querySelectorAll('[data-recruit]:checked');
+      if (checked.length > maxSelect) { input.checked = false; toast('本次最多录取 ' + maxSelect + ' 人。'); }
+    }));
+    card.querySelector('#dr-accept').addEventListener('click', () => {
+      const selected = Array.from(card.querySelectorAll('[data-recruit]:checked')).map(x => candidates[Number(x.dataset.recruit)]).slice(0, maxSelect);
+      if (!selected.length) { toast('至少选择一名弟子，或选择尽数遣返。'); return; }
+      finish(selected);
+      toast('山门新收弟子 ' + selected.length + ' 人。');
+    });
+    card.querySelector('#dr-reject').addEventListener('click', () => { finish([]); toast('山门重归寂静。'); });
   }
 
   /* ── 代际传承四选一（转正） ── */
@@ -2023,7 +2220,8 @@
       }[k];
       s.generation = (s.generation || 0) + 1;
       s.generation_chosen = false;
-      s.disciple = { recruited: true, progress: 0, realm: 0, agent: false, fed: 0 };
+      s.disciples = [];
+      if (g.LS.disciples) g.LS.disciples.recruit([g.LS.disciples.makeCandidate()]);
       g.LS.save.save();
       toast('【代际传承】新一代掌门继位——结局加成伴随后代一世。', 5200);
       g.LS.realm.doRebirth(true);
@@ -2109,6 +2307,87 @@
   }
 
   /* ── 邪修面板：劫掠/血祭/黑市（心魔≥30 解锁） ── */
+  function showMoPanel() {
+    if (!g.LS.path || !g.LS.path.isXie()) { toast('尚未堕魔，魔道之门不显。'); return; }
+    removeModals();
+    const { card } = makeModal(removeModals);
+    const render = () => {
+      const s = g.LS.S, path = g.LS.path;
+      const realm = path.moRealm() || { name: '炼血' };
+      const nextIndex = (s.mo_realm && s.mo_realm.index || 0) + 1;
+      const need = path.moNeed(nextIndex);
+      const xieChapters = (g.LS.BAL.story || {}).xie_chapters || [];
+      const chapterIdx = Math.max(0, Math.min(xieChapters.length - 1, (s.xie_chapter || 1) - 1));
+      const chapter = xieChapters[chapterIdx];
+      const chapterTasks = chapter ? chapter.tasks.map((task, idx) => {
+        const state = g.LS.quest.xieTaskState(chapterIdx, idx);
+        return '<div class="rebirth-item"><div><b>' + escapeHtml(task.desc) + '</b></div>' +
+          (state === 'claimed' ? '<span class="stamp">已领</span>' : '<button class="icon-btn" data-xie-claim="' + idx + '" ' + (state === 'claimable' ? '' : 'disabled') + '>' + (state === 'claimable' ? '领 取' : '进行中') + '</button>') + '</div>';
+      }).join('') : '';
+      const buildings = (g.LS.BAL.mo_buildings || []).map(def => {
+        const level = path.buildingLevel(def.id), cost = path.buildingCost(def.id), unlocked = path.buildingUnlocked(def);
+        const costText = cost ? Object.keys(cost).map(key => (key === 'xuesha' ? Math.floor(cost[key]) + ' 血煞' : fmtSafe(cost[key]) + ' 灵石')).join(' + ') : '';
+        return '<div class="rebirth-item"><div><b>' + escapeHtml(def.name) + '</b><span class="ev-badge ev-badge-buff">' + level + ' 级</span>' +
+          '<div style="font-size:11px;color:var(--ink-soft)">' + escapeHtml((def.effects && def.effects.note) || '以血煞供养的魔道建筑') + '</div></div>' +
+          '<button class="icon-btn" data-mo-build="' + def.id + '" ' + (unlocked ? '' : 'disabled') + '>' + (unlocked ? costText : '未解锁') + '</button></div>';
+      }).join('');
+      const cul = g.LS.BAL.cultivation || {};
+      const magicCards = (((cul.battle_cards || {}).my_cards) || []).filter(item => item.path === 'xie').map(item => {
+        const owned = item.default || (s.mo_cards_owned || []).indexOf(item.id) !== -1;
+        const lockedRealm = (item.unlock_realm || 0) > s.realm.index;
+        const lockedMo = (item.unlock_mo_realm || 0) > ((s.mo_realm || {}).index || 0);
+        const affordable = (s.resources.lingshi || 0) >= (item.price || 0) && (s.xuesha || 0) >= (item.xuesha_cost || 0);
+        const stateText = lockedRealm ? '正道境界不足' : (lockedMo ? '魔道第 ' + ((item.unlock_mo_realm || 0) + 1) + ' 阶解锁' : '');
+        return '<div class="rebirth-item"><div><b>' + escapeHtml(item.name) + '</b><span class="ev-badge ev-badge-buff">' + escapeHtml((g.LS.battle.XIE_KIND_NAME || {})[item.kind] || item.kind) + '</span>' +
+          '<div style="font-size:11px;color:var(--ink-soft)">' + escapeHtml(item.desc || '') + '</div></div><div>' +
+          (owned ? '<span class="stamp">已参悟</span>' : (stateText ? '<button class="icon-btn" disabled>' + stateText + '</button>' : '<button class="icon-btn" data-mo-card="' + item.id + '" ' + (affordable ? '' : 'disabled') + '>' + fmtSafe(item.price || 0) + ' 灵石 + ' + (item.xuesha_cost || 0) + ' 血煞</button>')) + '</div></div>';
+      }).join('');
+      const magicGear = ['weapons', 'techniques'].map(key => ((cul[key] || []).filter(item => item.path === 'xie').map(item => {
+        const kind = key === 'weapons' ? 'weapon' : 'technique';
+        const owned = (s[key + '_owned'] || []).indexOf(item.id) !== -1;
+        const equipped = s.equip[kind] === item.id;
+        const buildingReady = path.buildingLevel(item.sold_at) > 0;
+        const affordable = (s.resources.lingshi || 0) >= (item.price || 0) && (s.xuesha || 0) >= (item.xuesha_cost || 0);
+        const building = path.buildingDef(item.sold_at);
+        let action = '<button class="icon-btn" data-mo-gear="' + item.id + '" data-mo-gear-kind="' + kind + '">装备</button>';
+        if (equipped) action = '<span class="stamp">装备中</span>';
+        else if (!owned && !buildingReady) action = '<button class="icon-btn" disabled>需建' + escapeHtml((building || {}).name || '魔道建筑') + '</button>';
+        else if (!owned) action = '<button class="icon-btn" data-mo-gear="' + item.id + '" data-mo-gear-kind="' + kind + '" ' + (affordable ? '' : 'disabled') + '>' + fmtSafe(item.price || 0) + ' 灵石 + ' + (item.xuesha_cost || 0) + ' 血煞</button>';
+        return '<div class="rebirth-item"><div><b>' + escapeHtml(item.name) + '</b><span class="ev-badge ev-badge-chain">' + escapeHtml(item.grade || '') + ' · ' + (kind === 'weapon' ? '魔兵' : '魔典') + '</span>' +
+          '<div style="font-size:11px;color:var(--ink-soft)">' + escapeHtml(item.desc || '') + '</div></div><div>' +
+          action + '</div></div>';
+      }).join(''))).join('');
+      const needText = need ? '修为 ' + fmtSafe(need.xiufu) + ' + 血煞 ' + need.xuesha : '已至魔君';
+      card.innerHTML =
+        '<div class="modal-title">魔 道 血 途<button class="icon-btn" id="mo-close" style="float:right;font-size:12px;padding:3px 12px">离 开</button></div>' +
+        '<div class="modal-desc"><b style="color:var(--cinnabar)">' + escapeHtml(realm.name) + '</b> · 血煞 <b>' + Math.floor(s.xuesha || 0) + '</b>' +
+        ' · 心魔压制 ' + Math.round(path.xinmoSuppress() * 100) + '%<br><span style="font-size:11px;color:var(--ink-soft)">' +
+        escapeHtml(chapter ? chapter.name + '：' + chapter.intro : '血路已开，旧道仍在身后。') + '</span></div>' +
+        '<h3 class="panel-title" style="font-size:14px">魔道阶梯</h3>' +
+        '<div class="rebirth-item"><div><b>' + (need ? '血祭突破 · ' + escapeHtml((g.LS.BAL.mo_realms[nextIndex] || {}).name || '') : '魔君') + '</b>' +
+        '<div style="font-size:11px;color:var(--ink-soft)">' + needText + (need ? ' · 成功率 ' + Math.round(path.moBreakthroughRate() * 100) + '%' : '') + '</div></div>' +
+        (need ? '<button class="btn-primary" id="mo-break">血祭突破</button>' : '<span class="stamp">已登极</span>') + '</div>' +
+        (s.mo_pending_breakthrough ? '<div class="rebirth-item"><div><b>心魔献祭</b><div style="font-size:11px;color:var(--ink-soft)">献祭 40 心魔，挽回血祭败局</div></div><button class="icon-btn" id="mo-sacrifice" ' + ((s.xinmo || 0) < 40 ? 'disabled' : '') + '>献 祭</button></div>' : '') +
+        '<h3 class="panel-title" style="font-size:14px">魔道主线</h3>' + chapterTasks +
+        '<h3 class="panel-title" style="font-size:14px">魔道建筑</h3>' + buildings +
+        '<h3 class="panel-title" style="font-size:14px">魔功</h3>' + magicCards +
+        '<h3 class="panel-title" style="font-size:14px">魔兵与魔典</h3>' + magicGear +
+        '<div class="rebirth-item"><div><b>还俗</b><div style="font-size:11px;color:var(--ink-soft)">心魔须不高于 29；血煞归零、建筑封存、道心 -5。</div></div>' +
+        '<button class="icon-btn" id="mo-exit" ' + ((s.xinmo || 0) > 29 ? 'disabled' : '') + '>还 俗</button></div>';
+      card.querySelector('#mo-close').addEventListener('click', removeModals);
+      card.querySelectorAll('[data-mo-build]').forEach(btn => btn.addEventListener('click', () => { const r = path.buyBuilding(btn.dataset.moBuild); toast(r.msg); render(); renderAll(); }));
+      card.querySelectorAll('[data-mo-card]').forEach(btn => btn.addEventListener('click', () => { const r = path.buyMoCard(btn.dataset.moCard); toast(r.msg); if (r.ok) sfx('guqin'); render(); renderAll(); }));
+      card.querySelectorAll('[data-mo-gear]').forEach(btn => btn.addEventListener('click', () => { const r = path.buyMoEquipment(btn.dataset.moGear, btn.dataset.moGearKind); toast(r.msg); if (r.ok) sfx('guqin'); render(); renderAll(); }));
+      card.querySelectorAll('[data-xie-claim]').forEach(btn => btn.addEventListener('click', () => { const r = g.LS.quest.xieClaim(chapterIdx, Number(btn.dataset.xieClaim)); if (r) toast(r.gainText || r.task.story, 4200); render(); renderAll(); }));
+      const breakBtn = card.querySelector('#mo-break');
+      if (breakBtn) breakBtn.addEventListener('click', () => { const r = path.moBreakthrough(false); toast(r.msg, 4200); render(); renderAll(); });
+      const sacrificeBtn = card.querySelector('#mo-sacrifice');
+      if (sacrificeBtn) sacrificeBtn.addEventListener('click', () => { const r = path.sacrificeXinmo(); toast(r.msg, 4200); render(); renderAll(); });
+      card.querySelector('#mo-exit').addEventListener('click', () => { const r = path.exitXie(); toast(r.msg, 4200); if (r.ok) removeModals(); renderAll(); });
+    };
+    render();
+  }
+
   function showXinmo() {
     removeModals();
     const { card } = makeModal(removeModals);
@@ -2123,15 +2402,21 @@
         const a = acts[k];
         const cd = (s.xinmo_cd || {})[k];
         const left = cd && cd > Date.now() ? Math.ceil((cd - Date.now()) / 60000) : 0;
+        const minRealm = a.min_realm == null ? 0 : a.min_realm;
+        const unlockXinmo = a.unlock_xinmo == null ? ((g.LS.BAL.xinmo || {}).unlock || 30) : a.unlock_xinmo;
+        const realmLocked = s.realm.index < minRealm;
+        const xinmoLocked = xm < unlockXinmo;
+        const lockText = realmLocked ? g.LS.BAL.realms[minRealm].name + '解锁' : (xinmoLocked ? '心魔 ' + unlockXinmo + ' 解锁' : '');
         return '<div class="rebirth-item"><div><b>' + escapeHtml(a.name) + '</b>' +
           '<span class="ev-badge" style="color:var(--cinnabar)">心魔 +' + a.xinmo + '</span>' +
           '<div style="font-size:11px;color:var(--ink-soft)">' + escapeHtml(a.desc) + '</div></div>' +
-          '<button class="icon-btn" data-xact="' + k + '" ' + (left ? 'disabled' : '') + '>' + (left ? left + ' 分' : '行 事') + '</button></div>';
+          '<button class="icon-btn" data-xact="' + k + '" ' + (left || realmLocked || xinmoLocked ? 'disabled' : '') + '>' +
+          (left ? left + ' 分' : (lockText || '行 事')) + '</button></div>';
       }).join('');
       card.innerHTML =
         '<div class="modal-title">邪 修 之 道<button class="icon-btn" id="xm-close" style="float:right;font-size:12px;padding:3px 12px">离 开</button></div>' +
         '<div class="modal-desc">心魔 <b style="color:var(--cinnabar)">' + xm + '</b>/100' + (tier ? '（' + escapeHtml(tier.name) + '：' + escapeHtml(tier.desc) + '）' : '（心境清明）') +
-        '<br><span style="font-size:11px;color:var(--ink-soft)">心魔随岁月缓消（1 点/游戏年），清心丹珍品 −5、仙品 −15，转生清零。干坏事来钱快——雷劫与突破的账，迟早要还。</span></div>' +
+        '<br><span style="font-size:11px;color:var(--ink-soft)">心魔每两分钟缓消 0.5 点；缠身后清心丹的净心效果减半。干坏事来钱快——雷劫与突破的账，迟早要还。</span></div>' +
         rows;
       card.querySelector('#xm-close').addEventListener('click', removeModals);
       card.querySelectorAll('[data-xact]').forEach(btn => btn.addEventListener('click', () => {
@@ -2389,7 +2674,7 @@
         }
         rows += '<div class="modal-desc" style="font-size:11px;color:var(--ink-soft)">名刀碎裂后半价重铸；还魂甲一世触发一次、转生重置。渡劫有死亡率，命只有一条——或花灵石买后备。</div>';
       } else if (tabName === 'cards') {
-        const pool = ((cul.battle_cards || {}).my_cards || []).filter(c => c.price);
+        const pool = ((cul.battle_cards || {}).my_cards || []).filter(c => c.price && c.path !== 'xie');
         const owned = s.cards_owned || [];
         for (const c of pool) {
           const has = owned.indexOf(c.id) !== -1;
@@ -2403,7 +2688,7 @@
         }
         rows += '<div class="modal-desc" style="font-size:11px;color:var(--ink-soft)">秘传牌参悟后自动进抽牌池：斗法每回合从「已参悟的招 + 基础牌」里按行动点摸牌，不用手动编入。</div>';
       } else {
-        const list = tabName === 'tech' ? (cul.techniques || []) : (cul.weapons || []);
+        const list = (tabName === 'tech' ? (cul.techniques || []) : (cul.weapons || [])).filter(it => it.path !== 'xie');
         const ownedArr = tabName === 'tech' ? (s.techniques_owned || []) : (s.weapons_owned || []);
         const equipped = tabName === 'tech' ? s.equip.technique : s.equip.weapon;
         for (const it of list) {
@@ -2506,11 +2791,13 @@
     const closeEditor = () => { rememberPromptChoice(); removeModals(); };
     removeModals();
     const { card } = makeModal(closeEditor);
+    card.classList.add('deck-editor-card');
     const s = g.LS.S;
     const initialDeck = Array.isArray(s.deck) ? s.deck.slice() : [];
-    const pool = ((g.LS.BAL.cultivation || {}).battle_cards || {}).my_cards || [];
+    const allCards = ((g.LS.BAL.cultivation || {}).battle_cards || {}).my_cards || [];
+    const pool = allCards.filter(c => g.LS.battle.cardInPath(c));
     const KINDS = g.LS.battle.KINDS;
-    const KIND_NAME = g.LS.battle.KIND_NAME;
+    const KIND_NAME = s.path === 'xie' ? g.LS.battle.XIE_KIND_NAME : g.LS.battle.KIND_NAME;
     const owned = () => s.cards_owned || [];
     const render = () => {
       let cols = '';
@@ -2520,11 +2807,13 @@
         let items = '';
         for (const c of pool.filter(x => x.kind === kind)) {
           const has = g.LS.battle.ownsCard(c);
-          const locked = c.unlock_realm && s.realm.index < c.unlock_realm;
+          const lockedRealm = (c.unlock_realm || 0) > s.realm.index;
+          const lockedMo = c.path === 'xie' && (c.unlock_mo_realm || 0) > ((s.mo_realm || {}).index || 0);
+          const locked = lockedRealm || lockedMo;
           const activeNow = inDeckIds.indexOf(c.id) !== -1;
           if (!has) {
             items += '<div class="deck-card deck-card-locked"><b>' + escapeHtml(c.name) + '</b><span>' +
-              (locked ? '境界「' + ((g.LS.BAL.realms[c.unlock_realm] || {}).name || '?') + '」解锁' : (c.price ? '坊市秘传可参悟' : '尚未参悟')) + '</span></div>';
+              (lockedRealm ? '正道境界「' + ((g.LS.BAL.realms[c.unlock_realm] || {}).name || '?') + '」解锁' : (lockedMo ? '魔道第 ' + ((c.unlock_mo_realm || 0) + 1) + ' 阶解锁' : (c.path === 'xie' ? '魔道面板可参悟' : (c.price ? '坊市秘传可参悟' : '尚未参悟')))) + '</span></div>';
           } else {
             items += '<button class="deck-card' + (activeNow ? ' deck-card-on' : ' deck-card-off') + '" data-pick="' + c.id + '" aria-pressed="' + (activeNow ? 'true' : 'false') + '">' +
               '<b>' + escapeHtml(c.name) + '</b><span class="deck-card-meta">' + c.cost + '行动点 ' +
@@ -2536,11 +2825,11 @@
       }
       const ordered = (s.deck || []).map((id, index) => {
         const c = pool.find(x => x.id === id);
-        return c ? '<div class="deck-order-item"><span class="deck-order-index">' + (index + 1) + '</span><b>' + escapeHtml(c.name) + '</b><span class="deck-order-kind">' + escapeHtml(KIND_NAME[c.kind] || c.kind) + '</span><button class="icon-btn deck-move" data-move="up" data-order="' + index + '" title="前移"' + (index === 0 ? ' disabled' : '') + '>↑</button><button class="icon-btn deck-move" data-move="down" data-order="' + index + '" title="后移"' + (index === (s.deck || []).length - 1 ? ' disabled' : '') + '>↓</button></div>' : '';
+        return c ? '<div class="deck-order-item"><span class="deck-order-index">' + (index + 1) + '</span><b>' + escapeHtml(c.name) + '</b><span class="deck-order-kind">' + escapeHtml(KIND_NAME[c.kind] || c.kind) + '</span><button class="icon-btn deck-move deck-remove" data-deck-remove="' + index + '" title="取消这张招式">×</button><button class="icon-btn deck-move" data-move="up" data-order="' + index + '" title="前移"' + (index === 0 ? ' disabled' : '') + '>↑</button><button class="icon-btn deck-move" data-move="down" data-order="' + index + '" title="后移"' + (index === (s.deck || []).length - 1 ? ' disabled' : '') + '>↓</button></div>' : '';
       }).join('') || '<div class="deck-order-empty">尚未编入招式</div>';
       card.innerHTML =
         '<div class="modal-title">招 式 录<button class="icon-btn" id="dk-close" style="float:right;font-size:12px;padding:3px 12px">合 上</button></div>' +
-        '<div class="modal-desc"><b>斗法出战的就是你在这里配的卡组</b>（攻式 3 · 五行 2 · 守式 2 · 回式 1，共 8 槽）——每回合整套摊在手上，只按<b>行动点</b>决定你能使哪几张，每回合出一张。付不起、在冷却的会置灰；没配满的槽会从你已参悟的招里自动补位。想带重手，先把坊市「秘传」里的招买下来。</div>' +
+        '<div class="modal-desc"><b>斗法出战的就是你在这里配的卡组</b>（' + (s.path === 'xie' ? '攻式 3 · 劫掠 2 · 守式 2 · 血祭 1' : '攻式 3 · 五行 2 · 守式 2 · 回式 1') + '，共 8 槽）——每回合整套摊在手上，只按<b>行动点</b>决定你能使哪几张，每回合出一张。付不起、气血不足或在冷却的会置灰；没配满的槽会从你已参悟的招里自动补位。</div>' +
         '<div class="deck-order"><div class="deck-order-title">战斗招式位置</div>' + ordered + '</div>' +
         '<div class="deck-row">' + cols + '</div>' +
         '<div class="deck-actions"><button class="btn-primary" id="dk-save">保 存 标 记</button>' +
@@ -2567,21 +2856,19 @@
         const next = s.deck.slice(), tmp = next[i]; next[i] = next[j]; next[j] = tmp; s.deck = next;
         sfx('click'); g.LS.save.save(); render();
       }));
+      card.querySelectorAll('[data-deck-remove]').forEach(btn => btn.addEventListener('click', () => {
+        const index = Number(btn.dataset.deckRemove);
+        if (index < 0 || index >= (s.deck || []).length) return;
+        s.deck = removeDeckCardAt(s.deck, index);
+        sfx('click'); g.LS.save.save(); render();
+      }));
       card.querySelectorAll('[data-pick]').forEach(btn => btn.addEventListener('click', () => {
         const id = btn.dataset.pick;
         const c = pool.find(x => x.id === id);
         if (!c) return;
-        const limits = g.LS.battle.KIND_LIMITS || {};
-        const cap = limits[c.kind] || 1;
-        let deck = (s.deck || []).slice();
-        const has = deck.indexOf(id);
-        if (has !== -1) { deck.splice(has, 1); } // 再点取消
-        else {
-          const sameKind = deck.filter(did => { const d = pool.find(x => x.id === did); return d && d.kind === c.kind; });
-          if (sameKind.length >= cap) deck.splice(deck.indexOf(sameKind[0]), 1); // 满员挤掉最早
-          deck.push(id);
-        }
-        s.deck = deck;
+        const result = toggleDeckCard(s.deck, c, pool, g.LS.battle.KIND_LIMITS || {});
+        if (!result.ok) { toast((KIND_NAME[c.kind] || c.kind) + '槽位已满，请先从上方招式列表移除一张。'); return; }
+        s.deck = result.deck;
         sfx('click');
         render();
       }));
@@ -2921,13 +3208,22 @@
   // 手机浏览器与桌面壳退出时必须主动停掉 WebAudio；仅靠定时器自然结束会在后台继续发声。
   document.addEventListener('visibilitychange', () => {
     if (document.hidden) {
+      clearInterval(bgmTimer);
+      bgmTimer = null;
       stopBgmSources();
       if (audioCtx && audioCtx.state === 'running') audioCtx.suspend().catch(() => {});
       return;
     }
     if (!audioCtx || !g.LS.S || !g.LS.S.settings) return;
+    const restart = () => {
+      stopBgmSources();
+      bgmNext = audioCtx.currentTime + 0.8;
+      if (g.LS.S.settings.music) setBgm(true);
+    };
     if (audioCtx.state === 'suspended' && (g.LS.S.settings.sound || g.LS.S.settings.music)) {
-      audioCtx.resume().then(() => { if (g.LS.S.settings.music) bgmStep(); }).catch(() => {});
+      audioCtx.resume().then(restart).catch(() => {});
+    } else if (audioCtx.state === 'running') {
+      restart();
     }
   });
   window.addEventListener('pagehide', () => {
@@ -3246,7 +3542,8 @@
       }
       ctx.lineTo(w, h);
       ctx.closePath();
-      ctx.fillStyle = 'rgba(61, 90, 108, ' + alphas[layer] + ')';
+      const mountain = g.LS.S && g.LS.S.path === 'xie' ? '119, 28, 31' : '61, 90, 108';
+      ctx.fillStyle = 'rgba(' + mountain + ', ' + alphas[layer] + ')';
       ctx.fill();
     }
   }
@@ -3258,6 +3555,14 @@
       if (qd) qd.style.display = (g.LS.quest && g.LS.quest.hasClaimable()) ? '' : 'none'; // 主线可领奖红点（补领制）
     } catch (e) {}
     if (!g.LS.S || !g.LS.BAL) return;
+    const isXie = g.LS.S.path === 'xie';
+    document.documentElement.classList.toggle('xie', isXie);
+    if (uiState.lastXie !== isXie) {
+      uiState.lastXie = isXie;
+      drawBg();
+    }
+    const moBtn = document.getElementById('btn-mo');
+    if (moBtn) moBtn.classList.toggle('hidden', g.LS.S.path !== 'xie');
     renderResources();
     renderBuildings();
     renderCenter();
@@ -3274,10 +3579,10 @@
     renderChronicle, renderPermList, pushLog, markNewBuildings, isModalOpen, hintOnce,
     showEventModal, showEventPicker, closeEventModal, showOfflinePopup, showBreakthroughOverlay, showFailOverlay,
     showRealmUnlockGuide,
-    showSettings, showRebirthPanel, showTutorial, showPillHouse, showHelpPanel, showMarket, showFriends, showDeckEditor, scheduleDeckPrompt, showSeniorPick, showCodexPage, showUpdateNotes, scheduleUpdateNotes, migrateLegacyUpdateRead, unreadUpdateCount, playEmperorTribulation, showTrial, showXinmo, showAmbushModal, showQuest, showDisciple, showGenerationChoice, showTutorialSteps,
+    showSettings, showRebirthPanel, showTutorial, showPillHouse, showHelpPanel, showMarket, showFriends, showDeckEditor, scheduleDeckPrompt, showSeniorPick, showCodexPage, showUpdateNotes, scheduleUpdateNotes, migrateLegacyUpdateRead, unreadUpdateCount, playEmperorTribulation, showTrial, showXinmo, showMoPanel, showAmbushModal, showQuest, showDisciple, showDiscipleRecruit, showGenerationChoice, showTutorialSteps,
     showBattleArena, showBattleGuide, updateBattleHP, updateBattleShields, updateBattleQi, renderBattleHands, showBattleIntent,
-    showBattleScreen, battleLog, battleAppend, showBattleResult,
-    toast, tweenNumber, setBgm, applyLowFx, fbFlush,
+    showBattleScreen, battleLog, battleAppend, showBattleResult, renderDiscipleSkills, updateBattleRound,
+    toast, tweenNumber, setBgm, applyLowFx, fbFlush, toggleDeckCard, removeDeckCardAt,
     setLLMStatus, setForewarn, updateBuffBar, drawBg, sfx, playTribulation,
   };
 })(typeof window !== 'undefined' ? window : globalThis);

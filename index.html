@@ -91,6 +91,7 @@
       <div class="res-row tip-below" data-res="lingqi" data-tip="灵气：一口吐纳，精气入体。起楼置馆、买丹换剑，都从这口上出。"><span class="res-name">灵气</span><span class="res-val">0</span><small class="res-rate"></small></div>
       <div class="res-row tip-below" data-res="xiufu" data-tip="修为：日积月累的道行。攒满点中央「突破」叩门，成也罢败也罢，回头重攒。"><span class="res-name">修为</span><span class="res-val">0</span><small class="res-rate"></small></div>
       <div class="res-row tip-below" data-res="lingshi" data-tip="灵石：山外通行的灵钱。坊市、法器、试炼塔，处处要它。"><span class="res-name">灵石</span><span class="res-val">0</span><small class="res-rate"></small></div>
+      <div class="res-row tip-below" data-res="daoxin" data-tip="道心：掌门行止留下的善恶刻度，影响部分事件与突破。"><span class="res-name">道心</span><span class="res-val">0</span><small class="res-rate"></small></div>
       <div class="res-row tip-below" data-res="danyao" data-tip="丹药：丹炉炼出的丸药，分劣、凡、灵、珍、仙五品。服多则丹毒缠身。"><span class="res-name">丹药</span><span class="res-val">0</span><small class="res-rate"></small><button id="btn-pill" class="tip-below" data-tip="选丹：挑一颗吃（品质自选）">选丹</button><button id="btn-pillhouse" class="tip-below" data-tip="丹房：查看库存与丹毒">丹房</button></div>
       <div class="res-row tip-below" data-res="toxic" data-tip="丹毒：服丹积下的药毒。每 10 点压产量 3%（上限 30%），斗法时还会每回合反噬气血；随时间自散，清心丹可解，转世尽去。"><span class="res-name">丹毒</span><span class="res-val">0</span><small class="res-rate"></small></div>
       <div class="res-row tip-below" data-res="xinmo" data-tip="心魔：心里养出的戾气。三十滋生、六十缠身、八十五入魔；渡劫冲关更凶，静养自淡。"><span class="res-name">心魔</span><span class="res-val">0</span><small class="res-rate"></small></div>
@@ -150,11 +151,11 @@
   <aside id="right-panel" class="panel">
     <h2 class="panel-title">见闻 <span style="float:right"><button id="btn-help" class="btn-primary wen-tool-btn">指要</button> <button id="btn-codex" class="btn-primary wen-tool-btn">图鉴</button></span></h2>
     <div id="log-list"></div>
-    <div id="map-mini" aria-hidden="true"><span class="mm-dot" style="left:17.3%;top:81.4%"><b>丹房</b></span><span class="mm-dot" style="left:41.8%;top:85.9%"><b>市场</b></span><span class="mm-dot" style="left:49.2%;top:52.7%"><b>擂台</b></span><span class="mm-dot locked" style="left:68.9%;top:18%"></span><span class="mm-dot locked" style="left:5.9%;top:58%"></span><span class="mm-dot locked" style="left:70.4%;top:88.3%"></span><span class="mm-dot locked" style="left:58.9%;top:73.7%"></span></div>
+    <div id="map-mini" aria-hidden="true"><span class="mm-dot" style="left:17.3%;top:81.4%"><b>丹房</b></span><span class="mm-dot" style="left:41.8%;top:85.9%"><b>市场</b></span><span class="mm-dot" style="left:49.2%;top:52.7%"><b>擂台</b></span><span class="mm-dot locked" style="left:68.9%;top:18%"></span><span class="mm-dot locked" style="left:5.9%;top:58%"></span><span class="mm-dot" style="left:70.4%;top:88.3%"><b>寻徒</b></span><span class="mm-dot locked" style="left:58.9%;top:73.7%"></span></div>
     <div class="set-row wen-actions"><button id="btn-map" class="btn-primary wen-btn">地  图</button></div>
     <div class="set-row wen-actions"><button id="btn-market" class="btn-primary wen-btn">坊 市</button><button id="btn-friends" class="btn-primary wen-btn">道友录</button><button id="btn-deck" class="btn-primary wen-btn">招式录</button></div>
     <div class="set-row wen-actions"><button id="btn-quest" class="btn-primary wen-btn" style="position:relative">主 线<span id="quest-dot" style="display:none;position:absolute;top:-5px;right:-5px;min-width:16px;height:16px;line-height:16px;border-radius:999px;background:var(--cinnabar);color:#fff6f2;font-size:10px;text-align:center;box-shadow:0 0 8px rgba(192,57,43,.5)">领</span></button><button id="btn-disciple" class="btn-primary wen-btn">传 承</button></div>
-    <div class="set-row wen-actions"><button id="btn-trial" class="btn-primary wen-btn">试 炼 塔</button><button id="btn-codexpage" class="btn-primary wen-btn">体 系</button><button id="btn-xinmo" class="btn-primary wen-btn">邪 修</button></div>
+    <div class="set-row wen-actions"><button id="btn-trial" class="btn-primary wen-btn">试 炼 塔</button><button id="btn-codexpage" class="btn-primary wen-btn">体 系</button><button id="btn-xinmo" class="btn-primary wen-btn">邪 修</button><button id="btn-mo" class="btn-primary wen-btn hidden">魔 道</button></div>
     <h2 class="panel-title">福泽</h2>
     <div id="perm-list"></div>
     <button id="btn-rebirth" class="btn-primary">转 生</button>
@@ -176,6 +177,8 @@
 <script src="js/util.js"></script>
 <script src="js/state.js"></script>
 <script src="js/economy.js"></script>
+<script src="js/path.js"></script>
+<script src="js/disciples.js"></script>
 <script src="js/realm.js"></script>
 <script src="js/events.js"></script>
 <script src="js/llm.js"></script>

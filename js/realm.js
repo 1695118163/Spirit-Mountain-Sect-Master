@@ -46,6 +46,7 @@
       if (S().dao_heart > bt.dao_heart_bonus.high) rate += bt.dao_heart_bonus.pct;
       else if (S().dao_heart < bt.dao_heart_bonus.low) rate -= bt.dao_heart_bonus.pct;
     }
+    if (rate < 1 && g.LS.path) rate -= g.LS.path.xinmoPenalty(s.xinmo || 0);
     // 难度修正：困难档冲关更凶险，简单档更稳
     if (rate < 1 && g.LS.economy.difficultyCfg) rate += g.LS.economy.difficultyCfg().fail_rate_add || 0;
     return Math.max(0.1, Math.min(1, rate));
@@ -195,13 +196,25 @@
     }
     // 心魔侵扰：元婴起冲关有一线可能被心魔缠上（渡厄丹可免），压一成成功率（天劫重入沿用首判）
     let xinmoHit = false;
-    const xinmoChance = 0.15 + (dfc.qihuo_add || 0);
+    const xmCfg = bal.xinmo || {};
+    const effectiveXinmo = (s.xinmo || 0) * (1 - (g.LS.path ? g.LS.path.xinmoSuppress() : 0));
+    const xinmoChance = (xmCfg.intrusion_base || 0.05)
+      + (xmCfg.intrusion_xinmo_add || 0.10) * Math.min(1, effectiveXinmo / (xmCfg.intrusion_cap_xinmo || 60))
+      + (dfc.qihuo_add || 0);
     if (next.index >= 3 && !guaranteed && !(opts && opts.failReplay) && !(opts && opts.skipTribulation) && Math.random() < Math.max(0.05, xinmoChance)) {
       xinmoHit = true;
-      rate -= 0.15;
+      rate -= xmCfg.intrusion_rate_penalty || 0.15;
       if (g.LS.ui && g.LS.ui.toast) g.LS.ui.toast('冲关在即，一缕心魔悄然缠上识海——这一关，格外凶险。');
     }
     rate = Math.max(0.05, Math.min(1, rate));
+    if (!guaranteed && (s.xinmo || 0) >= 85 && !(opts && opts.failReplay) && !(opts && opts.skipTribulation)
+        && Math.random() < (xmCfg.rage_chance || 0.15)) {
+      s.resources.xiufu *= 1 - (xmCfg.rage_xiufu_loss_pct || 0.5);
+      s.bt.fail_cooldown_until = now + (bt.fail_cooldown_s || 30) * 1000;
+      if (g.LS.ui && g.LS.ui.toast) g.LS.ui.toast('心魔暴走，修为骤失一半，冲关被迫中断。');
+      if (g.LS.save && g.LS.save.save) g.LS.save.save();
+      return false;
+    }
     const pity = bt.pity_success || 3;
     const streak = (s.bt && s.bt.fail_streak) || 0;
     // failReplay：天劫动画重入，沿用首判结果（必败）
@@ -291,6 +304,10 @@
     // ── 成功分支 ──
     s.resources.xiufu = 0; // 突破消耗全部当前修为，清零重攒（cost_mode 仅作存档兼容记录）
     s.realm.index = next.index;
+    const weapon = ((bal.cultivation || {}).weapons || []).find(item => item.id === s.equip.weapon);
+    if (weapon && weapon.path === 'xie' && weapon.mo_cost && weapon.mo_cost.xinmo_per_breakthrough) {
+      s.xinmo = Math.min(100, (s.xinmo || 0) + weapon.mo_cost.xinmo_per_breakthrough);
+    }
     s.prestige.lifetime_best_realm = Math.max(s.prestige.lifetime_best_realm, next.index);
     if (s.bt) s.bt.fail_streak = 0;
     if (s.stagnation) { s.stagnation.since = now; s.stagnation.fired_for_realm = -1; } // 停滞计时重置
@@ -365,8 +382,10 @@
   function doRebirth(force) {
     const bal = BAL();
     if (!force && !canRebirth()) return false;
-    const gain = rebirthGain();
+    let gain = rebirthGain();
     const s = S();
+    const wasXie = s.path === 'xie';
+    if (wasXie) gain = Math.floor(gain * (1 + ((bal.path.xie.rebirth_gain_per_entry || 0) * (s.xie_steles || 0))));
     if (typeof localStorage !== 'undefined' && typeof document !== 'undefined') backupForRebirth();
 
     // 三世缘：本世结过缘的故人（未回收 tag）结转到跨世账本，来世以转世之身重逢
@@ -417,6 +436,9 @@
     fresh.seen_update = s.seen_update || '';   // 更新公告已读跨转生保留，否则每次转生都再弹一遍
     fresh.collection = s.collection || {};   // 图鉴跨转生保留
     fresh.chain_seen = s.chain_seen || {};
+    fresh.steles = s.steles || [];
+    fresh.chronicle_lines = s.chronicle_lines || [];
+    fresh.xie_steles = s.xie_steles || 0;
     fresh.prestige.lifetime_best_realm = 0;
     fresh.prestige.first_event_after_rebirth = fresh.prestige.bought.indexOf('qianshijiyuan') !== -1;
     fresh.prestige.points += gain;
