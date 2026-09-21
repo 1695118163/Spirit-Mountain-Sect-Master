@@ -22,6 +22,8 @@
     pill_shield: { name: '避尘', txt: '避尘丹清光护体：邪祟不侵', badge: '护' }
   };
   const lastStr = {};
+  let breathAutoTimer = null;
+  let breathGuardAt = 0;
   let evTimer = null;
   const UPDATE_READ_KEY = 'lingshan_update_read_v1';
   const DECK_PROMPT_DAY_KEY = 'lingshan_deck_prompt_day';
@@ -32,6 +34,30 @@
   const newBuildingUntil = {};
   let buildingSig = '';
   let audioCtx = null;
+  const sfxSources = new Set();
+  const queuedDiscipleRecruit = [];
+
+  function trackSfxSource(source) {
+    sfxSources.add(source);
+    source.addEventListener('ended', () => sfxSources.delete(source), { once: true });
+    return source;
+  }
+  function stopSfxSources() {
+    for (const source of sfxSources) { try { source.stop(); } catch (e) {} }
+    sfxSources.clear();
+  }
+  function syncAudioState() {
+    const settings = g.LS.S && g.LS.S.settings;
+    if (!settings) return;
+    if (!settings.sound) stopSfxSources();
+    if (!settings.sound && !settings.music) {
+      clearInterval(bgmTimer); bgmTimer = null;
+      stopBgmSources(); stopSfxSources();
+      if (audioCtx) { const closing = audioCtx; audioCtx = null; try { closing.close(); } catch (e) {} }
+    } else if (audioCtx && audioCtx.state === 'suspended') {
+      audioCtx.resume().catch(() => {});
+    }
+  }
 
   function toggleDeckCard(deck, card, pool, limits) {
     const next = Array.isArray(deck) ? deck.slice() : [];
@@ -98,7 +124,7 @@
       if (!AC) return;
       audioCtx = audioCtx || new AC();
       const t = audioCtx.currentTime;
-      const o = audioCtx.createOscillator();
+      const o = trackSfxSource(audioCtx.createOscillator());
       const gn = audioCtx.createGain();
       o.connect(gn); gn.connect(audioCtx.destination);
       if (type === 'click') {
@@ -122,7 +148,7 @@
       } else if (type === 'thunder') {
         // 天劫雷声：噪声爆裂 + 低频轰鸣（原用未定义的 ctx，整段被 try 吞掉 → 一直没声；改 audioCtx）
         const nctx = audioCtx;
-        const nb = nctx.createBufferSource();
+        const nb = trackSfxSource(nctx.createBufferSource());
         const buf = nctx.createBuffer(1, Math.floor(nctx.sampleRate * .5), nctx.sampleRate);
         const dd = buf.getChannelData(0);
         for (let i = 0; i < dd.length; i++) dd[i] = (Math.random() * 2 - 1) * Math.exp(-i / (dd.length / 4));
@@ -131,7 +157,7 @@
         const ng = nctx.createGain(); ng.gain.setValueAtTime(.4, t); ng.gain.exponentialRampToValueAtTime(.001, t + .5);
         nb.connect(nf); nf.connect(ng); ng.connect(nctx.destination);
         nb.start(t);
-        const o2 = nctx.createOscillator(); o2.type = 'sine';
+        const o2 = trackSfxSource(nctx.createOscillator()); o2.type = 'sine';
         o2.frequency.setValueAtTime(90, t); o2.frequency.exponentialRampToValueAtTime(38, t + .5);
         const g2 = nctx.createGain(); g2.gain.setValueAtTime(.28, t); g2.gain.exponentialRampToValueAtTime(.001, t + .55);
         o2.connect(g2); g2.connect(nctx.destination);
@@ -153,7 +179,7 @@
         gn.gain.exponentialRampToValueAtTime(.001, t + 1.45);
         o.start(t); o.stop(t + 1.5);
         const sctx = audioCtx;
-        const sb = sctx.createBufferSource();
+        const sb = trackSfxSource(sctx.createBufferSource());
         const sbuf = sctx.createBuffer(1, Math.floor(sctx.sampleRate * .7), sctx.sampleRate);
         const sd = sbuf.getChannelData(0);
         for (let i = 0; i < sd.length; i++) sd[i] = (Math.random() * 2 - 1) * Math.exp(-i / (sd.length / 5)) * .6;
@@ -174,6 +200,8 @@
 
   /* ── 引用缓存与事件绑定 ── */
   function initRefs() {
+    // 重新初始化（转生/存档导入等路径）前先清理旧的自动吐纳计时器，避免叠加成疯狂连点。
+    if (breathAutoTimer) { clearInterval(breathAutoTimer); breathAutoTimer = null; }
     refs.resRows = {};
     document.querySelectorAll('.res-row').forEach(row => {
       refs.resRows[row.dataset.res] = { val: row.querySelector('.res-val'), rate: row.querySelector('.res-rate') };
@@ -301,6 +329,10 @@
       spawnFloatText('+' + fmtSafe(q) + ' 灵气' + (x > 0 ? ' · +' + fmtSafe(x) + ' 修为' : ''), x > 0 ? 'gold' : 'cyan');
     };
     const doBreath = () => {
+      // 多次初始化或移动端重复派发 pointer 事件时，仍保证吐纳不会超过约 8 次/秒。
+      const now = Date.now();
+      if (now - breathGuardAt < 120) return;
+      breathGuardAt = now;
       const r = g.LS.economy.breath();
       if (burst.on()) {
         burst.qi += r.qi; burst.xp += r.xp;
@@ -326,10 +358,10 @@
     if (autoT) {
       autoT.checked = !!g.LS.S.auto_breath;
       refs.btnBreath.classList.toggle('auto-on', !!g.LS.S.auto_breath);
-      let autoTimer = null;
       const applyAuto = () => {
-        clearInterval(autoTimer);
-        if (g.LS.S.auto_breath) autoTimer = setInterval(doBreath, 150);
+        clearInterval(breathAutoTimer);
+        breathAutoTimer = null;
+        if (g.LS.S.auto_breath) breathAutoTimer = setInterval(doBreath, 150);
         refs.btnBreath.classList.toggle('auto-on', !!g.LS.S.auto_breath);
       };
       if (g.LS.S.auto_breath) applyAuto();
@@ -484,15 +516,17 @@
     lastStr.buffBar = sig;
     refs.buffBar.innerHTML = '';
     for (const b of buffs) {
-      const chip = document.createElement('span');
+      const chip = document.createElement('button');
+      chip.type = 'button';
       chip.className = 'buff-chip';
-      chip.style.cursor = 'help';
+      chip.style.cursor = 'pointer';
       const left = Math.ceil((b.ts_end - now) / 1000);
       // 悬停详情：来源与具体效果（用户反馈：状态看不懂）
       const detail = BUFF_DETAIL[b.id] || { name: b.name || '状态', txt: '' };
       chip.title = detail.name + '：' + detail.txt + '（剩 ' + left + ' 秒）';
       const multTxt = (b.mult && b.mult > 1 ? '×' + b.mult.toFixed(1) + ' ' : '') + (b.click_mult ? '点击×' + b.click_mult.toFixed(0) + ' ' : '');
       chip.textContent = (detail.badge || b.name || '状态') + ' ' + multTxt + left + 's';
+      chip.addEventListener('click', () => toast(detail.name + '：' + detail.txt + '（剩 ' + left + ' 秒）', 2800));
       refs.buffBar.appendChild(chip);
     }
   }
@@ -883,8 +917,13 @@
     refs.modalRoot.appendChild(mask);
     return { mask, card };
   }
-  function removeModals() {
+  function removeModals(skipQueued) {
     refs.modalRoot.innerHTML = '';
+    if (!skipQueued && queuedDiscipleRecruit.length) {
+      const next = queuedDiscipleRecruit.shift();
+      setTimeout(() => showDiscipleRecruit(next.candidates, next.options), 80);
+      return;
+    }
     // 启动弹窗不轮询；当前弹窗释放后，按「招式录 → 更新公告」尝试一次。
     if (pendingDeckPrompt) setTimeout(tryShowScheduledDeckPrompt, 60);
     else if (pendingUpdateNotes) setTimeout(tryShowScheduledUpdate, 60);
@@ -2021,12 +2060,13 @@
     card.querySelectorAll('[data-seek]').forEach(btn => btn.addEventListener('click', () => {
       const result = g.LS.disciples.seekCandidates(btn.dataset.seek);
       if (!result.ok) { toast(result.msg); return; }
+      removeModals(true);
       showDiscipleRecruit(result.candidates, {
         title: '寻 徒 归 山',
         desc: '此行耗时三十日。择一人收入门下，亦可空手而归。',
         maxSelect: 1,
         acceptText: '收为弟子',
-        rejectText: '空手归山'
+        rejectText: '空手归山', replace: true
       });
       renderAll();
     }));
@@ -2055,12 +2095,13 @@
       const picked = Array.from(card.querySelectorAll('.disciple-exam input:checked')).map(input => input.value);
       const result = g.LS.disciples.trialCandidates(picked);
       if (!result.ok) { toast(result.msg); return; }
+      removeModals(true);
       showDiscipleRecruit(result.candidates, {
         title: '试 炼 放 榜',
         desc: '试炼已毕，可录取一至三人。未选中者自行下山。',
         maxSelect: 3,
         acceptText: '收入门下',
-        rejectText: '本届不录'
+        rejectText: '本届不录', replace: true
       });
       renderAll();
     });
@@ -2128,15 +2169,18 @@
       card.querySelectorAll('[data-d-refer]').forEach(btn => btn.addEventListener('click', () => {
         const done = g.LS.disciples.referralCandidate(btn.dataset.dRefer);
         if (!done.ok) { toast(done.msg); return; }
+        removeModals(true);
         showDiscipleRecruit(done.candidates, {
           title: '弟 子 举 荐',
           desc: done.referrer + '带来一位相识之人。可收入门下，也可婉拒。',
           maxSelect: 1,
           acceptText: '收为弟子',
-          rejectText: '婉拒举荐'
+          rejectText: '婉拒举荐', replace: true
         });
       }));
       card.querySelectorAll('[data-d-feed]').forEach(df => df.addEventListener('click', () => {
+        const discipleList = card.querySelector('.disciple-list');
+        const keepScrollTop = discipleList ? discipleList.scrollTop : 0;
         const order = ['仙', '珍', '灵', '凡', '劣'];
         const stock = s.pill_stock || {};
         let done = null;
@@ -2151,7 +2195,11 @@
         }
         if (!done) done = { ok: false, msg: '丹房无丹可喂' };
         toast(done.msg);
-        if (done.ok) { sfx('guqin'); render(); }
+        if (done.ok) {
+          sfx('guqin'); render();
+          const restore = () => { const nextList = card.querySelector('.disciple-list'); if (nextList) nextList.scrollTop = keepScrollTop; };
+          if (window.requestAnimationFrame) requestAnimationFrame(restore); else setTimeout(restore, 0);
+        }
       }));
       card.querySelectorAll('[data-d-heart]').forEach(btn => btn.addEventListener('click', () => {
         const done = g.LS.disciples.askHeart(btn.dataset.dHeart); toast(done.msg); if (done.ok) { g.LS.save.save(); render(); }
@@ -2187,7 +2235,14 @@
 
   function showDiscipleRecruit(candidates, options) {
     options = options || {};
-    removeModals();
+    const existing = refs.modalRoot && refs.modalRoot.querySelector('.modal-card');
+    if (existing && !options.replace) {
+      if (queuedDiscipleRecruit.length >= 3) queuedDiscipleRecruit.shift();
+      queuedDiscipleRecruit.push({ candidates: candidates || [], options: options });
+      toast('山门来投已记下，当前弹窗结束后再呈上。');
+      return;
+    }
+    removeModals(!!options.replace);
     const { card } = makeModal(null);
     card.classList.add('disciple-recruit-card');
     const room = Math.max(0, ((g.LS.BAL.disciple || {}).max_slots || 20) - g.LS.disciples.active().length);
@@ -3226,6 +3281,7 @@
       clearInterval(bgmTimer);
       bgmTimer = null;
       stopBgmSources();
+      stopSfxSources();
       if (audioCtx && audioCtx.state === 'running') audioCtx.suspend().catch(() => {});
       return;
     }
@@ -3245,6 +3301,7 @@
     clearInterval(bgmTimer);
     bgmTimer = null;
     stopBgmSources();
+    stopSfxSources();
     const closing = audioCtx;
     audioCtx = null;
     if (closing && closing.state !== 'closed') closing.close().catch(() => {});
@@ -3344,7 +3401,7 @@
       '<div class="danger-zone set-row"><label>重置游戏（长按 3 秒）</label><button id="btn-reset"><span class="hold-fill"></span>长按重置</button></div>';
 
     bindDiff(); // 难度三选按钮事件（需在 innerHTML 渲染后绑定）
-    card.querySelector('#set-sound').addEventListener('change', (e) => { s.settings.sound = e.target.checked; g.LS.save.save(); });
+    card.querySelector('#set-sound').addEventListener('change', (e) => { s.settings.sound = e.target.checked; syncAudioState(); g.LS.save.save(); });
     card.querySelector('#set-lowfx').addEventListener('change', (e) => {
       s.settings.lowfx = e.target.checked;
       applyLowFx();

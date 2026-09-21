@@ -180,7 +180,7 @@ hr.brush { border: 0; height: 2px; background: linear-gradient(90deg, transparen
 
 #btn-pill { margin-left: 6px; }
 #buff-bar { display: flex; min-width:0; gap: 8px; }
-.buff-chip { font-size: 12px; color: var(--cinnabar); border: 1px solid var(--cinnabar); border-radius: 10px; padding: 1px 8px; }
+.buff-chip { font-family:inherit; font-size: 12px; color: var(--cinnabar); border: 1px solid var(--cinnabar); border-radius: 10px; padding: 1px 8px; background:transparent; cursor:pointer; white-space:nowrap; }
 
 #top-right { margin-left: auto; min-width:0; display: flex; align-items: center; gap: 10px; flex: 0 0 auto; }
 .dot { width: 10px; min-width: 10px; max-width: 10px; height: 10px; min-height: 10px; max-height: 10px; flex: 0 0 10px; aspect-ratio: 1 / 1; border-radius: 50%; display: inline-block; }
@@ -803,6 +803,7 @@ html.night body #version-mark { opacity: .3; }
 .deck-editor-card > .deck-actions,
 .deck-editor-card > .deck-login-actions { flex:0 0 auto; }
 .deck-editor-card > .deck-row { flex:1 1 auto; min-height:112px; overflow-y:auto; overscroll-behavior:contain; scrollbar-gutter:stable; padding:9px; border:1px solid rgba(122,106,85,.35); border-radius:6px; align-content:flex-start; }
+.deck-editor-card > .deck-order { max-height:min(30vh,260px); overflow-y:auto; overscroll-behavior:contain; scrollbar-gutter:stable; }
 .deck-row { display:flex; gap:8px; justify-content:center; flex-wrap:wrap; }
 .deck-col { flex:1; min-width:118px; max-width:150px; }
 .deck-kind { text-align:center; font-size:12px; letter-spacing:3px; color:var(--cinnabar,#c0392b); border-bottom:1px solid rgba(122,106,85,.5); padding-bottom:4px; margin-bottom:6px; }
@@ -839,6 +840,8 @@ html.night body #version-mark { opacity: .3; }
   .deck-editor-card > .modal-desc { font-size:11px; line-height:1.45; margin-bottom:7px; }
   .deck-editor-card > .deck-order { margin-bottom:8px; padding:7px; }
   .deck-editor-card > .deck-row { min-height:96px; padding:7px 5px; }
+  .deck-editor-card { contain:layout paint; }
+  .deck-editor-card > .deck-order { max-height:29vh; }
   .deck-editor-card .deck-col { min-width:112px; }
 }
 
@@ -910,6 +913,23 @@ html.xie body .disciple-recruit-option:has(input:checked) { background:#522529; 
   .quest-card .quest-ch-hd { min-height:38px; }
   .quest-card .rebirth-item { align-items:flex-start; padding:9px 2px; }
   .quest-card .rebirth-item button { min-height:36px; padding:6px 13px !important; flex:0 0 auto; }
+}
+
+/* 移动端最多三名出战弟子：技能固定一行显示，不再产生第二个纵向滚动区。 */
+@media (max-width:640px) {
+  .battle-disciple-skills {
+    display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:5px;
+    height:82px; min-height:82px; max-height:82px; overflow:hidden; padding:5px 6px;
+  }
+  .battle-disciple-skills .hand-card {
+    width:100%; min-width:0; min-height:0; height:72px; padding:7px 4px 5px;
+  }
+  .battle-disciple-skills .hand-card b { font-size:11px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .battle-disciple-skills .disciple-skill-desc {
+    font-size:9px; line-height:1.25; display:-webkit-box; -webkit-box-orient:vertical;
+    -webkit-line-clamp:2; overflow:hidden;
+  }
+  .battle-disciple-skills .hc-eff { font-size:8.5px; line-height:1.15; margin-top:2px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
 }
 
 /* ── 体系一览弹窗 & 更新公告 ── */

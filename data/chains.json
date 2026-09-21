@@ -117,7 +117,7 @@
           "desc": "最后一盏灯熄灭，那人要你亲手割断旧路。血写的门已经打开，只等你决定是否踏进去。",
           "options": [
             { "text": "堕魔", "fits": ["D"], "daoxin": 0, "xinmo_add": 12, "action": "enter_xie", "requires_xinmo": 40 },
-            { "text": "堕魔·深潜", "fits": ["B"], "daoxin": 0, "xinmo_add": 12, "action": "enter_xie_deep", "requires_xinmo": 40 },
+            { "text": "堕魔·深潜", "fits": ["B"], "daoxin": 0, "xinmo_add": 12, "action": "enter_xie_deep", "requires_xinmo": 75 },
             { "text": "收手", "action": "refuse_dark" }
           ] }
       ]
