@@ -24,8 +24,11 @@
   const lastStr = {};
   let evTimer = null;
   const UPDATE_READ_KEY = 'lingshan_update_read_v1';
+  const DECK_PROMPT_DAY_KEY = 'lingshan_deck_prompt_day';
   let pendingUpdateNotes = null;
   let updateNotesTimer = null;
+  let pendingDeckPrompt = false;
+  let deckPromptTimer = null;
   const newBuildingUntil = {};
   let buildingSig = '';
   let audioCtx = null;
@@ -48,6 +51,13 @@
     });
   }
   function fmtSafe(v) { return (g.LS.util && g.LS.util.fmt) ? g.LS.util.fmt(v) : String(Math.floor(v || 0)); }
+  function fmtResource(v) {
+    if (v === null || v === undefined || !isFinite(v)) return '--';
+    const units = [[1e32, '沟'], [1e28, '穰'], [1e24, '秭'], [1e20, '垓'], [1e16, '京'], [1e12, '兆'], [1e8, '亿'], [1e4, '万']];
+    const n = Math.abs(v), sign = v < 0 ? '-' : '';
+    for (const [base, unit] of units) if (n >= base) return sign + (n / base).toFixed(2) + unit;
+    return sign + n.toFixed(2);
+  }
   // 丹毒提示：与 economy 的产量折损同口径（每 10 点 -3%，上限 -30%）
   function toxicHint(v) {
     const pct = Math.min(30, Math.floor((v || 0) / 10) * 3);
@@ -142,6 +152,10 @@
     document.querySelectorAll('.res-row').forEach(row => {
       refs.resRows[row.dataset.res] = { val: row.querySelector('.res-val'), rate: row.querySelector('.res-rate') };
     });
+    refs.equipWeapon = $id('equip-weapon');
+    refs.equipWeaponRow = $id('equip-weapon-row');
+    refs.equipTechnique = $id('equip-technique');
+    refs.equipTechniqueRow = $id('equip-technique-row');
     refs.buildingList = $id('building-list');
     refs.btnBuyAll = $id('btn-buyall');
     refs.btnBuyAllSet = $id('btn-buyall-set');
@@ -210,7 +224,7 @@
     });
     // 面板按钮统一事件委托（document 级）：元素被任何方式重建/替换都不会丢绑定
     document.addEventListener('click', (e) => {
-      const t = e.target.closest('#btn-market, #btn-friends, #btn-deck, #btn-help, #btn-codex, #btn-pillhouse, #btn-settings, #btn-codexpage, #btn-trial, #btn-xinmo, #btn-map, #btn-quest, #btn-disciple, .map-spot');
+      const t = e.target.closest('#btn-market, #btn-friends, #btn-deck, #btn-help, #btn-codex, #btn-pillhouse, #btn-settings, #btn-updates, #btn-codexpage, #btn-trial, #btn-xinmo, #btn-map, #btn-quest, #btn-disciple, .map-spot');
       if (!t) return;
       if (t.id === 'btn-market') showMarket();
       else if (t.id === 'btn-map') g.LS.page.go('map');
@@ -222,6 +236,7 @@
       else if (t.id === 'btn-codex') showCodex();
       else if (t.id === 'btn-pillhouse') showPillHouse();
       else if (t.id === 'btn-settings') showSettings();
+      else if (t.id === 'btn-updates') showUpdateNotes(g.LS.CHANGELOG, { page: 'server' });
       else if (t.id === 'btn-codexpage') showCodexPage();
       else if (t.id === 'btn-trial') showTrial();
       else if (t.id === 'btn-xinmo') showXinmo();
@@ -362,6 +377,29 @@
   }
 
   /* ── 资源栏（脏比对） ── */
+  function renderEquipmentSummary() {
+    if (!refs.equipWeapon || !refs.equipTechnique) return;
+    const s = g.LS.S;
+    const cul = (g.LS.BAL && g.LS.BAL.cultivation) || {};
+    const weapon = (cul.weapons || []).find(x => x.id === (s.equip && s.equip.weapon));
+    const technique = (cul.techniques || []).find(x => x.id === (s.equip && s.equip.technique));
+    const renderOne = (kind, item, valueEl, rowEl) => {
+      const value = item ? item.name + (item.element ? ' · ' + item.element : '') : '未装备';
+      if (lastStr['equip_' + kind] !== value) {
+        valueEl.textContent = value;
+        valueEl.title = value;
+        lastStr['equip_' + kind] = value;
+      }
+      if (rowEl) {
+        rowEl.dataset.tip = item
+          ? (kind === 'weapon' ? '当前法宝：' : '当前功法：') + (item.grade ? item.grade + '品 · ' : '') + value + (item.desc ? '\n' + item.desc : '')
+          : (kind === 'weapon' ? '当前尚未装备法宝' : '当前尚未主修功法');
+      }
+    };
+    renderOne('weapon', weapon, refs.equipWeapon, refs.equipWeaponRow);
+    renderOne('technique', technique, refs.equipTechnique, refs.equipTechniqueRow);
+  }
+
   function renderResources() {
     const s = g.LS.S;
     const eco = g.LS.economy;
@@ -371,7 +409,7 @@
       const v = res === 'xinmo' ? (s.xinmo || 0)
         : res === 'toxic' ? Math.floor(s.pill_toxic || 0)
         : (res === 'danyao' && eco.pillTotal ? eco.pillTotal() : (s.resources[res] || 0));
-      const str = fmtSafe(v);
+      const str = fmtResource(v);
       if (lastStr['v_' + res] !== str) {
         if (lastStr['v_' + res] !== undefined) {
           r.val.classList.add('tick-flash');
@@ -385,9 +423,10 @@
       const rate = (res === 'xinmo' || res === 'toxic') ? 0 : eco.computePerSecond(res);
       const rStr = res === 'xinmo' ? xinmoStage(s.xinmo || 0)
         : res === 'toxic' ? toxicHint(s.pill_toxic || 0)
-        : (rate > 0 ? fmtSafe(rate) + '/秒' : '');
+        : (rate > 0 ? fmtResource(rate) + '/秒' : '');
       if (lastStr['r_' + res] !== rStr) { r.rate.textContent = rStr; lastStr['r_' + res] = rStr; }
     }
+    renderEquipmentSummary();
     checkHints(); // 概念即遇即讲
     updateBuffBar();
   }
@@ -802,8 +841,9 @@
   }
   function removeModals() {
     refs.modalRoot.innerHTML = '';
-    // 公告等待期间不轮询；当前弹窗释放后，仅尝试一次。
-    if (pendingUpdateNotes) setTimeout(tryShowScheduledUpdate, 60);
+    // 启动弹窗不轮询；当前弹窗释放后，按「招式录 → 更新公告」尝试一次。
+    if (pendingDeckPrompt) setTimeout(tryShowScheduledDeckPrompt, 60);
+    else if (pendingUpdateNotes) setTimeout(tryShowScheduledUpdate, 60);
   }
 
   /* ── 奇遇候选（2026-09-21 玩家口径「5 选 1」）：一次摊开几桩事，玩家自己挑一件经历 ──
@@ -858,7 +898,7 @@
       const btn = document.createElement('button');
       btn.className = 'ev-option' + (opt.key === 'C' ? ' ev-leave' : '');
       // 选项不再挂效果方向标签（势/仁/益/耗/恒/缘/异/贪 一律去掉，2026-09-21 玩家口径）
-      const tail = (opt.key === 'C' || ev.no_choice) ? '' : '（' + (opt.key === 'A' ? '其一' : '其二') + '）';
+      const tail = (opt.key === 'C' || ev.no_choice || ev.five_choice) ? '' : '（' + (opt.key === 'A' ? '其一' : '其二') + '）';
       btn.innerHTML = escapeHtml(opt.text) + tail;
       btn.addEventListener('click', () => g.LS.events.chooseOption(opt.key));
       card.appendChild(btn);
@@ -1337,7 +1377,7 @@
         '<li>「<b>手牌</b>」一栏：你这一手能用的招都在这里，点其中一张打出去（每回合限一张）。</li>' +
         '<li>最下「<b>调息 · 让招</b>」：不出招，把行动点回满，本回合让给对方。</li>' +
       '</ul>' +
-      '<div style="text-align:center;margin-top:16px"><button class="btn-primary" id="bg-ok" style="padding:9px 34px">知 道 了</button></div>';
+      '<div class="bg-actions"><button class="btn-primary" id="bg-ok" style="padding:9px 34px">知 道 了</button></div>';
     card.appendChild(gd);
     gd.querySelector('#bg-ok').addEventListener('click', function () {
       if (gd.parentNode) gd.parentNode.removeChild(gd);
@@ -2193,12 +2233,19 @@
   function showUpdateNotes(data, options) {
     const entries = updateEntries(data);
     if (!entries.length) return;
+    // 全服公告独立维护，不随版本号或更新公告自动变化。
+    const serverNotice = (data && data.server_notice) || {
+      date: '',
+      title: '全服公告',
+      lines: ['如果大家对游戏优化有什么建议，请在设置页面底部的留言栏积极留言哦！']
+    };
     clearTimeout(updateNotesTimer);
     updateNotesTimer = null;
     pendingUpdateNotes = null;
     removeModals();
     const opts = options || {};
     const read = updateReadIds();
+    let activePage = opts.page === 'server' ? 'server' : 'updates';
     let activeId = opts.entryId || (entries.find(e => read.indexOf(e.id || e.version) === -1) || entries[0]).id || entries[0].version;
     const viewed = new Set();
     const { card } = makeModal(null);
@@ -2206,27 +2253,33 @@
     const render = () => {
       const entry = entries.find(e => (e.id || e.version) === activeId) || entries[0];
       activeId = entry.id || entry.version;
-      viewed.add(activeId);
+      if (activePage === 'updates') viewed.add(activeId);
       const currentRead = updateReadIds();
-      card.innerHTML =
-        '<div class="update-head"><div><div class="modal-title">更 新 公 告</div><div class="update-current">当前版本 ' + escapeHtml((data && data.current_version) || entry.version || '') + '</div></div>' +
-        '<button class="icon-btn update-close" id="un-close" title="关闭" aria-label="关闭">✕</button></div>' +
-        '<div class="update-layout"><nav class="update-versions" aria-label="历史版本">' + entries.map(e => {
-          const id = e.id || e.version;
-          const unread = currentRead.indexOf(id) === -1;
-          return '<button class="update-version' + (id === activeId ? ' is-active' : '') + '" data-update-id="' + escapeHtml(id) + '">' +
-            '<span>' + escapeHtml(e.version || id) + '</span><small>' + escapeHtml(e.date || '') + '</small>' + (unread ? '<i>新</i>' : '') + '</button>';
-        }).join('') + '</nav>' +
+      const updateLayout = '<div class="update-layout"><nav class="update-versions" aria-label="历史版本">' + entries.map(e => {
+        const id = e.id || e.version;
+        const unread = currentRead.indexOf(id) === -1;
+        return '<button class="update-version' + (id === activeId ? ' is-active' : '') + '" data-update-id="' + escapeHtml(id) + '">' +
+          '<span>' + escapeHtml(e.version || id) + '</span><small>' + escapeHtml(e.date || '') + '</small>' + (unread ? '<i>新</i>' : '') + '</button>';
+      }).join('') + '</nav>' +
         '<article class="update-article"><div class="update-article-head"><span class="update-date">' + escapeHtml(entry.date || '') + '</span><h2>' + escapeHtml(entry.title || '版本更新') + '</h2>' +
-        (entry.summary ? '<p>' + escapeHtml(entry.summary) + '</p>' : '') + '</div><div class="update-notes">' + updateBody(entry) + '</div></article></div>' +
-        '<div class="update-actions"><button class="icon-btn" id="un-read-all">全部标为已读</button><button class="btn-primary" id="un-ok">知 道 了</button></div>';
+        (entry.summary ? '<p>' + escapeHtml(entry.summary) + '</p>' : '') + '</div><div class="update-notes">' + updateBody(entry) + '</div></article></div>';
+      const serverLayout = '<div class="update-layout update-layout-notice"><article class="update-article"><div class="update-article-head"><span class="update-date">' + escapeHtml(serverNotice.date || '') + '</span><h2>' + escapeHtml(serverNotice.title || '全服公告') + '</h2>' +
+        (serverNotice.summary ? '<p>' + escapeHtml(serverNotice.summary) + '</p>' : '') + '</div>' +
+        '<div class="update-notes">' + updateBody(serverNotice) + '</div></article></div>';
+      card.innerHTML =
+        '<div class="update-head"><div><div class="update-tabs" role="tablist"><button class="update-tab' + (activePage === 'server' ? ' is-active' : '') + '" data-update-page="server" role="tab">全服公告</button><button class="update-tab' + (activePage === 'updates' ? ' is-active' : '') + '" data-update-page="updates" role="tab">更新公告</button></div><div class="update-current">当前版本 ' + escapeHtml((data && data.current_version) || entry.version || '') + '</div></div>' +
+        '<button class="icon-btn update-close" id="un-close" title="关闭" aria-label="关闭">✕</button></div>' +
+        (activePage === 'server' ? serverLayout : updateLayout) +
+        '<div class="update-actions">' + (activePage === 'updates' ? '<button class="icon-btn" id="un-read-all">全部标为已读</button>' : '<span></span>') + '<button class="btn-primary" id="un-ok">知 道 了</button></div>';
       const close = () => { markUpdatesRead(Array.from(viewed)); removeModals(); };
       card.querySelector('#un-close').addEventListener('click', close);
       card.querySelector('#un-ok').addEventListener('click', close);
-      card.querySelector('#un-read-all').addEventListener('click', () => {
+      const readAll = card.querySelector('#un-read-all');
+      if (readAll) readAll.addEventListener('click', () => {
         markUpdatesRead(entries.map(e => e.id || e.version));
         render();
       });
+      card.querySelectorAll('[data-update-page]').forEach(btn => btn.addEventListener('click', () => { activePage = btn.dataset.updatePage; render(); }));
       card.querySelectorAll('[data-update-id]').forEach(btn => btn.addEventListener('click', () => { activeId = btn.dataset.updateId; render(); }));
     };
     render();
@@ -2244,6 +2297,24 @@
     pendingUpdateNotes = { data: data, entryId: latest.id || latest.version };
     clearTimeout(updateNotesTimer);
     updateNotesTimer = setTimeout(tryShowScheduledUpdate, Math.max(0, delay || 0));
+  }
+
+  function localDayKey() {
+    const d = new Date();
+    return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+  }
+  function tryShowScheduledDeckPrompt() {
+    if (!pendingDeckPrompt || isModalOpen() || (g.LS.battle && g.LS.battle.active)) return;
+    pendingDeckPrompt = false;
+    showDeckEditor({ loginPrompt: true });
+  }
+  function scheduleDeckPrompt(delay) {
+    try {
+      if (localStorage.getItem(DECK_PROMPT_DAY_KEY) === localDayKey()) return;
+    } catch (e) {}
+    pendingDeckPrompt = true;
+    clearTimeout(deckPromptTimer);
+    deckPromptTimer = setTimeout(tryShowScheduledDeckPrompt, Math.max(0, delay || 0));
   }
 
   /* ── 大师兄档位选择（师弟/同门/师兄，正常修炼都能赢） ── */
@@ -2389,6 +2460,7 @@
         sfx('guqin');
         toast('已购入「' + it.name + '」并装备');
         render(btn.dataset.kind);
+        renderResources();
         g.LS.save.save();
       }));
       card.querySelectorAll('[data-equip]').forEach(btn => btn.addEventListener('click', () => {
@@ -2397,6 +2469,7 @@
         sfx('click');
         toast('已装备');
         render(btn.dataset.kind);
+        renderResources();
         g.LS.save.save();
       }));
     };
@@ -2404,10 +2477,18 @@
   }
 
   /* ── 招式录：斗法出战卡组编成（四类各限槽数，共 8 槽）＋ 已参悟招式一览 ── */
-  function showDeckEditor() {
+  function showDeckEditor(options) {
+    const opts = options || {};
+    let suppressToday = false;
+    const rememberPromptChoice = () => {
+      if (!opts.loginPrompt || !suppressToday) return;
+      try { localStorage.setItem(DECK_PROMPT_DAY_KEY, localDayKey()); } catch (e) {}
+    };
+    const closeEditor = () => { rememberPromptChoice(); removeModals(); };
     removeModals();
-    const { card } = makeModal(removeModals);
+    const { card } = makeModal(closeEditor);
     const s = g.LS.S;
+    const initialDeck = Array.isArray(s.deck) ? s.deck.slice() : [];
     const pool = ((g.LS.BAL.cultivation || {}).battle_cards || {}).my_cards || [];
     const KINDS = g.LS.battle.KINDS;
     const KIND_NAME = g.LS.battle.KIND_NAME;
@@ -2434,19 +2515,39 @@
         }
         cols += '<div class="deck-col"><div class="deck-kind">' + (KIND_NAME[kind] || kind) + '</div>' + items + '</div>';
       }
+      const ordered = (s.deck || []).map((id, index) => {
+        const c = pool.find(x => x.id === id);
+        return c ? '<div class="deck-order-item"><span class="deck-order-index">' + (index + 1) + '</span><b>' + escapeHtml(c.name) + '</b><span class="deck-order-kind">' + escapeHtml(KIND_NAME[c.kind] || c.kind) + '</span><button class="icon-btn deck-move" data-move="up" data-order="' + index + '" title="前移"' + (index === 0 ? ' disabled' : '') + '>↑</button><button class="icon-btn deck-move" data-move="down" data-order="' + index + '" title="后移"' + (index === (s.deck || []).length - 1 ? ' disabled' : '') + '>↓</button></div>' : '';
+      }).join('') || '<div class="deck-order-empty">尚未编入招式</div>';
       card.innerHTML =
         '<div class="modal-title">招 式 录<button class="icon-btn" id="dk-close" style="float:right;font-size:12px;padding:3px 12px">合 上</button></div>' +
         '<div class="modal-desc"><b>斗法出战的就是你在这里配的卡组</b>（攻式 3 · 五行 2 · 守式 2 · 回式 1，共 8 槽）——每回合整套摊在手上，只按<b>行动点</b>决定你能使哪几张，每回合出一张。付不起、在冷却的会置灰；没配满的槽会从你已参悟的招里自动补位。想带重手，先把坊市「秘传」里的招买下来。</div>' +
+        '<div class="deck-order"><div class="deck-order-title">战斗招式位置</div>' + ordered + '</div>' +
         '<div class="deck-row">' + cols + '</div>' +
-        '<div style="text-align:center;margin-top:8px"><button class="btn-primary" id="dk-save" style="padding:7px 26px">保 存 标 记</button> ' +
-        '<button class="icon-btn" id="dk-reset">清 空 标 记</button></div>';
-      card.querySelector('#dk-close').addEventListener('click', removeModals);
+        '<div class="deck-actions"><button class="btn-primary" id="dk-save">保 存 标 记</button>' +
+        '<button class="icon-btn" id="dk-reset">清 空 标 记</button></div>' +
+        (opts.loginPrompt ? '<div class="deck-login-actions"><label><input type="checkbox" id="dk-today"' + (suppressToday ? ' checked' : '') + '> 今日内不再弹出 <small>（勾选后今日内不再弹出）</small></label><button class="icon-btn" id="dk-skip">无需修改</button></div>' : '');
+      card.querySelector('#dk-close').addEventListener('click', closeEditor);
       card.querySelector('#dk-save').addEventListener('click', () => {
         g.LS.save.save();
         toast('卡组已保存——下一场斗法就按这套出牌。');
-        removeModals();
+        closeEditor();
+      });
+      const todayCheck = card.querySelector('#dk-today');
+      if (todayCheck) todayCheck.addEventListener('change', () => { suppressToday = todayCheck.checked; });
+      const skip = card.querySelector('#dk-skip');
+      if (skip) skip.addEventListener('click', () => {
+        s.deck = initialDeck.slice();
+        g.LS.save.save();
+        closeEditor();
       });
       card.querySelector('#dk-reset').addEventListener('click', () => { s.deck = []; g.LS.save.save(); toast('已清空卡组（下次进斗法按已参悟的招自动补位）'); render(); });
+      card.querySelectorAll('[data-move]').forEach(btn => btn.addEventListener('click', () => {
+        const i = Number(btn.dataset.order), j = btn.dataset.move === 'up' ? i - 1 : i + 1;
+        if (i < 0 || j < 0 || i >= s.deck.length || j >= s.deck.length) return;
+        const next = s.deck.slice(), tmp = next[i]; next[i] = next[j]; next[j] = tmp; s.deck = next;
+        sfx('click'); g.LS.save.save(); render();
+      }));
       card.querySelectorAll('[data-pick]').forEach(btn => btn.addEventListener('click', () => {
         const id = btn.dataset.pick;
         const c = pool.find(x => x.id === id);
@@ -2716,6 +2817,21 @@
   /* ── 弦外之音：WebAudio 合成古琴 BGM（D 宫五声，留白即曲） ── */
   const BGM_SCALE = [220.0, 293.66, 329.63, 369.99, 440.0, 493.88, 587.33];
   let bgmTimer = null, bgmNext = 0, bgmCount = 0;
+  const bgmSources = new Set();
+
+  function trackBgmSource(source) {
+    bgmSources.add(source);
+    source.addEventListener('ended', () => bgmSources.delete(source), { once: true });
+    return source;
+  }
+
+  function stopBgmSources() {
+    for (const source of bgmSources) {
+      try { source.stop(); } catch (e) {}
+    }
+    bgmSources.clear();
+    bgmNext = 0;
+  }
 
   function bgmPluck(freq, when, vol) {
     const ctx = audioCtx;
@@ -2724,8 +2840,8 @@
     const lp = ctx.createBiquadFilter();
     lp.type = 'lowpass'; lp.frequency.value = 1200;
     g.connect(lp); lp.connect(ctx.destination);
-    const o1 = ctx.createOscillator(); o1.type = 'triangle'; o1.frequency.value = freq;
-    const o2 = ctx.createOscillator(); o2.type = 'sine'; o2.frequency.value = freq * 1.003;
+    const o1 = trackBgmSource(ctx.createOscillator()); o1.type = 'triangle'; o1.frequency.value = freq;
+    const o2 = trackBgmSource(ctx.createOscillator()); o2.type = 'sine'; o2.frequency.value = freq * 1.003;
     const og = ctx.createGain(); og.gain.value = 0.5;
     o1.connect(og); o2.connect(og); og.connect(g);
     g.gain.setValueAtTime(0, t);
@@ -2734,7 +2850,7 @@
     const buf = ctx.createBuffer(1, Math.floor(ctx.sampleRate * 0.01), ctx.sampleRate);
     const d = buf.getChannelData(0);
     for (let i = 0; i < d.length; i++) d[i] = (Math.random() * 2 - 1) * Math.exp(-i / 120);
-    const nb = ctx.createBufferSource(); nb.buffer = buf;
+    const nb = trackBgmSource(ctx.createBufferSource()); nb.buffer = buf;
     const ng = ctx.createGain(); ng.gain.value = 0.03;
     nb.connect(ng); ng.connect(lp);
     o1.start(t); o2.start(t); nb.start(t);
@@ -2744,7 +2860,7 @@
   function bgmXiao(when) {
     const ctx = audioCtx;
     const t = when;
-    const o = ctx.createOscillator(); o.type = 'sine'; o.frequency.value = 293.66;
+    const o = trackBgmSource(ctx.createOscillator()); o.type = 'sine'; o.frequency.value = 293.66;
     const g = ctx.createGain();
     o.connect(g); g.connect(ctx.destination);
     g.gain.setValueAtTime(0, t);
@@ -2773,9 +2889,39 @@
   }
 
   function setBgm(on) {
-    if (on) { if (!bgmTimer) { bgmTimer = setInterval(bgmStep, 800); bgmStep(); } }
-    else { clearInterval(bgmTimer); bgmTimer = null; }
+    if (on) {
+      if (!bgmTimer) bgmTimer = setInterval(bgmStep, 800);
+      bgmStep();
+    } else {
+      clearInterval(bgmTimer);
+      bgmTimer = null;
+      stopBgmSources();
+    }
   }
+
+  // 手机浏览器与桌面壳退出时必须主动停掉 WebAudio；仅靠定时器自然结束会在后台继续发声。
+  document.addEventListener('visibilitychange', () => {
+    if (document.hidden) {
+      stopBgmSources();
+      if (audioCtx && audioCtx.state === 'running') audioCtx.suspend().catch(() => {});
+      return;
+    }
+    if (!audioCtx || !g.LS.S || !g.LS.S.settings) return;
+    if (audioCtx.state === 'suspended' && (g.LS.S.settings.sound || g.LS.S.settings.music)) {
+      audioCtx.resume().then(() => { if (g.LS.S.settings.music) bgmStep(); }).catch(() => {});
+    }
+  });
+  window.addEventListener('pagehide', () => {
+    clearInterval(bgmTimer);
+    bgmTimer = null;
+    stopBgmSources();
+    const closing = audioCtx;
+    audioCtx = null;
+    if (closing && closing.state !== 'closed') closing.close().catch(() => {});
+  });
+  window.addEventListener('pageshow', () => {
+    if (g.LS.S && g.LS.S.settings && g.LS.S.settings.music) setBgm(true);
+  });
 
   /* ── 留言板（2026-09-21）：递给本地代理落盘；代理没开就存本机，下次进来自动补交 ── */
   const FB_KEY = 'lingshan_feedback_pending';
@@ -2827,8 +2973,6 @@
     const { card, mask } = makeModal(removeModals);
     const s = g.LS.S;
     const label = (k) => (g.LS.BAL.difficulty && g.LS.BAL.difficulty[k] && g.LS.BAL.difficulty[k].label) || k;
-    const updateCount = unreadUpdateCount(g.LS.CHANGELOG);
-    const currentVersion = (g.LS.CHANGELOG && g.LS.CHANGELOG.current_version) || (g.LS.BAL && g.LS.BAL.version) || '';
     const bindDiff = () => {
       card.querySelectorAll('[data-setdiff]').forEach(btn => {
         btn.addEventListener('click', () => {
@@ -2857,7 +3001,6 @@
       '<div class="set-llm-status">奇遇文案由火山方舟免费额度生成；不填或额度耗尽时自动改用内置事件池，游戏始终完整可玩，绝不产生任何费用。</div>' +
       '<div class="set-row"><label>密钥（写入 config.json）</label><input class="set-input" id="set-key" type="password" placeholder="粘贴 ark_api_key"><button class="btn-primary" id="set-key-save">保存</button></div>' +
       '<div class="set-row"><button class="icon-btn" id="set-retry-llm">重试 LLM</button><button class="icon-btn" id="set-savenow">立即存档</button></div>' +
-      '<div class="set-row update-setting"><label>更新公告' + (updateCount ? '<span class="update-unread-count">' + updateCount + ' 条未读</span>' : '') + '</label><button class="icon-btn" id="set-updates">查看 ' + escapeHtml(currentVersion) + '</button></div>' +
       '<div class="set-row"><label>导出存档</label><button class="icon-btn" id="set-export">生成文本</button></div>' +
       '<textarea class="set-textarea" id="set-io" placeholder="导出后复制保存；导入时粘贴至此"></textarea>' +
       '<div class="set-row"><label>导入存档</label><button class="icon-btn" id="set-import">读取文本</button></div>' +
@@ -2886,7 +3029,6 @@
     });
     card.querySelector('#set-llm').addEventListener('change', (e) => { s.settings.llm_enabled = e.target.checked; g.LS.save.save(); });
     card.querySelector('#set-savenow').addEventListener('click', () => { g.LS.save.save(); toast('已存档'); });
-    card.querySelector('#set-updates').addEventListener('click', () => showUpdateNotes(g.LS.CHANGELOG, { history: true }));
     card.querySelector('#set-retry-llm').addEventListener('click', () => { g.LS.llm.retryLLM(); toast('正在重新探测 LLM……'); });
     card.querySelector('#set-export').addEventListener('click', () => {
       const ta = card.querySelector('#set-io');
@@ -3113,7 +3255,7 @@
     renderChronicle, renderPermList, pushLog, markNewBuildings, isModalOpen, hintOnce,
     showEventModal, showEventPicker, closeEventModal, showOfflinePopup, showBreakthroughOverlay, showFailOverlay,
     showRealmUnlockGuide,
-    showSettings, showRebirthPanel, showTutorial, showPillHouse, showHelpPanel, showMarket, showFriends, showDeckEditor, showSeniorPick, showCodexPage, showUpdateNotes, scheduleUpdateNotes, migrateLegacyUpdateRead, unreadUpdateCount, playEmperorTribulation, showTrial, showXinmo, showAmbushModal, showQuest, showDisciple, showGenerationChoice, showTutorialSteps,
+    showSettings, showRebirthPanel, showTutorial, showPillHouse, showHelpPanel, showMarket, showFriends, showDeckEditor, scheduleDeckPrompt, showSeniorPick, showCodexPage, showUpdateNotes, scheduleUpdateNotes, migrateLegacyUpdateRead, unreadUpdateCount, playEmperorTribulation, showTrial, showXinmo, showAmbushModal, showQuest, showDisciple, showGenerationChoice, showTutorialSteps,
     showBattleArena, showBattleGuide, updateBattleHP, updateBattleShields, updateBattleQi, renderBattleHands, showBattleIntent,
     showBattleScreen, battleLog, battleAppend, showBattleResult,
     toast, tweenNumber, setBgm, applyLowFx, fbFlush,

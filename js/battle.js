@@ -99,16 +99,18 @@
     const s = S();
     const pool = poolArr || CARDS().my_cards || [];
     const deck = Array.isArray(s.deck) ? s.deck.slice() : [];
-    const picked = [];
+    const picked = [], counts = {};
+    // 先按玩家在招式录中的全局顺序入池；这个顺序就是战斗手牌的位置。
+    for (const id of deck) {
+      const c = pool.find(x => x.id === id && (!x.unlock_realm || S().realm.index >= x.unlock_realm));
+      if (!c || !ownsCard(c) || picked.indexOf(c) !== -1) continue;
+      const limit = KIND_LIMITS[c.kind] || 1;
+      if ((counts[c.kind] || 0) >= limit) continue;
+      picked.push(c); counts[c.kind] = (counts[c.kind] || 0) + 1;
+    }
     for (const kind of KINDS) {
       const limit = KIND_LIMITS[kind] || 1;
-      let taken = 0;
-      for (const id of deck) {
-        if (taken >= limit) break;
-        // 境界未到的招式不入池：卡组整槽都是高境界招时，下面会回退到默认牌，不至于空手
-        const c = pool.find(x => x.id === id && x.kind === kind && (!x.unlock_realm || S().realm.index >= x.unlock_realm));
-        if (c && ownsCard(c) && picked.indexOf(c) === -1) { picked.push(c); taken += 1; }
-      }
+      let taken = counts[kind] || 0;
       // 槽位没填满：从「已拥有 + 境界达标 + 本境付得起（费用 ≤ 境界+1）」的牌里随机补位，
       // 按强度排序（伤害+护盾+回气，同分看费用），保证出战池尽量满 8 槽、且会带重手
       if (taken < limit) {
@@ -502,6 +504,8 @@
     const a = active;
     if (!a) return;
     a.round += 1;
+    a.phase = 'my';
+    a.busy = false;
     // 行动点不再每回合自动回满：出招按费用扣，用光了靠「调息 · 让招」恢复（用户口径 2026-09-13）
     if (a.round === 1) a.my.qi = a.my.qiMax;
     a.my.shield = 0;
@@ -531,12 +535,14 @@
   /** 我方出招：一回合只放一招，放完立刻把回合交给对方（2026-09-13 用户口径） */
   function playCard(idx) {
     const a = active;
-    if (!a || a.busy) return;
+    if (!a || a.busy || a.phase !== 'my') return;
     const card = a.my.hand[idx];
     if (!card) return;
     if (a.my.qi < (card.cost || 0)) { g.LS.ui.toast('行动点不足——此招需 ' + (card.cost || 0) + ' 点，先「调息 · 让招」回满'); return; }
     if ((card._cdLeft || 0) > 0) return;
     a.busy = true;
+    a.phase = 'resolving-my';
+    a.busySince = Date.now();
     a.my.qi -= card.cost || 0;   // 出招消耗行动点（用光了得靠「调息」回满）
     if (card.cd) card._cdLeft = card.cd + 1; // 出招进 CD（下回合 startTurn -1 抵消）
     if (card.ap_next) a.my.apBonus = (a.my.apBonus || 0) + card.ap_next; // 下回合行功更盛
@@ -548,12 +554,18 @@
     if (!card.dmg && !card.heal && !card.shield) evs.push({ type: 'note', side: 'my', text: a.my.dao + '运功调整气息。' });
     logEvents(evs);
     syncUI({ skipHP: true });   // 手牌/行动点立刻更新；血条等打到身上
+    let settled = false;
     const after = () => {
+      if (settled || active !== a) return;
+      settled = true;
+      clearTimeout(watchdog);
       a.busy = false;
+      a.busySince = 0;
       syncHP();
       if (a.op.hp <= 0) { fallIfDead('op'); finish(true, []); return; }
       opTurn(); // 一招既出，回合交给对方
     };
+    const watchdog = setTimeout(after, 6000); // 移动端后台降频或特效回调丢失时自动解锁回合
     if (g.LS.battleFx) g.LS.battleFx.play('my', card, evs, after, syncHP);
     else setTimeout(after, 420);
   }
@@ -561,8 +573,9 @@
   /** 玩家点「调 息」：不出招，行动点回满——代价是白让一手给对方 */
   function endTurn() {
     const a = active;
-    if (!a || a.busy) return;
-    a.my.qi = a.my.qiMax + (a.my.apBonus || 0);
+    if (!a) return;
+    if (a.busy || a.phase !== 'my') { g.LS.ui.toast('这一手尚在结算，请稍候。'); return; }
+    a.my.qi = Math.max(1, a.my.qiMax + (a.my.apBonus || 0));
     a.my.apBonus = 0;
     logEvents([{ text: a.my.dao + '盘膝调息，行动点复满。' }]);
     if (g.LS.battleFx) g.LS.battleFx.float('my', '调 息', 'shield');
@@ -575,13 +588,15 @@
     const a = active;
     if (!a) return;
     a.busy = true;
+    a.phase = 'op';
+    a.busySince = Date.now();
     const it = a.op.intent;
     a.op.shield = 0; // 对方回合开始先散旧罡气，出招再凝新罩
     const evs = [];
     if (it) {
       if (it.rest) {
         // 与玩家「调息 · 让招」同构：本手不出招，把行动点回满（apBonus 的增减在此结算）
-        a.op.qi = a.op.qiMax + (a.op.apBonus || 0);
+        a.op.qi = Math.max(1, a.op.qiMax + (a.op.apBonus || 0));
         a.op.apBonus = 0;
         evs.push({ type: 'note', side: 'op', text: a.op.dao + '按剑不动，盘膝调息——行动点复满，这一手不出招。' });
       } else {
@@ -601,8 +616,13 @@
     logEvents(evs);
     g.LS.ui.showBattleIntent('');
     syncUI({ skipHP: true });   // 对方这一手打到我身上时再掉血
+    let settled = false;
     const after = () => {
+      if (settled || active !== a) return;
+      settled = true;
+      clearTimeout(watchdog);
       a.busy = false;
+      a.busySince = 0;
       syncHP();
       if (a.my.hp <= 0) { fallIfDead('my'); finish(false, []); return; }
       if (a.op.hp <= 0) { fallIfDead('op'); finish(true, []); return; }
@@ -616,6 +636,7 @@
       }
       setTimeout(startTurn, 260);
     };
+    const watchdog = setTimeout(after, 6000);
     if (g.LS.battleFx) g.LS.battleFx.play('op', it || { name: '调息' }, evs, after, syncHP);
     else setTimeout(after, 420);
   }

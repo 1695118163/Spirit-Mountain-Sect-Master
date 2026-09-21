@@ -589,8 +589,14 @@
     const pickSide = (v) => Array.isArray(v) ? (v.length ? v[Math.floor(Math.random() * v.length)] : null) : (v || null);
     const side = pickSide(isGood ? e.pos : e.neg) || pickSide(isGood ? e.neg : e.pos) || {};
     const desc = String(side.desc || e.desc || '').split('{away}').join(away);   // 「离山这几日」按真实离线时长落字
-    const sideFits = side.fits || (isGood ? ['A'] : ['F']);
-    const stageEv = { id: e.id, pool: 'OFFLINE', rarity: rarity, title: e.title, desc: desc, options: [{ fits: sideFits }], tags: [] };
+    const choiceDefs = ((cfg.choice_options || {})[e.id] || [
+      { text: '稳妥处置', fits: ['A'] },
+      { text: '亲自过问', fits: ['C'] },
+      { text: '顺势而为', fits: ['A', 'C'] },
+      { text: '从严处置', fits: ['A', 'F'] },
+      { text: '暂且搁置', fits: ['F'] }
+    ]).slice(0, 5);
+    const stageEv = { id: e.id, pool: 'OFFLINE', rarity: rarity, title: e.title, desc: desc, options: choiceDefs, tags: [] };
     const slots = rollSlots(stageEv);
     return {
       id: 'offline:' + e.id,
@@ -601,20 +607,23 @@
       builtinTags: [],
       title: e.title,
       desc: desc,
-      no_choice: true,        // 离线事件不给选择：看到的就是已经发生的事
+      five_choice: true,
       good: isGood,
-      options: [
-        { key: 'A', text: '知道了', slot: slots[0], daoxin: side.daoxin || 0, effect: side.effect || 'none' },
-        { key: 'C', text: BAL().texts.event_leave, slot: null, daoxin: 0, effect: 'none' }   // 只作倒计时兜底，不渲染
-      ]
+      options: choiceDefs.map((choice, index) => ({
+        key: 'O' + (index + 1),
+        text: choice.text,
+        slot: slots[index],
+        daoxin: choice.daoxin || 0,
+        effect: choice.effect || 'none'
+      }))
     };
   }
 
-  /** 离线候选（2026-09-21 玩家口径「5 选 1」）：加权、不重复、按条件过滤，给几张由 offline_events.pick_count 定 */
-  function rollOfflineCandidates(gapSec) {
+  /** 离线事件抽取：加权、不重复、按条件过滤。五选一发生在每个事件的处置选项内。 */
+  function rollOfflineCandidates(gapSec, count) {
     const cfg = offlinePoolCfg();
     if (!cfg || !cfg.events || !cfg.events.length) return [];
-    const n = Math.max(1, Math.floor(cfg.pick_count || 1));
+    const n = Math.max(0, Math.floor(count == null ? (cfg.count != null ? cfg.count : offlineEventCount(gapSec)) : count));
     const pool = cfg.events.filter(offlineCondOk);
     const picked = [];
     for (let i = 0; i < n && pool.length; i++) {
@@ -630,12 +639,12 @@
     return picked;
   }
 
-  /** 旧入口（一次直接给成型事件，不走选单）：抽 cfg.count 条 */
+  /** 一次抽 cfg.count 条成型事件；每条事件内部均为五选一。 */
   function rollOfflineEvents(gapSec) {
     const cfg = offlinePoolCfg() || {};
     const n = cfg.count != null ? cfg.count : offlineEventCount(gapSec);
     if (!n) return [];
-    return rollOfflineCandidates(gapSec).slice(0, n).map(c => buildOfflineFinal(c.entry, gapSec));
+    return rollOfflineCandidates(gapSec, n).map(c => buildOfflineFinal(c.entry, gapSec));
   }
 
   /** 离线归来：结算单排第一，后面跟独立池事件 + 访客 / 托梦，然后开始依次弹 */
@@ -647,19 +656,8 @@
       id: 'offline:settle', source: 'offline', kind: 'settle', payload: settleResult,
       rarity: '灵', title: (BAL().texts || {}).offline_title || '山中无甲子', desc: '', options: []
     });
-    // 离线事件（2026-09-21 玩家口径「5 选 1」）：摊开几桩山中事让玩家挑一桩听；
-    // pick_count 调成 1 就退回「随机听一桩」
-    const offCfg = offlinePoolCfg() || {};
-    const cands = rollOfflineCandidates(settleResult.gap);
-    if (cands.length > 1) {
-      q.push({
-        id: 'offline:pick', source: 'offline', kind: 'pick', gap: settleResult.gap,
-        rarity: offCfg.default_rarity || '灵', title: '山门来报', desc: '', options: [],
-        candidates: cands.map(c => ({ key: c.key, title: c.title }))
-      });
-    } else {
-      cands.forEach(c => q.push(buildOfflineFinal(c.entry, settleResult.gap)));
-    }
+    // 随机抽取离线事件；每个事件自身提供五种处置方式，玩家从中选一。
+    rollOfflineEvents(settleResult.gap).forEach(ev => q.push(ev));
     const visitor = maybeVisitor('offline');
     if (visitor) q.push(visitor);
     const dream = rollDream(settleResult.gap);
@@ -754,7 +752,7 @@
     s.event_state.open = null;
     let gainText = '';
 
-    if (key === 'A' || key === 'B') {
+    if (key !== 'C') {
       const opt = ev.options.find(o => o.key === key);
       if (opt) {
         if (opt.slot) {

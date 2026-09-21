@@ -132,6 +132,8 @@
     if (!g.LS.S.settings.difficulty && g.LS.S.stats.play_seconds < 5) {
       setTimeout(() => g.LS.ui.showDifficultyPick(), 800);
     }
+    // 每次上线提醒检查招式录；玩家可选择当天不再提醒。优先于更新公告进入弹窗队列。
+    if (g.LS.ui.scheduleDeckPrompt) g.LS.ui.scheduleDeckPrompt(1800);
     // 最新重要公告进入统一延迟队列。若引导、离线事件或战斗占用弹窗，待它们结束后再展示。
     if (g.LS.ui.scheduleUpdateNotes) g.LS.ui.scheduleUpdateNotes(g.LS.CHANGELOG, 2600);
   }

@@ -1,8 +1,7 @@
 {
   "version": "v0.21.3",
-  "note": "离线归来独立事件池（2026-09-19，2026-09-21 改五选一）。归来时按 pick_count 摊开几桩候选（只漏标题，不漏结果），玩家挑一桩听；选中后才按 pos_weight/neg_weight 随机正负，再在该方向的多条文案里随机挑一条（good→fits A 益 / bad→fits F 异），直接把结果讲给玩家，点「知道了」收。pick_count 调成 1 即退回「随机听一桩」。desc 里的 {away} 按真实离线时长替换。注意：negativeSuppression() 会在低境/有护山阵时把负面净化成正面（新手保护），属既有机制。cond 支持：always / tag / lingshoulan / hushanzhen / xinmo / daoxin。",
+  "note": "离线归来独立事件池。按 count 抽取事件，每个事件内部提供五种处置方式供玩家五选一；事件情境仍按 pos_weight/neg_weight 与玩家状态生成。desc 里的 {away} 按真实离线时长替换。negativeSuppression() 会在低境或有护山阵时净化部分负面效果。cond 支持：always / tag / lingshoulan / hushanzhen / xinmo / daoxin。",
   "count": 1,
-  "pick_count": 5,
   "default_rarity": "灵",
   "leave_text_key": "event_leave",
   "away_words": [
@@ -27,6 +26,99 @@
       "这大半月"
     ]
   ],
+  "choice_options": {
+    "off_disciple": [
+      { "text": "按功过赏赐弟子", "fits": ["A"], "daoxin": 1 },
+      { "text": "亲自查清山中账目", "fits": ["C"] },
+      { "text": "重新安排值守规矩", "fits": ["A", "C"] },
+      { "text": "从严追究失职之人", "fits": ["A", "F"], "daoxin": -1 },
+      { "text": "交由大弟子自行处置", "fits": ["C", "F"] }
+    ],
+    "off_lodger": [
+      { "text": "收下谢礼，结一份善缘", "fits": ["A"], "daoxin": 1 },
+      { "text": "查验客房与山门禁制", "fits": ["C"] },
+      { "text": "派弟子追上问个明白", "fits": ["A", "F"] },
+      { "text": "往后仍为散修留一间房", "fits": ["A", "C"], "daoxin": 1 },
+      { "text": "封门谢客，免生后患", "fits": ["F"] }
+    ],
+    "off_karma": [
+      { "text": "接下这份因果", "fits": ["A"], "daoxin": 1 },
+      { "text": "循着来路查清前尘", "fits": ["C"] },
+      { "text": "备礼回赠，不留亏欠", "fits": ["A", "C"], "daoxin": 2 },
+      { "text": "斩断旧账，不再往来", "fits": ["A", "F"], "daoxin": -1 },
+      { "text": "暂将此事压在心底", "fits": ["F"] }
+    ],
+    "off_crane": [
+      { "text": "收下灵鹤衔来的东西", "fits": ["A"] },
+      { "text": "查看它这些日子的去处", "fits": ["C"] },
+      { "text": "取灵果药草犒赏它", "fits": ["A", "C"], "daoxin": 1 },
+      { "text": "把它关回灵兽栏管教", "fits": ["A", "F"] },
+      { "text": "任它继续在山中自在来去", "fits": ["C", "F"] }
+    ],
+    "off_nightmare": [
+      { "text": "静坐观心，正面压下梦魇", "fits": ["A", "C"], "daoxin": 1 },
+      { "text": "服丹清心，先稳住识海", "fits": ["C"] },
+      { "text": "循梦中旧事追查心结", "fits": ["A", "F"] },
+      { "text": "以杀意强行斩断梦境", "fits": ["A", "F"], "daoxin": -2 },
+      { "text": "不去理会，任它自行消散", "fits": ["F"] }
+    ],
+    "off_msg": [
+      { "text": "择日回帖，请对方上山", "fits": ["A"], "daoxin": 1 },
+      { "text": "先让弟子查清来人底细", "fits": ["C"] },
+      { "text": "亲自写一封回信", "fits": ["A", "C"], "daoxin": 1 },
+      { "text": "派人循着落款登门问询", "fits": ["A", "F"] },
+      { "text": "将帖子收起，不作回应", "fits": ["F"] }
+    ],
+    "off_harvest": [
+      { "text": "开仓清点，将收成入库", "fits": ["A"] },
+      { "text": "留下一成作为来年种粮", "fits": ["C"] },
+      { "text": "赏给照料灵田的弟子", "fits": ["A", "C"], "daoxin": 1 },
+      { "text": "趁行情送去坊市出售", "fits": ["A", "F"] },
+      { "text": "暂不处理，任灵田休养", "fits": ["C", "F"] }
+    ],
+    "off_market": [
+      { "text": "立即将存货出手", "fits": ["A"] },
+      { "text": "再看几日行情", "fits": ["C"] },
+      { "text": "分批买卖，稳住价格", "fits": ["A", "C"] },
+      { "text": "借势压价，大进大出", "fits": ["A", "F"], "daoxin": -1 },
+      { "text": "封仓停市，避过风头", "fits": ["F"] }
+    ],
+    "off_disciple_deed": [
+      { "text": "认可他的处置，替他收尾", "fits": ["A"], "daoxin": 2 },
+      { "text": "查清原委后再定功过", "fits": ["C"] },
+      { "text": "让他亲自补上宗门亏空", "fits": ["A", "C"] },
+      { "text": "当众责罚，以正门规", "fits": ["A", "F"], "daoxin": -1 },
+      { "text": "收回他的主事之权", "fits": ["F"] }
+    ],
+    "off_sect_invite": [
+      { "text": "回帖应邀，择日论道", "fits": ["A"] },
+      { "text": "先派弟子探明对方来意", "fits": ["C"] },
+      { "text": "备一份薄礼主动登门", "fits": ["A", "C"], "daoxin": 1 },
+      { "text": "设下试探，反观对方虚实", "fits": ["A", "F"] },
+      { "text": "婉拒来帖，闭门清修", "fits": ["F"] }
+    ],
+    "off_cave": [
+      { "text": "召集弟子清理塌方", "fits": ["A"] },
+      { "text": "先以阵法封住洞口", "fits": ["C"] },
+      { "text": "亲自入洞查探", "fits": ["A", "F"] },
+      { "text": "修好山道与引水渠", "fits": ["A", "C"], "daoxin": 1 },
+      { "text": "暂时封山，不许任何人靠近", "fits": ["F"] }
+    ],
+    "off_incense": [
+      { "text": "下山回应村民所求", "fits": ["A"], "daoxin": 2 },
+      { "text": "让弟子维持山门香火", "fits": ["C"] },
+      { "text": "将香火所得用于济民", "fits": ["A", "C"], "daoxin": 3 },
+      { "text": "整肃借宗门名义敛财之人", "fits": ["A", "F"] },
+      { "text": "修行之人，不问山下议论", "fits": ["F"] }
+    ],
+    "off_beast": [
+      { "text": "追踪血迹，清剿妖兽", "fits": ["A", "F"] },
+      { "text": "修补并加固护山阵", "fits": ["C"] },
+      { "text": "安抚受伤弟子与山民", "fits": ["A"], "daoxin": 2 },
+      { "text": "设饵伏杀，取其内丹", "fits": ["A", "F"], "daoxin": -1 },
+      { "text": "封闭山门，静待兽群退去", "fits": ["F"] }
+    ]
+  },
   "events": [
     {
       "id": "off_disciple",
