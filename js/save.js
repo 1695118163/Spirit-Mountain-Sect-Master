@@ -123,6 +123,7 @@
         });
       }
       if (!Array.isArray(s.disciple_revenge)) s.disciple_revenge = [];
+      if (s.forced_revenge_battle !== null && (typeof s.forced_revenge_battle !== 'object' || !s.forced_revenge_battle.spec)) s.forced_revenge_battle = null;
       if (typeof s.disciple_recruit_at !== 'number' || !isFinite(s.disciple_recruit_at)) s.disciple_recruit_at = 0;
       s.v = 10;
       return s;

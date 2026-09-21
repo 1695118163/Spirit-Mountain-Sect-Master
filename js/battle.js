@@ -855,6 +855,9 @@
     // 奇遇强敌结算（乙§6.4）：胜=夺其财+心魔；败=强敌走死亡链、弱敌掉灵石
     if (a.mode === 'ambush' && a.ambushCtx) {
       const ctx = a.ambushCtx;
+      // 奇遇战没有走普通 showBattleResult 分支；先卸下斗法弹窗，
+      // 否则胜利回调结束后会留下一个 active 已清空、无法继续操作的战斗界面。
+      if (g.LS.ui && g.LS.ui.removeModals) g.LS.ui.removeModals();
       if (win) {
         active = null;
         setTimeout(() => { if (ctx.onWin) ctx.onWin(); }, 500);

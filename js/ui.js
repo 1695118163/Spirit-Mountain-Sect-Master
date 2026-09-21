@@ -1603,8 +1603,10 @@
 
   /* ── 奇遇强敌弹窗：战力预判明示，死是「你非要打」的死 ── */
   function showAmbushModal(info) {
+    if (info && info.forced && document.querySelector('.modal-card.forced-revenge')) return;
     removeModals();
     const { card } = makeModal(null);
+    if (info && info.forced) card.classList.add('forced-revenge');
     const myCP = g.LS.battle.combatPower();
     const ratio = myCP / Math.max(1, info.enemyCP);
     const F = g.LS.util.fmt;
@@ -1618,16 +1620,17 @@
         (info.xinmo >= 30 ? '<br><span style="font-size:11px;color:var(--cinnabar)">你业力缠身，仇家寻上门来。</span>' : '') + '</div>' +
       '<div style="display:flex;gap:8px;justify-content:center;margin-top:10px;flex-wrap:wrap">' +
         '<button class="btn-primary" id="am-fight" style="padding:8px 22px">正 面 一 战</button>' +
-        '<button class="icon-btn" id="am-pay">破财免灾（失 15% 灵石）</button>' +
-        '<button class="icon-btn" id="am-flee">转身逃遁（失 20% 灵石）</button></div>';
+        (info.revenge ? '' : '<button class="icon-btn" id="am-pay">破财免灾（失 15% 灵石）</button><button class="icon-btn" id="am-flee">转身逃遁（失 20% 灵石）</button>') + '</div>';
     const s = g.LS.S;
-    card.querySelector('#am-pay').addEventListener('click', () => {
+    const pay = card.querySelector('#am-pay');
+    if (pay) pay.addEventListener('click', () => {
       s.resources.lingshi = Math.floor(s.resources.lingshi * 0.85);
       g.LS.save.save();
       toast('留下买路财，对方掂量一番放行了。');
       removeModals();
     });
-    card.querySelector('#am-flee').addEventListener('click', () => {
+    const flee = card.querySelector('#am-flee');
+    if (flee) flee.addEventListener('click', () => {
       s.resources.lingshi = Math.floor(s.resources.lingshi * 0.8);
       g.LS.save.save();
       toast('你遁光一展，狼狈走脱——背后传来嗤笑。');
@@ -1635,7 +1638,7 @@
     });
     card.querySelector('#am-fight').addEventListener('click', () => {
       removeModals();
-      g.LS.battle.startAmbushFight(info.spec, {
+      const started = g.LS.battle.startAmbushFight(info.spec, {
         cpScale: info.cpScale,
         name: info.name,
         onWin: () => {
@@ -1663,6 +1666,10 @@
           g.LS.ui.renderAll();
         }
       });
+      if (started && info.forced && g.LS.S.forced_revenge_battle) {
+        g.LS.S.forced_revenge_battle = null;
+        g.LS.save.save();
+      }
     });
   }
 
@@ -3653,7 +3660,7 @@
     showRealmUnlockGuide,
     showSettings, showRebirthPanel, showTutorial, showPillHouse, showHelpPanel, showMarket, showFriends, showDeckEditor, scheduleDeckPrompt, showSeniorPick, showCodexPage, showUpdateNotes, scheduleUpdateNotes, migrateLegacyUpdateRead, unreadUpdateCount, playEmperorTribulation, showTrial, showXinmo, showMoPanel, showAmbushModal, showQuest, showDisciple, showDiscipleRecruit, showGenerationChoice, showTutorialSteps,
     showBattleArena, showBattleGuide, updateBattleHP, updateBattleShields, updateBattleQi, renderBattleHands, showBattleIntent,
-    showBattleScreen, battleLog, battleAppend, showBattleResult, renderDiscipleSkills, updateBattleRound,
+    showBattleScreen, battleLog, battleAppend, showBattleResult, renderDiscipleSkills, updateBattleRound, removeModals,
     toast, tweenNumber, setBgm, applyLowFx, fbFlush, toggleDeckCard, removeDeckCardAt,
     setLLMStatus, setForewarn, updateBuffBar, drawBg, sfx, playTribulation,
   };

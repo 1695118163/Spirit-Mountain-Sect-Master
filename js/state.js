@@ -65,6 +65,8 @@
       disciple_recruit_at: 0,
       disciple_seek_ready_day: {},
       disciple_revenge: [],
+      // 强制迎战的弟子寻仇：弹窗/刷新期间保留，只有进入战斗后清除
+      forced_revenge_battle: null,
       generation: 0,
       heirloom: null,
       generation_chosen: false,

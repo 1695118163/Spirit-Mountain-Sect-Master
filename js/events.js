@@ -901,6 +901,15 @@
   /** 奇遇强敌（乙§6）：金丹起偶遇劫匪/邪修，战力不足可能殒命——每世至多 2 次 */
   function maybeAmbush(now) {
     const s = S();
+    // 强制寻仇优先于所有普通奇遇；页面刷新后由此状态恢复，不会被其它事件挤掉。
+    if (s.forced_revenge_battle && s.forced_revenge_battle.spec) {
+      if (typeof document !== 'undefined' && document.visibilityState !== 'visible') return false;
+      if (!(g.LS.battle && g.LS.battle.active)) {
+        const open = typeof document !== 'undefined' && document.querySelector && document.querySelector('.modal-card.forced-revenge');
+        if (!open && g.LS.ui && g.LS.ui.showAmbushModal) g.LS.ui.showAmbushModal(Object.assign({}, s.forced_revenge_battle, { revenge: true, forced: true }));
+      }
+      return true;
+    }
     const revenge = (s.disciple_revenge || []).find(r => !r.resolved && (s.game_days || 0) >= r.due_day);
     if ((s.realm.index < 2 && !revenge) || s.event_state.pending) return false;
     if (typeof document !== 'undefined' && document.visibilityState !== 'visible') return false;
@@ -924,12 +933,17 @@
     if (revenge) revenge.resolved = true;
     else s.ambush.count += 1;
     s.ambush.next_ts = now + 600000;
-    g.LS.ui.showAmbushModal({
-      name, cpScale, enemyCP,
+    const ambushInfo = {
+      name, cpScale, enemyCP, revenge: !!revenge, forced: !!revenge,
       moves: spec.moves.map(m => m.name).slice(0, 3).join('、'),
       spec,
       xinmo: xm
-    });
+    };
+    if (revenge) {
+      s.forced_revenge_battle = Object.assign({}, ambushInfo);
+      if (g.LS.save && g.LS.save.save) g.LS.save.save();
+    }
+    g.LS.ui.showAmbushModal(ambushInfo);
     scheduleNext();
     return true;
   }
