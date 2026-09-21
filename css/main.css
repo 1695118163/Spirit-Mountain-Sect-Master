@@ -387,13 +387,8 @@ button:not(:disabled):active { transform: translateY(1px); }
 .perm-total { font-size: 15px; color: var(--cinnabar); }
 .perm-item { padding: 2px 0; }
 .wen-actions { gap:6px; }
-#right-panel .wen-btn { flex:1 1 0; min-width:0; min-height:34px; padding:6px 5px; border-color:rgba(122,106,85,.62); background:linear-gradient(180deg,rgba(255,255,255,.5),rgba(122,106,85,.1)); color:var(--ink,#292b29); font-size:12px; white-space:nowrap; }
-#right-panel .wen-btn:hover,#right-panel .wen-btn:focus-visible { border-color:var(--cinnabar,#9d392c); background:rgba(157,57,44,.08); color:var(--cinnabar,#9d392c); }
-#right-panel .wen-btn:active { background:rgba(157,57,44,.14); }
-#right-panel .wen-tool-btn { min-height:0; padding:2px 8px; border-color:rgba(122,106,85,.62); background:rgba(255,255,255,.34); color:var(--ink-soft,#7a6a55); font-size:11px; }
-#right-panel .wen-tool-btn:hover,#right-panel .wen-tool-btn:focus-visible { border-color:var(--cinnabar,#9d392c); color:var(--cinnabar,#9d392c); }
-html.night #right-panel .wen-btn { border-color:rgba(194,178,145,.42); background:linear-gradient(180deg,rgba(43,52,65,.92),rgba(27,34,44,.92)); color:#ded4c2; }
-html.night #right-panel .wen-tool-btn { border-color:rgba(194,178,145,.36); background:rgba(43,52,65,.72); color:#bdb3a2; }
+#right-panel .wen-btn { flex:1 1 0; min-width:0; min-height:34px; padding:6px 5px; font-size:12px; white-space:nowrap; }
+#right-panel .wen-tool-btn { min-height:0; padding:2px 8px; font-size:11px; }
 
 /* ── Tooltip ── */
 [data-tip] { position: relative; }
