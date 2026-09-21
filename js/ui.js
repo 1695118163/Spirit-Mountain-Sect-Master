@@ -409,7 +409,7 @@
       const v = res === 'xinmo' ? (s.xinmo || 0)
         : res === 'toxic' ? Math.floor(s.pill_toxic || 0)
         : (res === 'danyao' && eco.pillTotal ? eco.pillTotal() : (s.resources[res] || 0));
-      const str = fmtResource(v);
+      const str = (res === 'xinmo' || res === 'toxic') ? String(Math.floor(v)) : fmtResource(v);
       if (lastStr['v_' + res] !== str) {
         if (lastStr['v_' + res] !== undefined) {
           r.val.classList.add('tick-flash');
@@ -445,10 +445,10 @@
       chip.style.cursor = 'help';
       const left = Math.ceil((b.ts_end - now) / 1000);
       // 悬停详情：来源与具体效果（用户反馈：状态看不懂）
-      const detail = BUFF_DETAIL[b.id] || { name: label, txt: '' };
+      const detail = BUFF_DETAIL[b.id] || { name: b.name || '状态', txt: '' };
       chip.title = detail.name + '：' + detail.txt + '（剩 ' + left + ' 秒）';
       const multTxt = (b.mult && b.mult > 1 ? '×' + b.mult.toFixed(1) + ' ' : '') + (b.click_mult ? '点击×' + b.click_mult.toFixed(0) + ' ' : '');
-      chip.textContent = (detail.badge || label) + ' ' + multTxt + left + 's';
+      chip.textContent = (detail.badge || b.name || '状态') + ' ' + multTxt + left + 's';
       refs.buffBar.appendChild(chip);
     }
   }
