@@ -1,6 +1,8 @@
 /**
  * battle.js v3 —— 斗法引擎（杀戮尖塔式回合制选牌）：
- *  - 行动点 = 境界 + 1：每回合从卡组抽 8 张（付得起的全摸在手里），出招按招式费用扣点，点用光后靠「调息 · 让招」回满（代价是白让一手）；
+ *  - 行动点 = 境界 + 1：手牌就是玩家在「招式录」里自配的卡组（8 槽：攻 3 · 五行 2 · 守 2 · 回 1），每回合整套在手、
+ *    付不起/冷却中的置灰；出招按招式费用扣点，点用光后靠「调息 · 让招」回满（代价是白让一手）；
+ *    （2026-09-21 玩家口径：删掉「每回合抽 8 张」，改回自己配卡组——买的秘籍/装备才真正进牌路）
  *    出一招即把回合交给对方（一回合仅此一招）；护盾只保当回合；对方 AI 先亮「意图」再出手，玩家据此决断；
  *  - 五行克制 ×1.25 / 被克 ×0.85，天时（雨助水行/雪寒）微调，丹毒每回合自伤（按气血百分比，每档 2%）；
  *  - 大师兄「凌云子」（金丹）为内置人机陪练；好友影子斗法由影子 AI 代打（通用卡组）。
@@ -90,10 +92,12 @@
   /** 卡组槽位（乙§3.2）：攻3/五2/守2/回1 = 8 槽 */
   const KIND_LIMITS = { attack: 3, element: 2, defense: 2, heal: 1 };
 
-  /** 出战卡组解析：S().deck 按类取前 N 张合法牌（8 槽）；缺槽自动补位（须已参悟 且 费用 ≤ 自身行动点；够格的不超槽数则全给，超过随机抽） */
-  function resolveDeck() {
+  /** 出战卡组解析（2026-09-21 玩家自配口径）：S().deck 按类取前 N 张合法牌（8 槽）；
+      poolArr 传手牌池时用其中带 dmgFinal 的副本；缺槽再自动补位（已参悟 + 境界达标 + 付得起，
+      够格的不超槽数则全给、超过随机抽）——补位只是兜底，先认玩家自己配的那几张 */
+  function resolveDeck(poolArr) {
     const s = S();
-    const pool = CARDS().my_cards || [];
+    const pool = poolArr || CARDS().my_cards || [];
     const deck = Array.isArray(s.deck) ? s.deck.slice() : [];
     const picked = [];
     for (const kind of KINDS) {
@@ -139,12 +143,12 @@
     const bal = g.LS.BAL;
     const w = (bal.cultivation.weapons || []).find(x => x.id === s.equip.weapon);
     const t = (bal.cultivation.techniques || []).find(x => x.id === s.equip.technique);
-    const sharp = w ? w.sharp : 5;
+    const sharp = (w ? w.sharp : 5) + shopSharp();   // 市集「淬锋石」凿出的锋锐也算进去
     const rootMult = g.LS.state.spiritRootMult ? g.LS.state.spiritRootMult() : 1;
     // 气血整体下调 60%（2026-09-13 用户口径：一回合只出一招后，原血量让战斗过长）
     const hpMax = Math.round((80 + realm * 45 + sharp * 0.8) * 0.4 * Math.min(1.3, rootMult));
-    // 抽牌池＝「已参悟的招式 + 基础牌」全集（2026-09-14 用户口径：卡组不再参与抽牌）；
-    // 每回合按当前行动点从池里随机摸 8 张、境界越高越容易摸到重手（见 drawHand）；行动点是「可驭招式上限」
+    // 手牌池＝「已参悟的招式 + 基础牌」全集；出战手牌由 resolveDeck 从 S().deck（招式录编成）取，
+    // 空槽才从这里自动补位；行动点是「可驭招式上限」（2026-09-21 改回自配卡组）
     const handPool = (CARDS().my_cards || [])
       .filter(c => ownsCard(c) && (!c.unlock_realm || realm >= c.unlock_realm))
       .map(c => Object.assign({}, c, {
@@ -345,12 +349,19 @@
   /** 天赋等级（bought 重复计数，与 economy 同口径） */
   function talentLv(id) { const b = S().prestige && S().prestige.bought; return b ? b.filter(x => x === id).length : 0; }
 
+  /** 市集「淬锋石」凿出的永久锋锐加成（S().shop_sharp） */
+  function shopSharp() {
+    if (g.LS.state && g.LS.state.shopSharp) return g.LS.state.shopSharp();
+    const v = S().shop_sharp;
+    return typeof v === 'number' ? v : 0;
+  }
+
   /** 战力评估（乙§2.3）：CP=100×2.05^境×装备锋锐系数×丹毒折损，事件判定/强敌/劫掠唯一出处 */
   function combatPower() {
     const s = S();
     const bal = g.LS.BAL;
     const w = (bal.cultivation.weapons || []).find(x => x.id === s.equip.weapon);
-    const sharp = w ? w.sharp : 5;
+    const sharp = (w ? w.sharp : 5) + shopSharp();
     const cp = 100 * Math.pow(2.05, s.realm.index)
       * (1 + Math.min(0.6, sharp / 400))
       * Math.max(0.8, 1 - (s.pill_toxic || 0) * 0.002)
@@ -473,35 +484,20 @@
     startTurn();
   }
 
-  /* ── 抽牌：行动点是「出招要付的代价」，上限=境界+1，用点靠「调息」回满。
-     每回合从卡组抽 8 张（= 整套池子），只抽【当前余点】付得起、且不在冷却的招——点耗光就只剩便宜招可摸。
-     故练气（AP 1）只能使 1 费招，随境界解锁 2/3/4… 费的重手。 ── */
-  const DRAW_N = 8;   // 每回合把付得起的牌都摸上来（池子 8 槽 → 基本就是整套在手）
-  function drawHand(unit, n) {
-    const ap = Math.max(0, unit.qi || 0);   // 按当前行动点抽牌：点耗光了就抽不到贵招
-    const pool = (unit.handPool || []).filter(c => (c.cost || 0) <= ap && (c._cdLeft || 0) <= 0);
-    const picked = [];
-    if (pool.length <= n) picked.push.apply(picked, pool);   // 够格的不超过手牌上限 → 全都给你
-    else {                                                   // 超过 → 随机抽 n 张；境界越高，重手权重越大
-      const rank = S().realm.index / 9;                      // 0（练气）→ 1（飞升）
-      const bag = pool.slice();
-      while (picked.length < n && bag.length) {
-        let total = 0;
-        for (const c of bag) total += 1 + rank * (c.cost || 0);
-        let r = Math.random() * total, k = 0;
-        for (; k < bag.length - 1; k++) { r -= 1 + rank * (bag[k].cost || 0); if (r <= 0) break; }
-        picked.push(bag.splice(k, 1)[0]);
-      }
-    }
-    if (!picked.length) { // 余点太低/招全在冷却：兜底给费用最低的一张，别让玩家无牌可动
+  /* ── 手牌＝自配卡组（2026-09-21 玩家口径：删掉每回合抽 8 张）──
+     每回合把招式录里那套牌整套摊在手上；行动点只决定「这一手能使得动哪几张」（付不起的置灰），
+     出招依旧一回合一张。想带重手，就把坊市「秘传」的招买下来、编进卡组。 ── */
+  function dealDeck(unit) {
+    const deck = resolveDeck(unit.handPool || []);
+    if (!deck.length) { // 极端兜底：卡组空且手牌池也空（存档异常）→ 给费用最低的一张，别让玩家无牌可动
       const cheap = (unit.handPool || []).slice().sort((x, y) => (x.cost || 0) - (y.cost || 0));
-      if (cheap.length) picked.push(cheap[0]);
+      if (cheap.length) deck.push(cheap[0]);
     }
-    unit.hand = picked;
-    return picked;
+    unit.hand = deck;
+    return deck;
   }
 
-  /** 回合开始：罡气归零、重抽手牌、AI 亮意图、丹毒结算（行动点不自动回满，靠调息） */
+  /** 回合开始：罡气归零、摊开卡组手牌、AI 亮意图、丹毒结算（行动点不自动回满，靠调息） */
   function startTurn() {
     const a = active;
     if (!a) return;
@@ -510,7 +506,7 @@
     if (a.round === 1) a.my.qi = a.my.qiMax;
     a.my.shield = 0;
     (a.my.handPool || []).forEach(c => { if (c._cdLeft > 0) c._cdLeft -= 1; }); // 招式 CD 流转
-    drawHand(a.my, DRAW_N);
+    dealDeck(a.my);   // 手牌＝自配卡组（不再每回合随机抽 8 张）
     rollIntent(a.op);   // 敌方行动点同样不自动回满，买不起任何一招时它这一手只能调息
     const evs = [];
     if (a.my.toxic >= 10) {

@@ -339,6 +339,28 @@ async function handle(req, res) {
     }
   }
 
+  /* 留言板（2026-09-21）：玩家建议落盘 data/feedback.jsonl，一行一条，方便直接翻看 */
+  if (req.method === 'POST' && pathname === '/api/feedback') {
+    try {
+      const body = JSON.parse(await readBody(req));
+      const text = typeof body.text === 'string' ? body.text.trim() : '';
+      if (!text) return sendJSON(res, 400, { ok: false, message: '留言不能为空' });
+      if ([...text].length > 500) return sendJSON(res, 400, { ok: false, message: '留言过长（500 字以内）' });
+      const file = path.join(ROOT, 'data', 'feedback.jsonl');
+      fs.appendFileSync(file, JSON.stringify({
+        t: Date.now(),
+        text: text,
+        realm: body.realm != null ? body.realm : null,
+        version: body.version || '',
+        ua: String(req.headers['user-agent'] || '').slice(0, 120)
+      }) + '\n', 'utf8');
+      console.log('[灵山掌门代理] 收到一条留言：' + text.slice(0, 40));
+      return sendJSON(res, 200, { ok: true });
+    } catch (e) {
+      return sendJSON(res, 400, { ok: false, message: '留言提交失败：' + e.message });
+    }
+  }
+
   if (pathname.startsWith('/api/')) {
     return sendJSON(res, 404, { ok: false, message: 'unknown api path' });
   }

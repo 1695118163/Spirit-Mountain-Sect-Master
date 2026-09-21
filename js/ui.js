@@ -81,21 +81,48 @@
         gn.gain.exponentialRampToValueAtTime(.001, t + .4);
         o.start(t); o.stop(t + .45);
       } else if (type === 'thunder') {
-        // 天劫雷声：噪声爆裂 + 低频轰鸣
-        const nb = ctx.createBufferSource();
-        const buf = ctx.createBuffer(1, Math.floor(ctx.sampleRate * .5), ctx.sampleRate);
+        // 天劫雷声：噪声爆裂 + 低频轰鸣（原用未定义的 ctx，整段被 try 吞掉 → 一直没声；改 audioCtx）
+        const nctx = audioCtx;
+        const nb = nctx.createBufferSource();
+        const buf = nctx.createBuffer(1, Math.floor(nctx.sampleRate * .5), nctx.sampleRate);
         const dd = buf.getChannelData(0);
         for (let i = 0; i < dd.length; i++) dd[i] = (Math.random() * 2 - 1) * Math.exp(-i / (dd.length / 4));
         nb.buffer = buf;
-        const nf = ctx.createBiquadFilter(); nf.type = 'lowpass'; nf.frequency.value = 900;
-        const ng = ctx.createGain(); ng.gain.setValueAtTime(.4, t); ng.gain.exponentialRampToValueAtTime(.001, t + .5);
-        nb.connect(nf); nf.connect(ng); ng.connect(ctx.destination);
+        const nf = nctx.createBiquadFilter(); nf.type = 'lowpass'; nf.frequency.value = 900;
+        const ng = nctx.createGain(); ng.gain.setValueAtTime(.4, t); ng.gain.exponentialRampToValueAtTime(.001, t + .5);
+        nb.connect(nf); nf.connect(ng); ng.connect(nctx.destination);
         nb.start(t);
-        const o2 = ctx.createOscillator(); o2.type = 'sine';
+        const o2 = nctx.createOscillator(); o2.type = 'sine';
         o2.frequency.setValueAtTime(90, t); o2.frequency.exponentialRampToValueAtTime(38, t + .5);
-        const g2 = ctx.createGain(); g2.gain.setValueAtTime(.28, t); g2.gain.exponentialRampToValueAtTime(.001, t + .55);
-        o2.connect(g2); g2.connect(ctx.destination);
+        const g2 = nctx.createGain(); g2.gain.setValueAtTime(.28, t); g2.gain.exponentialRampToValueAtTime(.001, t + .55);
+        o2.connect(g2); g2.connect(nctx.destination);
         o2.start(t); o2.stop(t + .6);
+      } else if (type === 'breakfail') {
+        // 冲关失败：一声闷锣——低沉下坠，尾音散在风里（与成功的清钟+鼓点区分开）
+        o.type = 'triangle';
+        o.frequency.setValueAtTime(200, t);
+        o.frequency.exponentialRampToValueAtTime(74, t + 1.1);
+        gn.gain.setValueAtTime(.24, t);
+        gn.gain.exponentialRampToValueAtTime(.001, t + 1.25);
+        o.start(t); o.stop(t + 1.3);
+      } else if (type === 'shihuo') {
+        // 走火入魔：闷锣之上再叠一层气逆的沙哑嘶声，比普通失败更凶
+        o.type = 'triangle';
+        o.frequency.setValueAtTime(150, t);
+        o.frequency.exponentialRampToValueAtTime(52, t + 1.3);
+        gn.gain.setValueAtTime(.26, t);
+        gn.gain.exponentialRampToValueAtTime(.001, t + 1.45);
+        o.start(t); o.stop(t + 1.5);
+        const sctx = audioCtx;
+        const sb = sctx.createBufferSource();
+        const sbuf = sctx.createBuffer(1, Math.floor(sctx.sampleRate * .7), sctx.sampleRate);
+        const sd = sbuf.getChannelData(0);
+        for (let i = 0; i < sd.length; i++) sd[i] = (Math.random() * 2 - 1) * Math.exp(-i / (sd.length / 5)) * .6;
+        sb.buffer = sbuf;
+        const sf = sctx.createBiquadFilter(); sf.type = 'bandpass'; sf.frequency.value = 420; sf.Q.value = .8;
+        const sg = sctx.createGain(); sg.gain.setValueAtTime(.16, t); sg.gain.exponentialRampToValueAtTime(.001, t + .7);
+        sb.connect(sf); sf.connect(sg); sg.connect(sctx.destination);
+        sb.start(t);
       } else if (type === 'guqin') {
         o.frequency.setValueAtTime(440, t);
         o.frequency.linearRampToValueAtTime(660, t + .25);
@@ -773,6 +800,29 @@
     refs.modalRoot.innerHTML = '';
   }
 
+  /* ── 奇遇候选（2026-09-21 玩家口径「5 选 1」）：一次摊开几桩事，玩家自己挑一件经历 ──
+     只在普通触发路径用；因果回收/故人上门/剧情链这类「该来的」不走选单。 */
+  function showEventPicker(list, onPick, opts) {
+    sfx('guqin');
+    removeModals();
+    const o = opts || {};
+    const { card } = makeModal(() => onPick(list[0] && list[0].key));   // 点罩子＝直接挑第一件
+    card.classList.add('ev-pick');
+    card.innerHTML =
+      '<div class="modal-title">' + escapeHtml(o.title || '山 中 数 事') + '</div>' +
+      '<div class="modal-desc">' + escapeHtml(o.desc || '今日山中同时起了这么几桩事——你想先看哪一件？') + '</div>' +
+      list.map(it =>
+        '<button class="ev-option tactic-row ev-pick-row" data-pick-key="' + escapeHtml(it.key) + '">' +
+          '<b>' + escapeHtml(it.title) + '</b>' +
+          (it.desc ? '　<span class="ev-pick-desc">' + escapeHtml(it.desc) + '</span>' : '') +
+        '</button>').join('');
+    card.querySelectorAll('[data-pick-key]').forEach(b => b.addEventListener('click', () => {
+      const key = b.dataset.pickKey;
+      removeModals();
+      onPick(key);
+    }));
+  }
+
   /* ── 奇遇弹窗（不暂停产量） ── */
   function showEventModal(ev) {
     sfx('guqin');
@@ -801,17 +851,9 @@
       if (ev.no_choice && opt.key !== 'A') continue;   // 离线事件不给选择，只留一个「知道了」
       const btn = document.createElement('button');
       btn.className = 'ev-option' + (opt.key === 'C' ? ' ev-leave' : '');
-      // 效果方向徽章（不给数值，只给方向感）
-      let badge = '';
-      if (opt.slot) {
-        const T = { A: ['益', 'ev-badeg-good'], B: ['耗', 'ev-badge-bad'], C: ['势', 'ev-badge-buff'], D: ['恒', 'ev-badge-perm'], E: ['缘', 'ev-badge-chain'], F: ['异', 'ev-badge-bad'] };
-        const t = T[opt.slot.type];
-        if (t) badge = '<span class="ev-badge ' + t[1] + '">' + t[0] + '</span>';
-        if (opt.daoxin > 0) badge += '<span class="ev-badge ev-badge-good">仁</span>';
-        else if (opt.daoxin < 0) badge += '<span class="ev-badge ev-badge-bad">贪</span>';
-      }
+      // 选项不再挂效果方向标签（势/仁/益/耗/恒/缘/异/贪 一律去掉，2026-09-21 玩家口径）
       const tail = (opt.key === 'C' || ev.no_choice) ? '' : '（' + (opt.key === 'A' ? '其一' : '其二') + '）';
-      btn.innerHTML = badge + ' ' + escapeHtml(opt.text) + tail;
+      btn.innerHTML = escapeHtml(opt.text) + tail;
       btn.addEventListener('click', () => g.LS.events.chooseOption(opt.key));
       card.appendChild(btn);
     }
@@ -1074,7 +1116,7 @@
 
   /* ── 突破失败 / 走火入魔过场（暗色水墨，数值代价显式呈现） ── */
   function showFailOverlay(title, text, isQihuo, details) {
-    sfx('bell');
+    sfx(isQihuo ? 'shihuo' : 'breakfail');   // 失败另有一声闷锣/气逆声：与成功的清钟分得开（2026-09-21）
     const ov = document.createElement('div');
     ov.id = 'breakthrough-overlay';
     ov.style.background = isQihuo ? '#2b2222' : '#3a3330';
@@ -1131,36 +1173,32 @@
     const bal = g.LS.BAL;
     const bt = bal.breakthrough || {};
     const render = (selTactic, usePill) => {
-      const base = g.LS.realm.breakthroughRate(next);
       const tactics = bt.tactics || {};
       const pill = bt.pill_guard || {};
-      const novice = (g.LS.S.stats.breakthroughs || 0) < 2; // 前两次突破给新手推荐
-      // 大帝走九重雷劫：策略与 rate 不参与，故不给假百分比，只标它对灵石奖励的影响
+      // 面板不显示任何概率、不给新手推荐（2026-09-21 玩家口径），只留连败保底提示
       const emperor = next.index >= 10;
       const odds = emperor && g.LS.realm.emperorOdds ? g.LS.realm.emperorOdds(usePill && pill.rate_add ? pill.rate_add : 0) : null;
       let rows = '';
       ['steady', 'normal', 'bold'].forEach(k => {
         const t = tactics[k];
         if (!t) return;
-        let r = Math.max(0.05, Math.min(1, base + t.rate_add + (usePill && pill.rate_add ? pill.rate_add : 0)));
         const sel = selTactic === k;
-        const rec = novice && k === 'normal';
-        const badge = emperor
-          ? (t.reward_mult !== 1 ? '<span class="ev-badge ' + (t.reward_mult > 1 ? 'ev-badge-good' : 'ev-badge-bad') + '">突破灵石 ×' + t.reward_mult + '</span> ' : '')
-          : '<span class="ev-badge ' + (t.rate_add > 0 ? 'ev-badge-good' : (t.rate_add < 0 ? 'ev-badge-bad' : 'ev-badge-buff')) + '">' + Math.round(r * 100) + '%</span> ';
+        const badge = (emperor && t.reward_mult !== 1)
+          ? '<span class="ev-badge ' + (t.reward_mult > 1 ? 'ev-badge-good' : 'ev-badge-bad') + '">突破灵石 ×' + t.reward_mult + '</span> '
+          : '';
         rows += '<button class="ev-option tactic-row' + (sel ? ' tactic-sel' : '') + '" data-t="' + k + '">' +
           badge +
-          '<b>' + escapeHtml(t.name) + '</b>' + (rec ? '<span class="ev-badge ev-badge-good">新手推荐</span>' : '') + '　' + escapeHtml(t.desc) +
+          '<b>' + escapeHtml(t.name) + '</b>　' + escapeHtml(t.desc) +
           (emperor ? '' : (t.reward_mult !== 1 ? '　<span class="log-gain">灵石 ×' + t.reward_mult + '</span>' : '')) + '</button>';
       });
       const canPill = g.LS.economy.pillCount ? g.LS.economy.pillCount('pozhang') > 0 : false;
       const head = emperor && odds
         ? '<div class="modal-title">冲关 · ' + escapeHtml(next.name) + '</div>' +
-          '<div class="modal-desc">帝劫 · 九重雷劫：连受 <b>' + odds.strikes + '</b> 道天雷，每道单独判定，你的过率 <b>' + Math.round(odds.p * 100) + '%</b>。<br>' +
-          '落空不超过 <b>' + odds.layers + '</b> 道即可破境称帝——总过率 <b>' + (odds.pass * 100).toFixed(1) + '%</b>' +
+          '<div class="modal-desc">帝劫 · 九重雷劫：连受 <b>' + odds.strikes + '</b> 道天雷，每道单独判定；' +
+          '落空不超过 <b>' + odds.layers + '</b> 道即可破境称帝' +
           (odds.hasMingdao ? '（名刀在身，多容一道）' : '') + '。</div>'
         : '<div class="modal-title">冲关 · ' + escapeHtml(next.name) + '</div>' +
-          '<div class="modal-desc">基础成功率 <b>' + Math.round(base * 100) + '%</b>' +
+          '<div class="modal-desc">气机已满，只待叩门。' +
           (g.LS.S.dao_heart > (bt.dao_heart_bonus || {}).high ? '（道心加持）' : (g.LS.S.dao_heart < (bt.dao_heart_bonus || {}).low ? '（道心拖累）' : '')) +
           '　连败保底：' + (bt.pity_success || 3) + ' 次必成</div>';
       const tail = emperor
@@ -1169,7 +1207,7 @@
       card.innerHTML =
         head +
         rows +
-        '<div class="set-row"><label>破障丹护法（1 颗，' + (emperor ? '每道过率' : '成功率') + ' +' + Math.round((pill.rate_add || 0) * 100) + '%）— 丹房现有 ' + (g.LS.economy.pillCount ? g.LS.economy.pillCount('pozhang') : 0) + '</label>' +
+        '<div class="set-row"><label>破障丹护法（1 颗，' + (emperor ? '护住每一道天雷' : '护住这一关的气机') + '）— 丹房现有 ' + (g.LS.economy.pillCount ? g.LS.economy.pillCount('pozhang') : 0) + '</label>' +
         '<input type="checkbox" id="bt-use-pill" ' + (usePill ? 'checked' : '') + (canPill ? '' : ' disabled') + '></div>' +
         tail +
         '<div style="text-align:center;margin-top:10px"><button class="btn-primary" id="bt-go" style="padding:10px 34px;font-size:16px">出 关</button> ' +
@@ -1231,7 +1269,7 @@
       '</div></div>' +
       (info.elRel ? '<div class="modal-desc" style="text-align:center;color:var(--cinnabar)">' + escapeHtml(info.elRel) + '</div>' : '') +
       '<div class="modal-desc" style="text-align:center">' + escapeHtml(info.weather) + '</div>' +
-      '<div class="modal-desc" style="font-size:11px;color:var(--ink-soft)">行动点=自身境界+1：出招按招式所需点数扣减，用光了点「调息 · 让招」回满（代价是白让一手）；每回合从你已参悟的招与基础牌里摸牌（付得起的、至多 8 张，境界越高越容易摸到重手）、只出一招；罡气护罩只保当回合。</div>' +
+      '<div class="modal-desc" style="font-size:11px;color:var(--ink-soft)">行动点=自身境界+1：出招按招式所需点数扣减，用光了点「调息 · 让招」回满（代价是白让一手）；手牌即你<b>招式录</b>里配好的那套卡组（付不起的置灰），一回合只出一招；罡气护罩只保当回合。</div>' +
       '<div style="text-align:center;margin-top:10px"><button class="btn-primary" id="battle-start" style="padding:10px 34px;font-size:16px">开 战</button> ' +
       '<button class="icon-btn" id="battle-cancel">改日再战</button></div>';
     card.querySelector('#battle-start').addEventListener('click', () => { onStart(); });
@@ -1277,7 +1315,7 @@
     gd.innerHTML =
       '<div class="bg-title">斗 法 须 知</div>' +
       '<ul class="bg-list">' +
-        '<li>每回合从你<b>已参悟的招与基础牌</b>里摸牌：只手摸得动付得起、且不在冷却的（至多八张，<b>境界越高越容易摸到重手</b>），只能出其中 <b>一张</b>。</li>' +
+        '<li>出战的牌就是你<b>招式录</b>里配好的卡组（8 槽：攻式 3 · 五行 2 · 守式 2 · 回式 1）：每回合这套牌全在手，只按<b>行动点</b>决定你能使哪几张，一回合只出 <b>一张</b>。</li>' +
         '<li>每局由<b>你先出手</b>——先手在你；日后或另立定先手之规，眼下不必挂心。</li>' +
         '<li>出招消耗 <b>行动点</b>（= 自身境界 + 1）；用光了点「调息 · 让招」回满，代价是白让一手。</li>' +
         '<li>对手吃同一套行动条：他的点数也会耗光，耗光那一手只能调息（意图里会写出来）——那是你的机会。</li>' +
@@ -1671,6 +1709,7 @@
       html += '<h3 class="panel-title" style="font-size:14px">购 买</h3>';
       html += d.items.map(it =>
         '<div class="rebirth-item"><div><b>' + escapeHtml(it.name) + '</b>' +
+        (it.note ? '<span class="ev-badge ev-badge-buff">' + escapeHtml(it.note) + '</span>' : '') +
         '<div style="font-size:11px;color:var(--ink-soft)">' + escapeHtml(it.desc) + '</div></div>' +
         '<button class="icon-btn" data-mbuy="' + it.id + '" ' + (g.LS.S.resources.lingshi >= it.price ? '' : 'disabled') + '>' + g.LS.util.fmt(it.price) + ' 灵石</button></div>').join('');
       html += '<h3 class="panel-title" style="font-size:14px;margin-top:12px">卖 出</h3>';
@@ -2290,7 +2329,7 @@
     render('weapon');
   }
 
-  /* ── 招式录：已参悟招式一览（四类归类）+ 自己标星；斗法抽牌不看此处编成 ── */
+  /* ── 招式录：斗法出战卡组编成（四类各限槽数，共 8 槽）＋ 已参悟招式一览 ── */
   function showDeckEditor() {
     removeModals();
     const { card } = makeModal(removeModals);
@@ -2324,17 +2363,17 @@
       const deckDesc = (s.deck || []).map(id => { const c = pool.find(x => x.id === id); return c ? c.name : ''; }).filter(Boolean).join('、') || '（无）';
       card.innerHTML =
         '<div class="modal-title">招 式 录<button class="icon-btn" id="dk-close" style="float:right;font-size:12px;padding:3px 12px">合 上</button></div>' +
-        '<div class="modal-desc">已参悟的招式一览（按攻式 · 五行 · 守式 · 回式归类）。斗法每回合从<b>已参悟的全部招式与基础牌</b>里摸牌：只手摸得动付得起的（费用 ≤ 当前行动点），够格的不超 8 张就全给你、超过 8 张随机抽，且<b>境界越高越容易摸到重手</b>——不看此处标记。已标星：' + escapeHtml(deckDesc) + '</div>' +
+        '<div class="modal-desc"><b>斗法出战的就是你在这里配的卡组</b>（攻式 3 · 五行 2 · 守式 2 · 回式 1，共 8 槽）——每回合整套摊在手上，只按<b>行动点</b>决定你能使哪几张，每回合出一张。付不起、在冷却的会置灰；没配满的槽会从你已参悟的招里自动补位。想带重手，先把坊市「秘传」里的招买下来。当前卡组：' + escapeHtml(deckDesc) + '</div>' +
         '<div class="deck-row">' + cols + '</div>' +
         '<div style="text-align:center;margin-top:8px"><button class="btn-primary" id="dk-save" style="padding:7px 26px">保 存 标 记</button> ' +
         '<button class="icon-btn" id="dk-reset">清 空 标 记</button></div>';
       card.querySelector('#dk-close').addEventListener('click', removeModals);
       card.querySelector('#dk-save').addEventListener('click', () => {
         g.LS.save.save();
-        toast('标记已保存（只作备忘，不影响斗法抽牌）');
+        toast('卡组已保存——下一场斗法就按这套出牌。');
         removeModals();
       });
-      card.querySelector('#dk-reset').addEventListener('click', () => { s.deck = []; g.LS.save.save(); toast('已清空标记'); render(); });
+      card.querySelector('#dk-reset').addEventListener('click', () => { s.deck = []; g.LS.save.save(); toast('已清空卡组（下次进斗法按已参悟的招自动补位）'); render(); });
       card.querySelectorAll('[data-pick]').forEach(btn => btn.addEventListener('click', () => {
         const id = btn.dataset.pick;
         const c = pool.find(x => x.id === id);
@@ -2671,6 +2710,42 @@
     else { clearInterval(bgmTimer); bgmTimer = null; }
   }
 
+  /* ── 留言板（2026-09-21）：递给本地代理落盘；代理没开就存本机，下次进来自动补交 ── */
+  const FB_KEY = 'lingshan_feedback_pending';
+  /** 页面由代理托管时同源提交（端口以 config.json 为准，不写死）；file:// 直开则退回默认代理地址 */
+  function fbBase() {
+    if (typeof location !== 'undefined' && /^https?:$/.test(location.protocol)) return '';
+    return (g.LS.llm && g.LS.llm.PROXY) || 'http://127.0.0.1:8787';
+  }
+  function fbVer() { const el = document.getElementById('version-mark'); return el ? (el.textContent || '').trim() : ''; }
+  function fbPending() { try { return JSON.parse(localStorage.getItem(FB_KEY) || '[]'); } catch (e) { return []; } }
+  function fbStore(q) { try { localStorage.setItem(FB_KEY, JSON.stringify((q || []).slice(-50))); } catch (e) {} }
+  function fbPost(rec) {
+    return fetch(fbBase() + '/api/feedback', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(rec)
+    }).then(r => { if (!r.ok) throw new Error('http ' + r.status); return true; });
+  }
+  /** 递交一条：成功返回 {local:false}；代理不可用则存本机排队（{local:true}），绝不丢玩家的字 */
+  function fbSend(text) {
+    const s = g.LS.S || {};
+    const rec = { text: text, realm: (s.realm && s.realm.index) || 0, version: fbVer() };
+    return fbPost(rec).then(() => ({ local: false }))
+      .catch(() => { const q = fbPending(); q.push(Object.assign({ t: Date.now() }, rec)); fbStore(q); return { local: true }; });
+  }
+  /** 启动/打开设置时补交本机暂存的留言 */
+  function fbFlush() {
+    const q = fbPending();
+    if (!q.length) return;
+    (async () => {
+      const rest = [];
+      for (const rec of q) {
+        try { await fbPost(rec); } catch (e) { rest.push(rec); }
+      }
+      fbStore(rest);
+    })();
+  }
+
   /* ── 设置面板 ── */
   /** 低性能模式（设置开关）：给 html 挂 .lowfx 交给 CSS 简化背景，并停掉环境 canvas 与天气粒子 */
   function applyLowFx() {
@@ -2716,6 +2791,13 @@
       '<div class="set-row"><label>导出存档</label><button class="icon-btn" id="set-export">生成文本</button></div>' +
       '<textarea class="set-textarea" id="set-io" placeholder="导出后复制保存；导入时粘贴至此"></textarea>' +
       '<div class="set-row"><label>导入存档</label><button class="icon-btn" id="set-import">读取文本</button></div>' +
+      '<div class="fb-box">' +
+        '<div class="fb-title">留 言 板</div>' +
+        '<div class="modal-desc" style="font-size:11px;color:var(--ink-soft)">玩着哪里别扭、想要什么新玩法、哪里数值不对——写在这里，我一条条看。</div>' +
+        '<textarea class="set-textarea fb-textarea" id="fb-text" maxlength="500" placeholder="（500 字以内）"></textarea>' +
+        '<div class="set-row" style="justify-content:flex-end"><button class="btn-primary" id="fb-send" style="padding:6px 22px">递 上 留 言</button></div>' +
+        '<div class="fb-slogan">你们的建议都是我们前进的动力！</div>' +
+      '</div>' +
       '<div class="danger-zone set-row"><label>重置游戏（长按 3 秒）</label><button id="btn-reset"><span class="hold-fill"></span>长按重置</button></div>';
 
     bindDiff(); // 难度三选按钮事件（需在 innerHTML 渲染后绑定）
@@ -2783,6 +2865,18 @@
       fill.style.transition = 'width .2s';
       fill.style.width = '0%';
     }));
+    card.querySelector('#fb-send').addEventListener('click', async () => {
+      const ta = card.querySelector('#fb-text');
+      const txt = ((ta && ta.value) || '').trim();
+      if (!txt) { toast('先写点什么吧'); return; }
+      const btn = card.querySelector('#fb-send');
+      btn.disabled = true;
+      const r = await fbSend(txt);
+      btn.disabled = false;
+      if (r.local) toast('本地代理没开，留言先替你收在本机了——下次带着 start.bat 进来会自动递上。', 4600);
+      else { if (ta) ta.value = ''; toast('留言已递上。你们的建议都是我们前进的动力！', 3800); }
+    });
+    fbFlush();   // 顺手把上次没递出去的补上
     card.querySelector('#set-close').addEventListener('click', removeModals);
   }
 
@@ -2946,12 +3040,12 @@
   g.LS.ui = {
     initRefs, renderAll, renderResources, renderBuildings, renderCenter,
     renderChronicle, renderPermList, pushLog, markNewBuildings, isModalOpen, hintOnce,
-    showEventModal, closeEventModal, showOfflinePopup, showBreakthroughOverlay, showFailOverlay,
+    showEventModal, showEventPicker, closeEventModal, showOfflinePopup, showBreakthroughOverlay, showFailOverlay,
     showRealmUnlockGuide,
     showSettings, showRebirthPanel, showTutorial, showPillHouse, showHelpPanel, showMarket, showFriends, showDeckEditor, showSeniorPick, showCodexPage, showUpdateNotes, playEmperorTribulation, showTrial, showXinmo, showAmbushModal, showQuest, showDisciple, showGenerationChoice, showTutorialSteps,
     showBattleArena, showBattleGuide, updateBattleHP, updateBattleShields, updateBattleQi, renderBattleHands, showBattleIntent,
     showBattleScreen, battleLog, battleAppend, showBattleResult,
-    toast, tweenNumber, setBgm, applyLowFx,
+    toast, tweenNumber, setBgm, applyLowFx, fbFlush,
     setLLMStatus, setForewarn, updateBuffBar, drawBg, sfx, playTribulation,
   };
 })(typeof window !== 'undefined' ? window : globalThis);

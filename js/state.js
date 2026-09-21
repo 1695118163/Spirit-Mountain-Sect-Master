@@ -52,6 +52,8 @@
       generation_chosen: false,
       cards_owned: ['tunazhang', 'yujianshu', 'wuxingshu', 'hutigangqi', 'zhoutian'],
       deck: [],
+      shop_sharp: 0,      // 市集「淬锋石」凿出的永久锋锐加成（2026-09-21 市集新增）
+      huxinjing: 0,       // 市集「护心镜」存量：走火时挡一记，用后即碎
       seen_update: '',
       equip: { weapon: null, technique: null },
       friends: [],
@@ -190,5 +192,11 @@
 
   function markFlag(id, weight) { addTag(id, '缘', weight); }
 
-  g.LS.state = { NEW_STATE, getS, applyEffect, addBuff, tickBuffs, addTag, changeDaoHeart, markFlag, rollSpiritRoot, spiritRootMult };
+  /** 市集「淬锋石」累计锋锐加成（斗法伤害/气血、战力评估都要算） */
+  function shopSharp() {
+    const v = g.LS.S && g.LS.S.shop_sharp;
+    return typeof v === 'number' ? v : 0;
+  }
+
+  g.LS.state = { NEW_STATE, getS, applyEffect, addBuff, tickBuffs, addTag, changeDaoHeart, markFlag, rollSpiritRoot, spiritRootMult, shopSharp };
 })(typeof window !== 'undefined' ? window : globalThis);

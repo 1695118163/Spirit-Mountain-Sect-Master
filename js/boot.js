@@ -96,6 +96,7 @@
     g.LS.llm.checkHealth();
     setInterval(() => g.LS.llm.checkHealth(), 60000);
     g.LS.dev.initDev();
+    if (g.LS.ui.fbFlush) g.LS.ui.fbFlush(); // 留言板：有本机暂存的留言就趁机补交
     if (g.LS.ui.applyLowFx) g.LS.ui.applyLowFx(); // 低性能模式（存档设置）：先于环境层初始化，省掉雾带烘焙
     if (g.LS.ambient) g.LS.ambient.init(); // 环境动画层（云雾/墨鹤/天气）
     if (g.LS.ui.applyLowFx) g.LS.ui.applyLowFx();

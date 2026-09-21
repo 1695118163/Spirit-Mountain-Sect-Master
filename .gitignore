@@ -6,3 +6,5 @@ node_modules/
 *.zip
 Thumbs.db
 .DS_Store
+# 玩家留言（本地收集，不入库）
+data/feedback.jsonl

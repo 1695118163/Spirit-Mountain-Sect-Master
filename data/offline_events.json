@@ -1,7 +1,8 @@
 {
   "version": "v0.21.3",
-  "note": "离线归来独立事件池（2026-09-19）。一次离线只出一条，不给选项：按 pos_weight/neg_weight 随机正负，再在该方向的多条文案里随机挑一条（good→fits A 益 / bad→fits F 异），直接把结果讲给玩家，点「知道了」收。desc 里的 {away} 按真实离线时长替换。注意：negativeSuppression() 会在低境/有护山阵时把负面净化成正面（新手保护），属既有机制。cond 支持：always / tag / lingshoulan / hushanzhen / xinmo / daoxin。",
+  "note": "离线归来独立事件池（2026-09-19，2026-09-21 改五选一）。归来时按 pick_count 摊开几桩候选（只漏标题，不漏结果），玩家挑一桩听；选中后才按 pos_weight/neg_weight 随机正负，再在该方向的多条文案里随机挑一条（good→fits A 益 / bad→fits F 异），直接把结果讲给玩家，点「知道了」收。pick_count 调成 1 即退回「随机听一桩」。desc 里的 {away} 按真实离线时长替换。注意：negativeSuppression() 会在低境/有护山阵时把负面净化成正面（新手保护），属既有机制。cond 支持：always / tag / lingshoulan / hushanzhen / xinmo / daoxin。",
   "count": 1,
+  "pick_count": 5,
   "default_rarity": "灵",
   "leave_text_key": "event_leave",
   "away_words": [

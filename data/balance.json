@@ -580,6 +580,7 @@
     "interval_jitter_s": 30,
     "interval_min_s": 120,
     "modal_timeout_s": 30,
+    "pick_count": 5,
     "rarity": {
       "keys": [
         "凡",
