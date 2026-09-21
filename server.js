@@ -295,6 +295,7 @@ async function handle(req, res) {
       let pills = {};
       let help = {};
       let cultivation = {};
+      let disciples = {};
       let offlineEvents = {};
       let changelog = null;
       try {
@@ -310,12 +311,15 @@ async function handle(req, res) {
         cultivation = JSON.parse(fs.readFileSync(path.join(ROOT, 'data', 'cultivation.json'), 'utf8'));
       } catch (e) { /* cultivation.json 可选 */ }
       try {
+        disciples = JSON.parse(fs.readFileSync(path.join(ROOT, 'data', 'disciples.json'), 'utf8'));
+      } catch (e) { /* disciples.json 可选 */ }
+      try {
         offlineEvents = JSON.parse(fs.readFileSync(path.join(ROOT, 'data', 'offline_events.json'), 'utf8'));
       } catch (e) { /* offline_events.json 可选 */ }
       try {
         changelog = JSON.parse(fs.readFileSync(path.join(ROOT, 'data', 'changelog.json'), 'utf8'));
       } catch (e) { /* changelog.json 可选，旧版客户端仍可从 balance.update_notes 回退 */ }
-      return sendJSON(res, 200, { ok: true, balance, events, chains, pills, help, cultivation, offline_events: offlineEvents, changelog, game_version: gameVersion() });
+      return sendJSON(res, 200, { ok: true, balance, events, chains, pills, help, cultivation, disciples, offline_events: offlineEvents, changelog, game_version: gameVersion() });
     } catch (e) {
       return sendJSON(res, 500, { ok: false, message: '读取数据文件失败：' + e.message });
     }

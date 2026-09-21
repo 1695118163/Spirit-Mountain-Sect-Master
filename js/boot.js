@@ -50,6 +50,10 @@
             const r9 = await fetch('./data/offline_events.json');
             if (r9.ok) balance.offline_events = (await r9.json());
           } catch (e) {}
+          try {
+            const rd = await fetch('./data/disciples.json');
+            if (rd.ok) balance.disciples = await rd.json();
+          } catch (e) {}
           let changelog = null;
           try {
             const r10 = await fetch('./data/changelog.json', { cache: 'no-store' });
@@ -71,6 +75,7 @@
         r.balance.pills = r.pills || {};
         r.balance.help = r.help || {}; r.balance.cultivation = r.cultivation || {};
         r.balance.offline_events = r.offline_events || {};
+        r.balance.disciples = r.disciples || {};
         return { balance: r.balance, events: r.events, chains: r.chains || [], changelog: r.changelog || null, version: r.game_version || '' };
       }
     } catch (e) {}

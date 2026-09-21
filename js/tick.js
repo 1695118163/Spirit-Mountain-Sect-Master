@@ -39,11 +39,15 @@
     if (mode === 'online') {
       s.stats.play_seconds += dt;
       eco.autoPillTick(Date.now()); // 元婴被动：自动服丹
+      if (g.LS.quest && g.LS.quest.tickDisciple) g.LS.quest.tickDisciple();
+      if (g.LS.disciples && g.LS.disciples.tick) g.LS.disciples.tick(dt);
     }
     const now = Date.now();
     // 游戏历法：现实 1 秒 = 游戏 day_per_second 天（在线离线同速，山中无甲子）
     const dps = (bal.game_time && bal.game_time.day_per_second) || 1;
     s.game_days = (s.game_days || 0) + dt * dps;
+    if (g.LS.path && g.LS.path.tick) g.LS.path.tick(dt);
+    if (g.LS.economy && g.LS.economy.xinmoDecay) g.LS.economy.xinmoDecay(now);
     if (g.LS.economy && g.LS.economy.toxicDecay) g.LS.economy.toxicDecay(dt); // 丹毒随时间消散
     // 前尘心障（丹瘾种因，转生不清）：道心被缓缓侵蚀
     if (Array.isArray(s.persistent_curses) && s.persistent_curses.indexOf('danyin') !== -1) {
@@ -162,13 +166,11 @@
     advanceGame(dt, { mode: 'online' }); // 后台节流的大 dt 全额补算（隐藏期间按在线效率累计）
     stagnationTick(now);
     g.LS.events.maybeTriggerEvent(now);
-    try { if (g.LS.quest) g.LS.quest.tickDisciple(); } catch (e) {} // 弟子成长（批四）
     if (now >= nextRenderAt) {
       nextRenderAt = now + TICK_MS;
       try {
         if (g.LS.quest) {
           /* 主线可领奖由右栏红点常亮指引（不弹 toast 刷屏） */
-          g.LS.quest.tickDisciple();
           const sd = g.LS.S;
           if (sd.disciple && sd.disciple.agent && sd.disciple.realm >= 4 && !sd.generation_chosen && g.LS.ui && g.LS.ui.showGenerationChoice) {
             sd.generation_chosen = true;

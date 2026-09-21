@@ -8,7 +8,7 @@
   const KEY = 'lingshan_save_v1';
   const KEY_BACKUP = 'lingshan_save_backup';
   const KEY_TMP = 'lingshan_save_tmp';
-  const SAVE_VERSION = 9;
+  const SAVE_VERSION = 10;
 
   const MIGRATIONS = {
     // v1 → v2：补 突破失败体系（bt）/ 停滞彩蛋（stagnation）/ 事件队列（queue）
@@ -84,6 +84,47 @@
       if (typeof s.honor !== 'number' || !isFinite(s.honor)) s.honor = 0;
       if (!s.record || typeof s.record !== 'object') s.record = { win: 0, lose: 0 };
       s.v = 9;
+      return s;
+    },
+    // v9 → v10：邪修双轨 + 弟子数组化；旧 disciple 保留为只读墓碑
+    9: (s) => {
+      if (s.path !== 'xie' && s.path !== 'zheng') s.path = 'zheng';
+      if (typeof s.xuesha !== 'number' || !isFinite(s.xuesha)) s.xuesha = 0;
+      if (typeof s.xie_chapter !== 'number' || !isFinite(s.xie_chapter)) s.xie_chapter = 0;
+      if (typeof s.xie_idx !== 'number' || !isFinite(s.xie_idx)) s.xie_idx = 0;
+      if (!s.xie_claimed || typeof s.xie_claimed !== 'object') s.xie_claimed = {};
+      if (typeof s.xie_steles !== 'number' || !isFinite(s.xie_steles)) s.xie_steles = 0;
+      if (!s.flags || typeof s.flags !== 'object') s.flags = {};
+      if (!s.mo_realm || typeof s.mo_realm !== 'object') s.mo_realm = { index: 0, progress: 0 };
+      if (typeof s.mo_realm.index !== 'number' || !isFinite(s.mo_realm.index)) s.mo_realm.index = 0;
+      if (typeof s.mo_realm.progress !== 'number' || !isFinite(s.mo_realm.progress)) s.mo_realm.progress = 0;
+      if (s.path !== 'xie') s.mo_realm = { index: 0, progress: 0 };
+      if (!s.mo_buildings_level || typeof s.mo_buildings_level !== 'object') s.mo_buildings_level = {};
+      if (!Array.isArray(s.mo_cards_owned)) s.mo_cards_owned = [];
+      if (!Array.isArray(s.disciples)) s.disciples = [];
+      if (s.disciple && s.disciple.recruited && !s.disciples.length) {
+        const progress = Math.max(0, Math.min(100, Number(s.disciple.progress) || 0));
+        s.disciples.push({
+          id: 'legacy_d1',
+          name: s.disciple.name || '首徒',
+          root: s.disciple.root || s.spirit_root || { key: '真', element: '水' },
+          stage: Math.min(3, Math.floor(progress / 33)),
+          progress: progress,
+          realm: Number(s.disciple.realm) || 0,
+          agent: !!s.disciple.agent,
+          traits: [{ key: 'zhonghou', revealed: true }, { key: 'qinmian', revealed: false }],
+          skills: [{ id: 'hui_qi', revealed: true, used_in_battle: false }],
+          suspicion: 0,
+          mood: 'normal',
+          events_log: [],
+          betray_warned: false,
+          status: 'active',
+          fed: Number(s.disciple.fed) || 0
+        });
+      }
+      if (!Array.isArray(s.disciple_revenge)) s.disciple_revenge = [];
+      if (typeof s.disciple_recruit_at !== 'number' || !isFinite(s.disciple_recruit_at)) s.disciple_recruit_at = 0;
+      s.v = 10;
       return s;
     }
   };

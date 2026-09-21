@@ -1,0 +1,44 @@
+{
+  "version": 1,
+  "names": ["沈砚", "顾玄", "陆昭", "苏隐", "楚离", "谢无咎", "裴照", "宁渊", "闻霜", "叶沉", "白蘅", "江烬", "秦夜", "洛微", "温辞", "林渡", "韩鸦", "许归尘", "孟秋", "周厌"],
+  "traits": [
+    { "key": "zhonghou", "name": "忠厚", "polarity": 1, "skill_mult": 1.15, "betray_add": -12, "hidden_hint": "话少，眼神老实。" },
+    { "key": "conghui", "name": "聪慧", "polarity": 1, "skill_mult": 1.2, "betray_add": -6, "hidden_hint": "听经时总比别人快半拍。" },
+    { "key": "shanliang", "name": "善良", "polarity": 1, "skill_mult": 1.2, "betray_add": -15, "hidden_hint": "把最后一口粥让给了同门。" },
+    { "key": "qinmian", "name": "勤勉", "polarity": 1, "skill_mult": 1.1, "betray_add": -4, "hidden_hint": "鸡鸣即起，扫院三年不辍。" },
+    { "key": "yinren", "name": "隐忍", "polarity": 1, "skill_mult": 1.05, "betray_add": -8, "hidden_hint": "受了委屈也不说。" },
+    { "key": "tanlan", "name": "贪婪", "polarity": -1, "skill_mult": 1.1, "betray_add": 18, "hidden_hint": "总盯着库房的钥匙。" },
+    { "key": "qienuo", "name": "怯懦", "polarity": -1, "skill_mult": 0.9, "betray_add": 8, "hidden_hint": "夜里有响动，他先缩进被窝。" },
+    { "key": "shisha", "name": "嗜杀", "polarity": -1, "skill_mult": 1.25, "betray_add": 22, "hidden_hint": "杀鸡时笑了。" },
+    { "key": "yinhen", "name": "阴狠", "polarity": -1, "skill_mult": 1.2, "betray_add": 25, "hidden_hint": "记仇，且记得很细。" },
+    { "key": "aoman", "name": "傲慢", "polarity": -1, "skill_mult": 1.05, "betray_add": 14, "hidden_hint": "嫌山门寒酸。" }
+  ],
+  "drift": [
+    { "from": "shanliang", "to": "yinhen", "cause": "被辜负", "event_id": "ds_bei_fuyu", "note": "善良→阴狠：弟子事件触发漂移" },
+    { "from": "zhonghou", "to": "qienuo", "cause": "看着同门送死", "event_id": "ds_jian_si" },
+    { "from": "qinmian", "to": "tanlan", "cause": "多年不进阶", "event_id": "ds_jing_chi", "note": "勤勉→贪婪" },
+    { "from": "yinren", "to": "shisha", "cause": "手刃仇人", "event_id": "ds_shou_ren" },
+    { "from": "aoman", "to": "conghui", "cause": "被打服后自省", "event_id": "ds_zi_xing", "note": "负面→正面，漂移不是单行道" },
+    { "from": "tanlan", "to": "zhonghou", "cause": "掌门分他一半资源", "event_id": "ds_fen_zi" }
+  ],
+  "skills": [
+    { "id": "hui_qi", "name": "血息回元", "kind": "heal", "base": 0.15, "desc": "引血息回流，回复最大气血 15%×性格系数。" },
+    { "id": "xu_qi", "name": "摄灵手", "kind": "qi", "base": 2, "desc": "摄来散逸灵机，立即恢复行动点 +2。" },
+    { "id": "hu_ti", "name": "玄煞护身", "kind": "shield", "base": 0.08, "desc": "玄煞附体，本回合获得最大气血 8%×系数的护盾。" },
+    { "id": "po_du", "name": "蚀毒诀", "kind": "cleanse", "base": 3, "desc": "以煞蚀毒，削去丹毒 3 点。" },
+    { "id": "chi_zhi", "name": "镇魂印", "kind": "delay", "base": 1, "desc": "镇住敌魂，令其下一手意图延后。" },
+    { "id": "shi_xue", "name": "饮血咒", "kind": "drain", "base": 0.08, "heal_pct": 0.4, "suspicion": 6, "path": "xie", "desc": "咒血伤敌并回复伤害的 40%，怀疑 +6（魔道专属）。" }
+  ],
+  "event_pool": [
+    "ds_bei_fuyu",
+    "ds_jian_si",
+    "ds_jing_chi",
+    "ds_shou_ren",
+    "ds_zi_xing",
+    "ds_fen_zi",
+    "ds_tou_dan",
+    "ds_li_men",
+    "ds_qiu_dan",
+    "ds_zhen_cha"
+  ]
+}

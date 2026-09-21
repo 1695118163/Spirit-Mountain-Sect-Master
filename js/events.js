@@ -17,7 +17,27 @@
   /* ── 解锁集合 ── */
 
   function poolsUnlocked() {
-    return BAL().pools.filter(p => p.unlock_realm <= S().realm.index).map(p => p.id);
+    const s = S();
+    return BAL().pools.filter(p => {
+      if (p.unlock_realm > s.realm.index) return false;
+      if (p.id === 'DARK') return (s.xinmo || 0) >= ((BAL().events.pool_weight || {}).xinmo_high_threshold || 30)
+        && !(s.flags && s.flags[((BAL().path || {}).enter || {}).refuse_flag || 'refused_dark']) && s.path !== 'xie';
+      if (p.id === 'DISCIPLE') return (s.disciples || []).some(d => d.status === 'active');
+      return true;
+    }).map(p => p.id);
+  }
+
+  function eventEligible(ev) {
+    const s = S(), req = ev.requires || {};
+    if (ev.min_realm != null && s.realm.index < ev.min_realm) return false;
+    if (req.not_flag && s.flags && s.flags[req.not_flag]) return false;
+    const active = (s.disciples || []).filter(d => d.status === 'active');
+    if (req.active_disciple && !active.length) return false;
+    if (req.trait && !active.some(d => (d.traits || []).some(t => t.key === req.trait))) return false;
+    if (req.suspicion_min != null && !active.some(d => (d.suspicion || 0) >= req.suspicion_min)) return false;
+    if (req.suspicion_range && !active.some(d => (d.suspicion || 0) >= req.suspicion_range[0] && (d.suspicion || 0) <= req.suspicion_range[1])) return false;
+    if (req.pill_min != null && g.LS.economy && g.LS.economy.pillTotal && g.LS.economy.pillTotal() < req.pill_min) return false;
+    return true;
   }
 
   /* ── 奇遇频率 ── */
@@ -103,9 +123,13 @@
         let w = 1;
         if (s.dao_heart > pw.dao_high_threshold && pw.pools_dao_high.indexOf(p) !== -1) w *= pw.boost_mult;
         if (s.dao_heart < pw.dao_low_threshold && pw.pools_dao_low.indexOf(p) !== -1) w *= pw.boost_mult;
+        const xm = s.xinmo || 0;
+        if (xm >= pw.xinmo_high_threshold && (pw.pools_xinmo_high || []).indexOf(p) !== -1) {
+          w *= Math.min(pw.xinmo_linear_cap, 1 + xm / 50) * pw.xinmo_boost_mult;
+        }
         return w;
       });
-      const cands = EVT().filter(e => e.pool === pool && e.rarity === rarity && !e.recycle && !blocked.has(e.id));
+      const cands = EVT().filter(e => e.pool === pool && e.rarity === rarity && !e.recycle && !blocked.has(e.id) && eventEligible(e));
       if (cands.length) return cands[U().randInt(0, cands.length - 1)];
       poolIds = poolIds.filter(p => p !== pool); // 该池此稀有度无库存，换池
     }
@@ -134,10 +158,14 @@
         let w = 1;
         if (s.dao_heart > pw.dao_high_threshold && pw.pools_dao_high.indexOf(p) !== -1) w *= pw.boost_mult;
         if (s.dao_heart < pw.dao_low_threshold && pw.pools_dao_low.indexOf(p) !== -1) w *= pw.boost_mult;
+        const xm = s.xinmo || 0;
+        if (xm >= pw.xinmo_high_threshold && (pw.pools_xinmo_high || []).indexOf(p) !== -1) {
+          w *= Math.min(pw.xinmo_linear_cap, 1 + xm / 50) * pw.xinmo_boost_mult;
+        }
         return w;
       });
       const cands = EVT().filter(e => e.pool === pool && e.rarity === rarity && !e.recycle
-        && !blocked.has(e.id) && !picked.some(x => x.id === e.id));
+        && !blocked.has(e.id) && !picked.some(x => x.id === e.id) && eventEligible(e));
       if (!cands.length) { poolsLeft.splice(poolsLeft.indexOf(pool), 1); continue; }   // 该池此稀有度没库存了
       picked.push(cands[U().randInt(0, cands.length - 1)]);
     }
@@ -243,9 +271,12 @@
       builtinTags: ev.tags || [],
       title: ev.title,
       desc: ev.desc,
+      special: ev.special || null,
+      disciple_effect: ev.disciple_effect || null,
+      requires: ev.requires || null,
       options: [
-        { key: 'A', text: ev.options[0].text, slot: slots[0], daoxin: ev.options[0].daoxin || 0 },
-        { key: 'B', text: ev.options[1].text, slot: slots[1], daoxin: ev.options[1].daoxin || 0 },
+        { key: 'A', text: ev.options[0].text, slot: slots[0], daoxin: ev.options[0].daoxin || 0, special: ev.options[0].special || null },
+        { key: 'B', text: ev.options[1].text, slot: slots[1], daoxin: ev.options[1].daoxin || 0, special: ev.options[1].special || null },
         { key: 'C', text: BAL().texts.event_leave, slot: null, daoxin: 0 }
       ]
     };
@@ -346,7 +377,8 @@
       finalEv.baseId = ev.id; // LLM 文案事件也按其内置模板 id 计入去重，防「同一件事 4 分钟两遇」
     };
 
-    const llmOk = g.LS.llm && g.LS.llm.isHealthy() && s.settings.llm_enabled;
+    const llmOk = ev.pool !== 'DARK' && ev.pool !== 'DISCIPLE'
+      && g.LS.llm && g.LS.llm.isHealthy() && s.settings.llm_enabled;
     if (llmOk) {
       const payload = g.LS.llm.buildHistoryPayload(slots, hint);
       // LLM 与 20s 兜底竞速：超时/失败即内置池，玩家无感知
@@ -693,9 +725,43 @@
     s.steles.push({ title, body, footer: (cfg.stele_footer || '').replace('{realm}', BAL().realms[s.realm.index].name) });
   }
 
+  function buildChainEvent(chain, stageIdx) {
+    const stage = chain.stages[stageIdx];
+    const stageEv = { id: chain.id + ':stage' + stageIdx, pool: 'CHAIN', rarity: stage.rarity || '灵', title: stage.title, desc: stage.desc, options: stage.options, tags: [] };
+    const slots = rollSlots(stageEv);
+    const keys = ['A', 'B', 'C'];
+    return {
+      id: 'chain:' + chain.id + ':' + stageIdx,
+      source: 'chain',
+      rarity: stage.rarity || '灵',
+      recycle: null,
+      after: null,
+      builtinTags: stage.tags || [],
+      title: stage.title,
+      desc: stage.desc,
+      options: stage.options.map((opt, index) => ({
+        key: keys[index], text: opt.text, slot: index < 2 ? slots[index] : null, daoxin: opt.daoxin || 0,
+        xinmo_add: opt.xinmo_add || 0, action: opt.action || '', requires_xinmo: opt.requires_xinmo || 0
+      }))
+    };
+  }
+
+  function maybeStartDarkChain() {
+    const s = S(), enter = (BAL().path || {}).enter || {};
+    if (s.path === 'xie' || s.realm.index < (enter.chapter_min || 2) || (s.xinmo || 0) < (enter.chain_xinmo_min || 40)) return false;
+    s.flags = s.flags || {};
+    if (s.flags[enter.refuse_flag || 'refused_dark'] || s.flags.dark_chain_started) return false;
+    const chain = (g.LS.CHAINS || []).find(c => c.id === enter.chain_id);
+    if (!chain || !chain.stages || !chain.stages.length) return false;
+    s.flags.dark_chain_started = 1;
+    enqueueOrShow(buildChainEvent(chain, 0));
+    scheduleNext();
+    return true;
+  }
+
   function maybeContinueChain(ev, key) {
     const CH = g.LS.CHAINS || [];
-    if (!CH.length || key === 'C') return; // 离去即断，故事留给选的人
+    if (!CH.length || key === 'C') return;
     let chain = null;
     let stageIdx = -1;
     if (typeof ev.id === 'string' && ev.id.indexOf('chain:') === 0) {
@@ -706,6 +772,10 @@
       chain = CH.find(c => c.trigger_event === ev.id && (c.trigger_option === 'any' || c.trigger_option === key));
     }
     if (!chain || !Array.isArray(chain.stages) || !chain.stages.length) return;
+    if (chain.id === ((BAL().path || {}).enter || {}).chain_id) {
+      S().flags = S().flags || {};
+      S().flags.dark_chain_started = 1;
+    }
     let chance;
     if (stageIdx === -1) {
       chance = chain.trigger_chance != null ? chain.trigger_chance : 0.6;
@@ -715,32 +785,7 @@
     }
     if (Math.random() >= chance) return;
     const nextIdx = stageIdx + 1;
-    const stage = chain.stages[nextIdx];
-    const stageEv = {
-      id: chain.id + ':stage' + nextIdx,
-      pool: 'CHAIN',
-      rarity: stage.rarity || '灵',
-      title: stage.title,
-      desc: stage.desc,
-      options: stage.options,
-      tags: []
-    };
-    const slots = rollSlots(stageEv); // 每幕照常本地预掷数值
-    const finalEv = {
-      id: 'chain:' + chain.id + ':' + nextIdx,
-      source: 'chain',
-      rarity: stage.rarity || '灵',
-      recycle: null,
-      after: null,
-      builtinTags: stage.tags || [],
-      title: stage.title,
-      desc: stage.desc,
-      options: [
-        { key: 'A', text: stage.options[0].text, slot: slots[0], daoxin: stage.options[0].daoxin || 0 },
-        { key: 'B', text: stage.options[1].text, slot: slots[1], daoxin: stage.options[1].daoxin || 0 },
-        { key: 'C', text: BAL().texts.event_leave, slot: null, daoxin: 0 }
-      ]
-    };
+    const finalEv = buildChainEvent(chain, nextIdx);
     // 稍作停顿再续：像翻到下一页
     setTimeout(() => { if (g.LS.S && g.LS.S.event_state) enqueueOrShow(finalEv); }, 700);
   }
@@ -749,11 +794,17 @@
     const s = S();
     const ev = s.event_state.open;
     if (!ev) return;
+    const selected = ev.options.find(o => o.key === key);
+    if (selected && selected.requires_xinmo && (s.xinmo || 0) < selected.requires_xinmo) {
+      if (g.LS.ui && g.LS.ui.toast) g.LS.ui.toast('心魔不足，还差 ' + (selected.requires_xinmo - (s.xinmo || 0)) + ' 点。');
+      return;
+    }
     s.event_state.open = null;
     let gainText = '';
+    const actionableC = key === 'C' && selected && selected.action;
 
-    if (key !== 'C') {
-      const opt = ev.options.find(o => o.key === key);
+    if (key !== 'C' || actionableC) {
+      const opt = selected;
       if (opt) {
         if (opt.slot) {
           const applied = g.LS.state.applyEffect(opt.slot);
@@ -773,6 +824,12 @@
             s.xinmo = Math.min(100, s.xinmo + 6 + Math.floor(Math.random() * 5));
           }
         }
+        if (opt.xinmo_add) s.xinmo = Math.min(100, (s.xinmo || 0) + opt.xinmo_add);
+        if (opt.action === 'refuse_dark' && g.LS.path) gainText += ' ' + g.LS.path.refuseDark().msg;
+        if (opt.action === 'enter_xie' && g.LS.path) gainText += ' ' + g.LS.path.enterXie(false).msg;
+        if (opt.action === 'enter_xie_deep' && g.LS.path) gainText += ' ' + g.LS.path.enterXie(true).msg;
+        if (g.LS.path && g.LS.path.applyEventSpecial) g.LS.path.applyEventSpecial(ev, opt);
+        if (ev.disciple_effect && g.LS.disciples) g.LS.disciples.applyEvent(ev.baseId || ev.id, ev.disciple_effect, key, ev.requires);
         // 故人上门/托梦的即时抉择效果（boost/disturb 存给下次突破，其余立即结算）
         if (opt.effect && opt.effect !== 'none') {
           const eco = g.LS.economy;
@@ -834,25 +891,28 @@
   /** 奇遇强敌（乙§6）：金丹起偶遇劫匪/邪修，战力不足可能殒命——每世至多 2 次 */
   function maybeAmbush(now) {
     const s = S();
-    if (s.realm.index < 2 || s.event_state.pending) return false;
+    const revenge = (s.disciple_revenge || []).find(r => !r.resolved && (s.game_days || 0) >= r.due_day);
+    if ((s.realm.index < 2 && !revenge) || s.event_state.pending) return false;
     if (typeof document !== 'undefined' && document.visibilityState !== 'visible') return false;
     s.ambush = s.ambush || { count: 0, next_ts: 0 };
-    if (s.ambush.count >= 2 || now < (s.ambush.next_ts || 0)) return false;
+    if (!revenge && (s.ambush.count >= 2 || now < (s.ambush.next_ts || 0))) return false;
     const xm = s.xinmo || 0;
     let p = 0.12;
     if (xm >= 30) p *= 1.5;
     if (xm >= 60) p *= 1.3;
-    if (Math.random() >= p) { s.ambush.next_ts = now + 240000; return false; }
+    if (revenge && Math.random() >= revenge.chance) { revenge.resolved = true; return false; }
+    if (!revenge && Math.random() >= p) { s.ambush.next_ts = now + 240000; return false; }
     const scale = [0.7, 1.0, 1.25, 1.45];
     const cpScale = scale[Math.floor(Math.random() * scale.length)];
     const names = xm >= 60 ? ['心魔化形的另一个你', '血罗刹', '黄泉引路人'] : (xm >= 30 ? ['寻仇的邪修', '黑市牙行的打手', '魔道修士'] : ['山道劫匪', '黑风寨劫匪', '断岳蛮修']);
-    const name = names[Math.floor(Math.random() * names.length)];
+    const name = revenge ? '叛徒' + revenge.name : names[Math.floor(Math.random() * names.length)];
     const spec = g.LS.trial.buildMob(Math.max(2, s.realm.index));
     spec.name = name;
     spec.hpMult = 1;
     spec.dmgAdd = xm >= 60 ? 2 : 0;
     const enemyCP = Math.round(g.LS.battle.combatPower() * cpScale);
-    s.ambush.count += 1;
+    if (revenge) revenge.resolved = true;
+    else s.ambush.count += 1;
     s.ambush.next_ts = now + 600000;
     g.LS.ui.showAmbushModal({
       name, cpScale, enemyCP,
@@ -865,6 +925,7 @@
   }
 
   function maybeTriggerEvent(now) {
+    if (maybeStartDarkChain()) return;
     if (maybeAmbush(now)) return;
     const s = S();
     if (s.event_state.pending) return;      // 管线占用期间不触发；弹窗开着的新事件走队列
@@ -881,7 +942,7 @@
 
   g.LS.events = {
     rollOfflineEvents, queueOfflineReturn,
-    drawEvent, chooseOption, maybeTriggerEvent, scheduleNext, pumpQueue, maybeContinueChain, maybeAmbush,
+    drawEvent, chooseOption, maybeTriggerEvent, scheduleNext, pumpQueue, maybeContinueChain, maybeStartDarkChain, maybeAmbush,
     maybeVisitor, rollDream, isPastLife, chronicle, carveStele,
     rollSlots, rollRarity, pickByRarity, pickCandidates, pickCount, materializeSlot,
     rollOfflineCandidates, buildOfflineFinal,

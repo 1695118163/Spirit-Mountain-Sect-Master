@@ -117,9 +117,10 @@ if (!Array.isArray(events)) {
   process.exit(1);
 }
 
-// 规则 1：恰好 61 条
-if (events.length !== EXPECTED_TOTAL) {
-  fail('-', 'events.json', `条数须为 ${EXPECTED_TOTAL}｜实际 ${events.length}`);
+// 规则 1：A-J 核心包仍须恰好 61 条；扩展系统可追加具名池事件。
+const coreEvents = events.filter((ev) => ev && typeof ev.pool === 'string' && POOLS.includes(ev.pool));
+if (coreEvents.length !== EXPECTED_TOTAL) {
+  fail('-', 'events.json', `A-J 核心条数须为 ${EXPECTED_TOTAL}｜实际 ${coreEvents.length}`);
 }
 
 // 规则 5 准备：balance.json pools 节 → no_negative 为 true 的池
@@ -146,6 +147,7 @@ for (const ev of events) {
 
 const seenIds = new Map();    // id 唯一性
 const titleOwner = new Map(); // title 全库唯一性
+const configuredPools = new Set(Array.isArray(balance.pools) ? balance.pools.map(p => p && p.id).filter(Boolean) : Object.keys(balance.pools || {}));
 
 for (let idx = 0; idx < events.length; idx++) {
   const ev = events[idx];
@@ -155,6 +157,7 @@ for (let idx = 0; idx < events.length; idx++) {
     continue;
   }
   const id = typeof ev.id === 'string' ? ev.id : `#${idx}`;
+  const isCore = typeof ev.pool === 'string' && POOLS.includes(ev.pool);
 
   // 规则 2：必填字段
   for (const f of ['id', 'pool', 'rarity', 'title', 'desc', 'options']) {
@@ -163,16 +166,17 @@ for (let idx = 0; idx < events.length; idx++) {
 
   // id：格式「池字母+两位序号」、全局唯一、前缀=pool
   if (typeof ev.id === 'string') {
-    if (!/^[A-J][0-9]{2}$/.test(ev.id)) fail(id, 'id', '格式须为「池字母+两位序号」');
+    if (isCore && !/^[A-J][0-9]{2}$/.test(ev.id)) fail(id, 'id', '格式须为「池字母+两位序号」');
+    if (!isCore && !/^[a-z][a-z0-9_]+$/.test(ev.id)) fail(id, 'id', '扩展事件须使用小写 snake_case');
     if (seenIds.has(ev.id)) fail(id, 'id', `与 ${seenIds.get(ev.id)} 重复`);
     else seenIds.set(ev.id, ev.id);
-    if (typeof ev.pool === 'string' && ev.id[0] !== ev.pool) {
+    if (isCore && typeof ev.pool === 'string' && ev.id[0] !== ev.pool) {
       fail(id, 'id', `前缀「${ev.id[0]}」≠pool「${ev.pool}」`);
     }
   }
 
-  if (ev.pool !== undefined && !POOLS.includes(ev.pool)) {
-    fail(id, 'pool', `「${ev.pool}」不在 A-J`);
+  if (ev.pool !== undefined && !configuredPools.has(ev.pool)) {
+    fail(id, 'pool', `「${ev.pool}」未在 balance.pools 注册`);
   }
   if (ev.rarity !== undefined && !RARITIES.includes(ev.rarity)) {
     fail(id, 'rarity', `「${ev.rarity}」须为 凡/灵/珍/仙`);
@@ -207,7 +211,7 @@ for (let idx = 0; idx < events.length; idx++) {
         if (typeof opt.text === 'string') {
           const n = charLen(opt.text);
           if (n > 16) fail(id, `options[${i}].text`, `超长 ${n}＞16 字`);
-          checkTextNumbers(id, `options[${i}].text`, opt.text);
+          if (isCore) checkTextNumbers(id, `options[${i}].text`, opt.text);
         }
       });
     }
@@ -250,7 +254,7 @@ for (let idx = 0; idx < events.length; idx++) {
   if (typeof ev.title === 'string') {
     const n = charLen(ev.title);
     if (n > 12) fail(id, 'title', `超长 ${n}＞12 字`);
-    checkTextNumbers(id, 'title', ev.title);
+    if (isCore) checkTextNumbers(id, 'title', ev.title);
     if (titleOwner.has(ev.title)) {
       fail(id, 'title', `全库重复｜与 ${titleOwner.get(ev.title)} 同名「${ev.title}」`);
     } else {
@@ -260,7 +264,7 @@ for (let idx = 0; idx < events.length; idx++) {
   if (typeof ev.desc === 'string') {
     const n = charLen(ev.desc);
     if (n > 80) fail(id, 'desc', `超长 ${n}＞80 字`);
-    checkTextNumbers(id, 'desc', ev.desc);
+    if (isCore) checkTextNumbers(id, 'desc', ev.desc);
   }
 
   // 规则 5：低池负面禁令（no_negative=true 的池，fits 不得含 B/F）

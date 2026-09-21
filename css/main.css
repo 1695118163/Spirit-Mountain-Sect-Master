@@ -62,6 +62,81 @@ html.night body #btn-breath { box-shadow: 0 4px 24px rgba(0,0,0,.4), inset 0 0 3
 html.night body #xp-bar { background: var(--paper-dim); }
 html.night body .toast { background: #e8e2d2; color: #343b47; }
 
+/* ── 魔道主题：仅换色，不改布局 ── */
+html.xie body {
+  --paper: #1b1113;
+  --ink: #f4e8e2;
+  --paper-dim: #2b191d;
+  --ink-soft: rgba(244, 232, 226, .68);
+  --cyan: #c98c86;
+  --cinnabar: #c43b35;
+  --gold: #d7ad68;
+  --ink-mute: #b9a7a5;
+  background: #160d0f;
+}
+html.xie body::before { opacity: .3; }
+html.xie body .panel {
+  background: #26171a;
+  border-color: rgba(196, 59, 53, .58);
+  box-shadow: 0 3px 18px rgba(5, 0, 1, .42), inset 0 1px rgba(255, 230, 220, .025);
+}
+html.xie body #center { background: #211316; }
+html.xie body .panel-title { border-bottom-color: rgba(213, 100, 91, .46); }
+html.xie body .b-card,
+html.xie body .ev-option,
+html.xie body .bc-side,
+html.xie body .rebirth-item { border-color: rgba(201, 93, 86, .35); }
+html.xie body .b-card,
+html.xie body .ev-option { background: #321e22; }
+html.xie body .b-card:hover { box-shadow: 0 4px 16px rgba(4, 0, 1, .5); }
+html.xie body .btn-primary {
+  color: #fff7f2;
+  background: #a92b29;
+  border: 1px solid #d5544c;
+  box-shadow: inset 0 1px rgba(255, 235, 225, .12), 0 2px 8px rgba(5, 0, 1, .28);
+}
+html.xie body .btn-primary:hover:not(:disabled) { background: #c23a33; border-color: #e36d63; }
+html.xie body .btn-primary:focus-visible,
+html.xie body .icon-btn:focus-visible { outline: 2px solid #f0b58d; outline-offset: 2px; }
+html.xie body .btn-primary:disabled,
+html.xie body .b-buy:disabled { color: #c0b2b2; background: #493b3e; border-color: #645255; box-shadow: none; }
+html.xie body .icon-btn {
+  color: #f1ddd7;
+  background: #321d21;
+  border-color: #8d4a49;
+}
+html.xie body .icon-btn:hover:not(:disabled) { color: #fff8f4; background: #4a2428; border-color: #d05a54; }
+html.xie body .icon-btn:disabled { color: #908183; background: #2b2526; border-color: #574a4c; }
+html.xie body .b-buy,
+html.xie body .b-ability { color: #fff3ee; background: #842521; border: 1px solid #c14c45; }
+html.xie body .b-buy:hover:not(:disabled),
+html.xie body .b-ability:hover:not(:disabled) { background: #a8322c; }
+html.xie body #btn-breath {
+  color: #f8e9e2;
+  background: #211316;
+  border-color: #bd4942;
+  box-shadow: 0 5px 28px rgba(2, 0, 0, .55), inset 0 0 34px rgba(171, 31, 31, .18);
+}
+html.xie body #btn-breath:hover { box-shadow: 0 7px 34px rgba(151, 25, 25, .42), inset 0 0 40px rgba(190, 42, 36, .24); }
+html.xie body #xp-fill { background: linear-gradient(90deg, #761b1c, #d4483e); }
+html.xie body .modal-mask { background: rgba(8, 1, 2, .76); }
+html.xie body .modal-card { background: #241519; border-color: #b5423d; box-shadow: 0 12px 48px rgba(0, 0, 0, .62); }
+html.xie body .set-textarea { color: var(--ink); background: #170e10; border-color: #75403f; }
+html.xie body .hand-card,
+html.xie body .deck-card,
+html.xie body .senior-tier { color: #f3e5df; background: linear-gradient(180deg, #3a2024, #211316); border-color: #75403f; }
+html.xie body .deck-card-on {
+  color: #fff8f3;
+  background: linear-gradient(180deg, #8d2927, #54191c);
+  border-color: #e2a45f;
+  box-shadow: inset 0 0 0 1px rgba(255, 221, 184, .14), 0 0 10px rgba(196, 59, 53, .38);
+}
+html.xie body .battle-log { background: #160d0f; border-color: #603638; }
+html.xie body .battle-intent { color: #f0cf9c; background: #3c211e; border-color: #ad7454; }
+html.xie body .toast { background: #f1dfd7; color: #251316; border: 1px solid #bd5b54; }
+html.xie body #tint-season { opacity: .2; }
+html.xie body #tint-day { opacity: .36; }
+
 #app {
   position: relative; z-index: 1;
   height: 100vh;

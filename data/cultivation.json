@@ -368,6 +368,522 @@
       "bonus": {
         "xp_mult": 0.16
       }
+    },
+    {
+      "id": "mo_qingfeng",
+      "name": "血锋剑",
+      "grade": "凡",
+      "element": "金",
+      "sharp": 11,
+      "price": 480,
+      "desc": "血炼重铸之器，锋芒以心魔与血煞温养。",
+      "path": "xie",
+      "xuesha_cost": 5,
+      "mo_cost": {
+        "xinmo_per_breakthrough": 2
+      },
+      "sold_at": "xuechi"
+    },
+    {
+      "id": "mo_taomufuchen",
+      "name": "尸木拂尘",
+      "grade": "凡",
+      "element": "木",
+      "sharp": 11,
+      "price": 480,
+      "desc": "血炼重铸之器，锋芒以心魔与血煞温养。",
+      "path": "xie",
+      "xuesha_cost": 5,
+      "mo_cost": {
+        "xinmo_per_breakthrough": 2
+      },
+      "sold_at": "xuechi"
+    },
+    {
+      "id": "mo_huowenbi",
+      "name": "血纹匕",
+      "grade": "凡",
+      "element": "火",
+      "sharp": 13,
+      "price": 900,
+      "desc": "血炼重铸之器，锋芒以心魔与血煞温养。",
+      "path": "xie",
+      "xuesha_cost": 5,
+      "mo_cost": {
+        "xinmo_per_breakthrough": 2
+      },
+      "sold_at": "xuechi"
+    },
+    {
+      "id": "mo_xuanshuifan",
+      "name": "玄血幡",
+      "grade": "凡",
+      "element": "水",
+      "sharp": 15,
+      "price": 1800,
+      "desc": "血炼重铸之器，锋芒以心魔与血煞温养。",
+      "bonus": {
+        "xp_mult": 0.01
+      },
+      "path": "xie",
+      "xuesha_cost": 5,
+      "mo_cost": {
+        "xinmo_per_breakthrough": 2
+      },
+      "sold_at": "xuechi"
+    },
+    {
+      "id": "mo_chiyanbian",
+      "name": "赤髓鞭",
+      "grade": "凡",
+      "element": "火",
+      "sharp": 16,
+      "price": 2100,
+      "desc": "血炼重铸之器，锋芒以心魔与血煞温养。",
+      "bonus": {
+        "xp_mult": 0.01
+      },
+      "path": "xie",
+      "xuesha_cost": 5,
+      "mo_cost": {
+        "xinmo_per_breakthrough": 2
+      },
+      "sold_at": "xuechi"
+    },
+    {
+      "id": "mo_qingzhufengyunjian",
+      "name": "青竹噬魂剑",
+      "grade": "凡",
+      "element": "木",
+      "sharp": 19,
+      "price": 3600,
+      "desc": "血炼重铸之器，锋芒以心魔与血煞温养。",
+      "bonus": {
+        "xp_mult": 0.01
+      },
+      "path": "xie",
+      "xuesha_cost": 5,
+      "mo_cost": {
+        "xinmo_per_breakthrough": 2
+      },
+      "sold_at": "xuechi"
+    },
+    {
+      "id": "mo_biyuhulu",
+      "name": "碧血葫芦",
+      "grade": "灵",
+      "element": "木",
+      "sharp": 24,
+      "price": 7200,
+      "desc": "血炼重铸之器，锋芒以心魔与血煞温养。",
+      "bonus": {
+        "xp_mult": 0.02
+      },
+      "path": "xie",
+      "xuesha_cost": 12,
+      "mo_cost": {
+        "xinmo_per_breakthrough": 2
+      },
+      "sold_at": "xuechi"
+    },
+    {
+      "id": "mo_zidianzhui",
+      "name": "紫血锥",
+      "grade": "灵",
+      "element": "金",
+      "sharp": 26,
+      "price": 9600,
+      "desc": "血炼重铸之器，锋芒以心魔与血煞温养。",
+      "bonus": {
+        "xp_mult": 0.02
+      },
+      "path": "xie",
+      "xuesha_cost": 12,
+      "mo_cost": {
+        "xinmo_per_breakthrough": 2
+      },
+      "sold_at": "xuechi"
+    },
+    {
+      "id": "mo_jinleizhu",
+      "name": "金煞竹",
+      "grade": "灵",
+      "element": "木",
+      "sharp": 30,
+      "price": 18000,
+      "desc": "血炼重铸之器，锋芒以心魔与血煞温养。",
+      "bonus": {
+        "xp_mult": 0.02
+      },
+      "path": "xie",
+      "xuesha_cost": 12,
+      "mo_cost": {
+        "xinmo_per_breakthrough": 2
+      },
+      "sold_at": "xuechi"
+    },
+    {
+      "id": "mo_chixiaohuan",
+      "name": "赤霄血环",
+      "grade": "灵",
+      "element": "火",
+      "sharp": 35,
+      "price": 36000,
+      "desc": "血炼重铸之器，锋芒以心魔与血煞温养。",
+      "bonus": {
+        "xp_mult": 0.03
+      },
+      "path": "xie",
+      "xuesha_cost": 12,
+      "mo_cost": {
+        "xinmo_per_breakthrough": 2
+      },
+      "sold_at": "xuechi"
+    },
+    {
+      "id": "mo_hanbingjing",
+      "name": "凝血镜",
+      "grade": "灵",
+      "element": "水",
+      "sharp": 37,
+      "price": 48000,
+      "desc": "血炼重铸之器，锋芒以心魔与血煞温养。",
+      "bonus": {
+        "xp_mult": 0.03
+      },
+      "path": "xie",
+      "xuesha_cost": 12,
+      "mo_cost": {
+        "xinmo_per_breakthrough": 2
+      },
+      "sold_at": "xuechi"
+    },
+    {
+      "id": "mo_sanyanshan",
+      "name": "三血扇",
+      "grade": "灵",
+      "element": "火",
+      "sharp": 43,
+      "price": 72000,
+      "desc": "血炼重铸之器，锋芒以心魔与血煞温养。",
+      "bonus": {
+        "xp_mult": 0.03
+      },
+      "path": "xie",
+      "xuesha_cost": 12,
+      "mo_cost": {
+        "xinmo_per_breakthrough": 2
+      },
+      "sold_at": "xuechi"
+    },
+    {
+      "id": "mo_shanhesan",
+      "name": "血河扇",
+      "grade": "珍",
+      "element": "土",
+      "sharp": 50,
+      "price": 180000,
+      "desc": "血炼重铸之器，锋芒以心魔与血煞温养。",
+      "bonus": {
+        "xp_mult": 0.04
+      },
+      "path": "xie",
+      "xuesha_cost": 30,
+      "mo_cost": {
+        "xinmo_per_breakthrough": 2
+      },
+      "sold_at": "hunhfan"
+    },
+    {
+      "id": "mo_liangyijian",
+      "name": "两仪魔剑",
+      "grade": "珍",
+      "element": [
+        "水",
+        "火"
+      ],
+      "sharp": 54,
+      "price": 360000,
+      "desc": "血炼重铸之器，锋芒以心魔与血煞温养。",
+      "bonus": {
+        "xp_mult": 0.04
+      },
+      "path": "xie",
+      "xuesha_cost": 30,
+      "mo_cost": {
+        "xinmo_per_breakthrough": 2
+      },
+      "sold_at": "hunhfan"
+    },
+    {
+      "id": "mo_shijinrongxia",
+      "name": "噬魂蛊匣",
+      "grade": "珍",
+      "element": "金",
+      "sharp": 59,
+      "price": 480000,
+      "desc": "血炼重铸之器，锋芒以心魔与血煞温养。",
+      "bonus": {
+        "xp_mult": 0.04
+      },
+      "path": "xie",
+      "xuesha_cost": 30,
+      "mo_cost": {
+        "xinmo_per_breakthrough": 2
+      },
+      "sold_at": "hunhfan"
+    },
+    {
+      "id": "mo_zhuxianjian",
+      "name": "弑仙血剑",
+      "grade": "仙",
+      "element": "金",
+      "sharp": 76,
+      "price": 1200000,
+      "desc": "血炼重铸之器，锋芒以心魔与血煞温养。",
+      "bonus": {
+        "xp_mult": 0.06
+      },
+      "path": "xie",
+      "xuesha_cost": 80,
+      "mo_cost": {
+        "xinmo_per_breakthrough": 2
+      },
+      "sold_at": "hunhfan"
+    },
+    {
+      "id": "mo_fengleichi",
+      "name": "风雷魔翅",
+      "grade": "仙",
+      "element": "金",
+      "sharp": 84,
+      "price": 1800000,
+      "desc": "血炼重铸之器，锋芒以心魔与血煞温养。",
+      "bonus": {
+        "xp_mult": 0.06
+      },
+      "path": "xie",
+      "xuesha_cost": 80,
+      "mo_cost": {
+        "xinmo_per_breakthrough": 2
+      },
+      "sold_at": "hunhfan"
+    },
+    {
+      "id": "mo_yuancishenshan",
+      "name": "元磁血山",
+      "grade": "仙",
+      "element": "土",
+      "sharp": 95,
+      "price": 3000000,
+      "desc": "血炼重铸之器，锋芒以心魔与血煞温养。",
+      "bonus": {
+        "xp_mult": 0.06
+      },
+      "path": "xie",
+      "xuesha_cost": 80,
+      "mo_cost": {
+        "xinmo_per_breakthrough": 2
+      },
+      "sold_at": "hunhfan"
+    },
+    {
+      "id": "mo_taixuding",
+      "name": "太虚血鼎",
+      "grade": "仙",
+      "element": "土",
+      "sharp": 119,
+      "price": 9000000,
+      "desc": "血炼重铸之器，锋芒以心魔与血煞温养。",
+      "bonus": {
+        "xp_mult": 0.08
+      },
+      "path": "xie",
+      "xuesha_cost": 80,
+      "mo_cost": {
+        "xinmo_per_breakthrough": 2
+      },
+      "sold_at": "hunhfan"
+    },
+    {
+      "id": "mo_tuntianmoguan",
+      "name": "噬天魔罐",
+      "grade": "仙",
+      "element": "水",
+      "sharp": 140,
+      "price": 15000000,
+      "desc": "血炼重铸之器，锋芒以心魔与血煞温养。",
+      "bonus": {
+        "xp_mult": 0.08
+      },
+      "path": "xie",
+      "xuesha_cost": 80,
+      "mo_cost": {
+        "xinmo_per_breakthrough": 2
+      },
+      "sold_at": "hunhfan"
+    },
+    {
+      "id": "mo_xihuangta",
+      "name": "西皇血塔",
+      "grade": "仙",
+      "element": "土",
+      "sharp": 162,
+      "price": 24000000,
+      "desc": "血炼重铸之器，锋芒以心魔与血煞温养。",
+      "bonus": {
+        "xp_mult": 0.08
+      },
+      "path": "xie",
+      "xuesha_cost": 80,
+      "mo_cost": {
+        "xinmo_per_breakthrough": 2
+      },
+      "sold_at": "hunhfan"
+    },
+    {
+      "id": "mo_hundunzhong",
+      "name": "混沌血钟",
+      "grade": "帝",
+      "element": [
+        "金",
+        "木",
+        "土",
+        "水",
+        "火"
+      ],
+      "sharp": 184,
+      "price": 180000000,
+      "desc": "血炼重铸之器，锋芒以心魔与血煞温养。",
+      "bonus": {
+        "xp_mult": 0.1
+      },
+      "path": "xie",
+      "xuesha_cost": 200,
+      "mo_cost": {
+        "xinmo_per_breakthrough": 2
+      },
+      "sold_at": "lianhungu"
+    },
+    {
+      "id": "mo_hengyulu",
+      "name": "恒宇血炉",
+      "grade": "帝",
+      "element": "火",
+      "sharp": 205,
+      "price": 360000000,
+      "desc": "血炼重铸之器，锋芒以心魔与血煞温养。",
+      "bonus": {
+        "xp_mult": 0.1
+      },
+      "path": "xie",
+      "xuesha_cost": 200,
+      "mo_cost": {
+        "xinmo_per_breakthrough": 2
+      },
+      "sold_at": "lianhungu"
+    },
+    {
+      "id": "mo_huangta",
+      "name": "荒血塔",
+      "grade": "帝",
+      "element": "土",
+      "sharp": 227,
+      "price": 600000000,
+      "desc": "血炼重铸之器，锋芒以心魔与血煞温养。",
+      "bonus": {
+        "xp_mult": 0.1
+      },
+      "path": "xie",
+      "xuesha_cost": 200,
+      "mo_cost": {
+        "xinmo_per_breakthrough": 2
+      },
+      "sold_at": "lianhungu"
+    },
+    {
+      "id": "mo_wanwu_muqi_ding",
+      "name": "万物血母鼎",
+      "grade": "帝",
+      "element": [
+        "金",
+        "木",
+        "土",
+        "水",
+        "火"
+      ],
+      "sharp": 259,
+      "price": 12000000000,
+      "desc": "血炼重铸之器，锋芒以心魔与血煞温养。",
+      "bonus": {
+        "xp_mult": 0.13
+      },
+      "path": "xie",
+      "xuesha_cost": 200,
+      "mo_cost": {
+        "xinmo_per_breakthrough": 2
+      },
+      "sold_at": "lianhungu"
+    },
+    {
+      "id": "mo_jiuzi_zhenyan_yin",
+      "name": "九字血印",
+      "grade": "帝",
+      "element": "金",
+      "sharp": 292,
+      "price": 24000000000,
+      "desc": "血炼重铸之器，锋芒以心魔与血煞温养。",
+      "bonus": {
+        "xp_mult": 0.13
+      },
+      "path": "xie",
+      "xuesha_cost": 200,
+      "mo_cost": {
+        "xinmo_per_breakthrough": 2
+      },
+      "sold_at": "lianhungu"
+    },
+    {
+      "id": "mo_busi_tiandao",
+      "name": "不死血刀",
+      "grade": "帝",
+      "element": "金",
+      "sharp": 324,
+      "price": 240000000000,
+      "desc": "血炼重铸之器，锋芒以心魔与血煞温养。",
+      "bonus": {
+        "xp_mult": 0.16
+      },
+      "path": "xie",
+      "xuesha_cost": 200,
+      "mo_cost": {
+        "xinmo_per_breakthrough": 2
+      },
+      "sold_at": "lianhungu"
+    },
+    {
+      "id": "mo_chengxianding",
+      "name": "堕仙血鼎",
+      "grade": "帝",
+      "element": [
+        "金",
+        "木",
+        "土",
+        "水",
+        "火"
+      ],
+      "sharp": 389,
+      "price": 480000000000,
+      "desc": "血炼重铸之器，锋芒以心魔与血煞温养。",
+      "bonus": {
+        "xp_mult": 0.16
+      },
+      "path": "xie",
+      "xuesha_cost": 200,
+      "mo_cost": {
+        "xinmo_per_breakthrough": 2
+      },
+      "sold_at": "lianhungu"
     }
   ],
   "techniques": [
@@ -600,10 +1116,367 @@
       "bonus": {
         "xp_mult": 0.16
       }
+    },
+    {
+      "id": "mo_changchun",
+      "name": "长春血功",
+      "grade": "凡",
+      "element": "木",
+      "price": 360,
+      "desc": "逆行经脉、以煞养功的魔道秘卷。",
+      "bonus": {
+        "xp_mult": 0.01
+      },
+      "path": "xie",
+      "xuesha_cost": 5,
+      "mo_cost": {
+        "daoxin_per_game_year": -1
+      },
+      "sold_at": "xuechi"
+    },
+    {
+      "id": "mo_tuna",
+      "name": "噬息诀",
+      "grade": "凡",
+      "element": "水",
+      "price": 360,
+      "desc": "逆行经脉、以煞养功的魔道秘卷。",
+      "bonus": {
+        "xp_mult": 0.01
+      },
+      "path": "xie",
+      "xuesha_cost": 5,
+      "mo_cost": {
+        "daoxin_per_game_year": -1
+      },
+      "sold_at": "xuechi"
+    },
+    {
+      "id": "mo_liehuozhang",
+      "name": "血火掌",
+      "grade": "灵",
+      "element": "火",
+      "price": 1800,
+      "desc": "逆行经脉、以煞养功的魔道秘卷。",
+      "bonus": {
+        "xp_mult": 0.02
+      },
+      "path": "xie",
+      "xuesha_cost": 12,
+      "mo_cost": {
+        "daoxin_per_game_year": -1
+      },
+      "sold_at": "xuechi"
+    },
+    {
+      "id": "mo_gengjinjue",
+      "name": "庚金血诀",
+      "grade": "灵",
+      "element": "金",
+      "price": 2100,
+      "desc": "逆行经脉、以煞养功的魔道秘卷。",
+      "bonus": {
+        "xp_mult": 0.02
+      },
+      "path": "xie",
+      "xuesha_cost": 12,
+      "mo_cost": {
+        "daoxin_per_game_year": -1
+      },
+      "sold_at": "xuechi"
+    },
+    {
+      "id": "mo_houtugong",
+      "name": "血土功",
+      "grade": "灵",
+      "element": "土",
+      "price": 1800,
+      "desc": "逆行经脉、以煞养功的魔道秘卷。",
+      "bonus": {
+        "xp_mult": 0.02
+      },
+      "path": "xie",
+      "xuesha_cost": 12,
+      "mo_cost": {
+        "daoxin_per_game_year": -1
+      },
+      "sold_at": "xuechi"
+    },
+    {
+      "id": "mo_bibojue",
+      "name": "血波诀",
+      "grade": "灵",
+      "element": "水",
+      "price": 1800,
+      "desc": "逆行经脉、以煞养功的魔道秘卷。",
+      "bonus": {
+        "xp_mult": 0.02
+      },
+      "path": "xie",
+      "xuesha_cost": 12,
+      "mo_cost": {
+        "daoxin_per_game_year": -1
+      },
+      "sold_at": "xuechi"
+    },
+    {
+      "id": "mo_yinyanglu",
+      "name": "血阴血阳录",
+      "grade": "珍",
+      "element": [
+        "水",
+        "火"
+      ],
+      "price": 48000,
+      "desc": "逆行经脉、以煞养功的魔道秘卷。",
+      "bonus": {
+        "xp_mult": 0.04
+      },
+      "path": "xie",
+      "xuesha_cost": 30,
+      "mo_cost": {
+        "daoxin_per_game_year": -1
+      },
+      "sold_at": "hunhfan"
+    },
+    {
+      "id": "mo_zixiaogong",
+      "name": "紫霄血功",
+      "grade": "珍",
+      "element": "金",
+      "price": 30000,
+      "desc": "逆行经脉、以煞养功的魔道秘卷。",
+      "bonus": {
+        "xp_mult": 0.04
+      },
+      "path": "xie",
+      "xuesha_cost": 30,
+      "mo_cost": {
+        "daoxin_per_game_year": -1
+      },
+      "sold_at": "hunhfan"
+    },
+    {
+      "id": "mo_chijiao_zhenjie",
+      "name": "赤炎血解",
+      "grade": "珍",
+      "element": "火",
+      "price": 36000,
+      "desc": "逆行经脉、以煞养功的魔道秘卷。",
+      "bonus": {
+        "xp_mult": 0.04
+      },
+      "path": "xie",
+      "xuesha_cost": 30,
+      "mo_cost": {
+        "daoxin_per_game_year": -1
+      },
+      "sold_at": "hunhfan"
+    },
+    {
+      "id": "mo_dayanjue",
+      "name": "大衍血诀",
+      "grade": "珍",
+      "element": "木",
+      "price": 60000,
+      "desc": "逆行经脉、以煞养功的魔道秘卷。",
+      "bonus": {
+        "xp_mult": 0.04
+      },
+      "path": "xie",
+      "xuesha_cost": 30,
+      "mo_cost": {
+        "daoxin_per_game_year": -1
+      },
+      "sold_at": "hunhfan"
+    },
+    {
+      "id": "mo_qingyuanjianjue",
+      "name": "青元血剑诀",
+      "grade": "仙",
+      "element": "木",
+      "price": 90000,
+      "desc": "逆行经脉、以煞养功的魔道秘卷。",
+      "bonus": {
+        "xp_mult": 0.05
+      },
+      "path": "xie",
+      "xuesha_cost": 80,
+      "mo_cost": {
+        "daoxin_per_game_year": -1
+      },
+      "sold_at": "hunhfan"
+    },
+    {
+      "id": "mo_yuancishenguang",
+      "name": "元磁血光",
+      "grade": "仙",
+      "element": "土",
+      "price": 150000,
+      "desc": "逆行经脉、以煞养功的魔道秘卷。",
+      "bonus": {
+        "xp_mult": 0.05
+      },
+      "path": "xie",
+      "xuesha_cost": 80,
+      "mo_cost": {
+        "daoxin_per_game_year": -1
+      },
+      "sold_at": "hunhfan"
+    },
+    {
+      "id": "mo_fengxingbu",
+      "name": "血影步",
+      "grade": "仙",
+      "element": "金",
+      "price": 180000,
+      "bonus": {
+        "xp_mult": 0.05
+      },
+      "desc": "逆行经脉、以煞养功的魔道秘卷。",
+      "path": "xie",
+      "xuesha_cost": 80,
+      "mo_cost": {
+        "daoxin_per_game_year": -1
+      },
+      "sold_at": "hunhfan"
+    },
+    {
+      "id": "mo_taiwang",
+      "name": "太上噬情录",
+      "grade": "仙",
+      "element": "土",
+      "price": 5400000,
+      "desc": "逆行经脉、以煞养功的魔道秘卷。",
+      "bonus": {
+        "xp_mult": 0.06999999999999999
+      },
+      "path": "xie",
+      "xuesha_cost": 80,
+      "mo_cost": {
+        "daoxin_per_game_year": -1
+      },
+      "sold_at": "hunhfan"
+    },
+    {
+      "id": "mo_tuntianmogong",
+      "name": "噬天魔功",
+      "grade": "仙",
+      "element": "水",
+      "price": 9000000,
+      "desc": "逆行经脉、以煞养功的魔道秘卷。",
+      "bonus": {
+        "xp_mult": 0.06999999999999999
+      },
+      "path": "xie",
+      "xuesha_cost": 80,
+      "mo_cost": {
+        "daoxin_per_game_year": -1
+      },
+      "sold_at": "hunhfan"
+    },
+    {
+      "id": "mo_wuxingguiyuan",
+      "name": "五行血元诀",
+      "grade": "仙",
+      "element": [
+        "金",
+        "木",
+        "土",
+        "水",
+        "火"
+      ],
+      "price": 21600000,
+      "desc": "逆行经脉、以煞养功的魔道秘卷。",
+      "bonus": {
+        "xp_mult": 0.06999999999999999
+      },
+      "path": "xie",
+      "xuesha_cost": 80,
+      "mo_cost": {
+        "daoxin_per_game_year": -1
+      },
+      "sold_at": "hunhfan"
+    },
+    {
+      "id": "mo_hunyuanzhongjue",
+      "name": "混元血钟诀",
+      "grade": "帝",
+      "element": [
+        "金",
+        "木",
+        "土",
+        "水",
+        "火"
+      ],
+      "price": 240000000,
+      "desc": "逆行经脉、以煞养功的魔道秘卷。",
+      "bonus": {
+        "xp_mult": 0.11
+      },
+      "path": "xie",
+      "xuesha_cost": 200,
+      "mo_cost": {
+        "daoxin_per_game_year": -1
+      },
+      "sold_at": "lianhungu"
+    },
+    {
+      "id": "mo_dijing",
+      "name": "魔帝经",
+      "grade": "帝",
+      "element": [
+        "金",
+        "木",
+        "土",
+        "水",
+        "火"
+      ],
+      "price": 7200000000,
+      "desc": "逆行经脉、以煞养功的魔道秘卷。",
+      "bonus": {
+        "xp_mult": 0.14
+      },
+      "path": "xie",
+      "xuesha_cost": 200,
+      "mo_cost": {
+        "daoxin_per_game_year": -1
+      },
+      "sold_at": "lianhungu"
+    },
+    {
+      "id": "mo_yuantianshu",
+      "name": "源血天书",
+      "grade": "帝",
+      "element": [
+        "金",
+        "木",
+        "土",
+        "水",
+        "火"
+      ],
+      "price": 144000000000,
+      "desc": "逆行经脉、以煞养功的魔道秘卷。",
+      "bonus": {
+        "xp_mult": 0.17
+      },
+      "path": "xie",
+      "xuesha_cost": 200,
+      "mo_cost": {
+        "daoxin_per_game_year": -1
+      },
+      "sold_at": "lianhungu"
     }
   ],
   "battle": {
-    "rounds": 12,
+    "blood_offering_max_layers": 5,
+    "endgame": {
+      "mode": "ko",
+      "exhaust_start_round": 13,
+      "exhaust_pct_per_round": 0.03,
+      "exhaust_cap": 0.3,
+      "exhaust_on": true
+    },
     "move_pct": 28,
     "realm_edge_pct_per_level": 0.2,
     "crush_mult": 3,
@@ -700,6 +1573,118 @@
       "taixu_ding": {
         "name": "太虚镇世",
         "mult": 2.6
+      },
+      "mo_qingfeng": {
+        "name": "血锋剑·饮血式",
+        "mult": 1
+      },
+      "mo_taomufuchen": {
+        "name": "尸木拂尘·饮血式",
+        "mult": 1
+      },
+      "mo_huowenbi": {
+        "name": "血纹匕·饮血式",
+        "mult": 1
+      },
+      "mo_xuanshuifan": {
+        "name": "玄血幡·饮血式",
+        "mult": 1
+      },
+      "mo_chiyanbian": {
+        "name": "赤髓鞭·饮血式",
+        "mult": 1
+      },
+      "mo_qingzhufengyunjian": {
+        "name": "青竹噬魂剑·饮血式",
+        "mult": 1
+      },
+      "mo_biyuhulu": {
+        "name": "碧血葫芦·饮血式",
+        "mult": 1
+      },
+      "mo_zidianzhui": {
+        "name": "紫血锥·饮血式",
+        "mult": 1
+      },
+      "mo_jinleizhu": {
+        "name": "金煞竹·饮血式",
+        "mult": 1
+      },
+      "mo_chixiaohuan": {
+        "name": "赤霄血环·饮血式",
+        "mult": 1
+      },
+      "mo_hanbingjing": {
+        "name": "凝血镜·饮血式",
+        "mult": 1
+      },
+      "mo_sanyanshan": {
+        "name": "三血扇·饮血式",
+        "mult": 1
+      },
+      "mo_shanhesan": {
+        "name": "血河扇·饮血式",
+        "mult": 1
+      },
+      "mo_liangyijian": {
+        "name": "两仪魔剑·饮血式",
+        "mult": 1
+      },
+      "mo_shijinrongxia": {
+        "name": "噬魂蛊匣·饮血式",
+        "mult": 1
+      },
+      "mo_zhuxianjian": {
+        "name": "弑仙血剑·饮血式",
+        "mult": 1
+      },
+      "mo_fengleichi": {
+        "name": "风雷魔翅·饮血式",
+        "mult": 1
+      },
+      "mo_yuancishenshan": {
+        "name": "元磁血山·饮血式",
+        "mult": 1
+      },
+      "mo_taixuding": {
+        "name": "太虚血鼎·饮血式",
+        "mult": 1
+      },
+      "mo_tuntianmoguan": {
+        "name": "噬天魔罐·饮血式",
+        "mult": 1
+      },
+      "mo_xihuangta": {
+        "name": "西皇血塔·饮血式",
+        "mult": 1
+      },
+      "mo_hundunzhong": {
+        "name": "混沌血钟·饮血式",
+        "mult": 1
+      },
+      "mo_hengyulu": {
+        "name": "恒宇血炉·饮血式",
+        "mult": 1
+      },
+      "mo_huangta": {
+        "name": "荒血塔·饮血式",
+        "mult": 1
+      },
+      "mo_wanwu_muqi_ding": {
+        "name": "万物血母鼎·饮血式",
+        "mult": 1
+      },
+      "mo_jiuzi_zhenyan_yin": {
+        "name": "九字血印·饮血式",
+        "mult": 1
+      },
+      "mo_busi_tiandao": {
+        "name": "不死血刀·饮血式",
+        "mult": 1
+      },
+      "mo_chengxianding": {
+        "name": "堕仙血鼎·饮血式",
+        "mult": 1
       }
     },
     "technique_moves": {
@@ -743,6 +1728,82 @@
       "taishang": {
         "name": "太上忘情一指",
         "mult": 2.1
+      },
+      "mo_changchun": {
+        "name": "长春血功·噬魂篇",
+        "mult": 1
+      },
+      "mo_tuna": {
+        "name": "噬息诀·噬魂篇",
+        "mult": 1
+      },
+      "mo_liehuozhang": {
+        "name": "血火掌·噬魂篇",
+        "mult": 1
+      },
+      "mo_gengjinjue": {
+        "name": "庚金血诀·噬魂篇",
+        "mult": 1
+      },
+      "mo_houtugong": {
+        "name": "血土功·噬魂篇",
+        "mult": 1
+      },
+      "mo_bibojue": {
+        "name": "血波诀·噬魂篇",
+        "mult": 1
+      },
+      "mo_yinyanglu": {
+        "name": "血阴血阳录·噬魂篇",
+        "mult": 1
+      },
+      "mo_zixiaogong": {
+        "name": "紫霄血功·噬魂篇",
+        "mult": 1
+      },
+      "mo_chijiao_zhenjie": {
+        "name": "赤炎血解·噬魂篇",
+        "mult": 1
+      },
+      "mo_dayanjue": {
+        "name": "大衍血诀·噬魂篇",
+        "mult": 1
+      },
+      "mo_qingyuanjianjue": {
+        "name": "青元血剑诀·噬魂篇",
+        "mult": 1
+      },
+      "mo_yuancishenguang": {
+        "name": "元磁血光·噬魂篇",
+        "mult": 1
+      },
+      "mo_fengxingbu": {
+        "name": "血影步·噬魂篇",
+        "mult": 1
+      },
+      "mo_taiwang": {
+        "name": "太上噬情录·噬魂篇",
+        "mult": 1
+      },
+      "mo_tuntianmogong": {
+        "name": "噬天魔功·噬魂篇",
+        "mult": 1
+      },
+      "mo_wuxingguiyuan": {
+        "name": "五行血元诀·噬魂篇",
+        "mult": 1
+      },
+      "mo_hunyuanzhongjue": {
+        "name": "混元血钟诀·噬魂篇",
+        "mult": 1
+      },
+      "mo_dijing": {
+        "name": "魔帝经·噬魂篇",
+        "mult": 1
+      },
+      "mo_yuantianshu": {
+        "name": "源血天书·噬魂篇",
+        "mult": 1
       }
     },
     "crit_base": 0.1,
@@ -1039,8 +2100,8 @@
         "cd": 2,
         "unlock_realm": 4,
         "price": 250000,
-        "lifesteal_pct": 30,
-        "desc": "化神解锁：沧海吞波，水行五费重击，伤害三成转为回气。"
+        "lifesteal_pct": 8,
+        "desc": "化神解锁：沧海吞波，水行五费重击，伤害百分之八转为回气。"
       },
       {
         "id": "wulei_zhengfa",
@@ -1140,6 +2201,726 @@
         "unlock_realm": 8,
         "price": 200000000,
         "desc": "渡劫解锁：太清造化之术，九费回气八十。"
+      },
+      {
+        "id": "mo_tunazhang",
+        "kind": "attack",
+        "name": "噬气掌",
+        "cost": 1,
+        "dmg": 8,
+        "shield": 0,
+        "path": "xie",
+        "unlock_realm": 0,
+        "unlock_mo_realm": 0,
+        "hp_cost_pct": 2,
+        "hp_cost_floor_pct": 0.1,
+        "block_heal_pct": 0,
+        "lifesteal_pct": 0,
+        "blood_offering_gain": 0,
+        "atk_buff_pct": 0,
+        "default": true,
+        "desc": "以气血催动，强夺杀力。"
+      },
+      {
+        "id": "mo_yujianshu",
+        "kind": "attack",
+        "name": "血刃诀",
+        "cost": 1,
+        "dmg": 10,
+        "shield": 0,
+        "path": "xie",
+        "unlock_realm": 0,
+        "unlock_mo_realm": 0,
+        "hp_cost_pct": 3,
+        "hp_cost_floor_pct": 0.1,
+        "block_heal_pct": 0,
+        "lifesteal_pct": 0,
+        "blood_offering_gain": 0,
+        "atk_buff_pct": 0,
+        "weapon": true,
+        "default": true,
+        "desc": "以气血催动，强夺杀力。"
+      },
+      {
+        "id": "mo_pojunzhan",
+        "kind": "attack",
+        "name": "裂骨斩",
+        "cost": 2,
+        "dmg": 24,
+        "shield": 0,
+        "path": "xie",
+        "unlock_realm": 0,
+        "unlock_mo_realm": 0,
+        "hp_cost_pct": 5,
+        "hp_cost_floor_pct": 0.1,
+        "block_heal_pct": 0,
+        "lifesteal_pct": 0,
+        "blood_offering_gain": 0,
+        "atk_buff_pct": 0,
+        "price": 480,
+        "xuesha_cost": 16,
+        "desc": "以气血催动，强夺杀力。"
+      },
+      {
+        "id": "mo_benming",
+        "kind": "attack",
+        "name": "本命血剑",
+        "cost": 3,
+        "dmg": 30,
+        "shield": 0,
+        "path": "xie",
+        "unlock_realm": 4,
+        "unlock_mo_realm": 2,
+        "hp_cost_pct": 3,
+        "hp_cost_floor_pct": 0.1,
+        "block_heal_pct": 0,
+        "lifesteal_pct": 0,
+        "blood_offering_gain": 0,
+        "atk_buff_pct": 0,
+        "desc": "以气血催动，强夺杀力。"
+      },
+      {
+        "id": "mo_wuxingshu",
+        "kind": "element",
+        "name": "夺灵术",
+        "cost": 2,
+        "dmg": 16,
+        "shield": 0,
+        "path": "xie",
+        "unlock_realm": 0,
+        "unlock_mo_realm": 0,
+        "hp_cost_pct": 0,
+        "hp_cost_floor_pct": 0.1,
+        "block_heal_pct": 0,
+        "lifesteal_pct": 4,
+        "blood_offering_gain": 0,
+        "atk_buff_pct": 0,
+        "el": "root",
+        "default": true,
+        "desc": "掠敌精元，血祭越深，夺取越盛。"
+      },
+      {
+        "id": "mo_sanmeihuo",
+        "kind": "element",
+        "name": "血火焚",
+        "cost": 2,
+        "dmg": 15,
+        "shield": 0,
+        "path": "xie",
+        "unlock_realm": 0,
+        "unlock_mo_realm": 0,
+        "hp_cost_pct": 0,
+        "hp_cost_floor_pct": 0.1,
+        "block_heal_pct": 0,
+        "lifesteal_pct": 4,
+        "blood_offering_gain": 0,
+        "atk_buff_pct": 0,
+        "el": "火",
+        "price": 720,
+        "xuesha_cost": 16,
+        "desc": "掠敌精元，血祭越深，夺取越盛。"
+      },
+      {
+        "id": "mo_xuanbingjian",
+        "kind": "element",
+        "name": "玄冰噬",
+        "cost": 2,
+        "dmg": 15,
+        "shield": 0,
+        "path": "xie",
+        "unlock_realm": 0,
+        "unlock_mo_realm": 0,
+        "hp_cost_pct": 0,
+        "hp_cost_floor_pct": 0.1,
+        "block_heal_pct": 0,
+        "lifesteal_pct": 4,
+        "blood_offering_gain": 0,
+        "atk_buff_pct": 0,
+        "el": "水",
+        "price": 720,
+        "xuesha_cost": 16,
+        "desc": "掠敌精元，血祭越深，夺取越盛。"
+      },
+      {
+        "id": "mo_qingmuchan",
+        "kind": "element",
+        "name": "青丝夺魂",
+        "cost": 2,
+        "dmg": 13,
+        "shield": 0,
+        "path": "xie",
+        "unlock_realm": 0,
+        "unlock_mo_realm": 0,
+        "hp_cost_pct": 0,
+        "hp_cost_floor_pct": 0.1,
+        "block_heal_pct": 0,
+        "lifesteal_pct": 4,
+        "blood_offering_gain": 0,
+        "atk_buff_pct": 0,
+        "el": "木",
+        "price": 720,
+        "xuesha_cost": 16,
+        "desc": "掠敌精元，血祭越深，夺取越盛。"
+      },
+      {
+        "id": "mo_hutigangqi",
+        "kind": "defense",
+        "name": "血罡护体",
+        "cost": 1,
+        "dmg": 0,
+        "shield": 11,
+        "path": "xie",
+        "unlock_realm": 0,
+        "unlock_mo_realm": 0,
+        "hp_cost_pct": 0,
+        "hp_cost_floor_pct": 0.1,
+        "block_heal_pct": 31,
+        "lifesteal_pct": 0,
+        "blood_offering_gain": 0,
+        "atk_buff_pct": 0,
+        "default": true,
+        "desc": "血煞凝障，受击时反哺己身。"
+      },
+      {
+        "id": "mo_jinzhongzhao",
+        "kind": "defense",
+        "name": "骨钟罩",
+        "cost": 1,
+        "dmg": 0,
+        "shield": 16,
+        "path": "xie",
+        "unlock_realm": 0,
+        "unlock_mo_realm": 0,
+        "hp_cost_pct": 0,
+        "hp_cost_floor_pct": 0.1,
+        "block_heal_pct": 46,
+        "lifesteal_pct": 0,
+        "blood_offering_gain": 0,
+        "atk_buff_pct": 0,
+        "price": 600,
+        "xuesha_cost": 8,
+        "desc": "血煞凝障，受击时反哺己身。"
+      },
+      {
+        "id": "mo_zhoutian",
+        "kind": "heal",
+        "name": "燃血诀",
+        "cost": 1,
+        "dmg": 0,
+        "shield": 0,
+        "path": "xie",
+        "unlock_realm": 0,
+        "unlock_mo_realm": 0,
+        "hp_cost_pct": 2,
+        "hp_cost_floor_pct": 0.1,
+        "block_heal_pct": 0,
+        "lifesteal_pct": 0,
+        "blood_offering_gain": 1,
+        "atk_buff_pct": 6,
+        "buff_scope": "battle",
+        "default": true,
+        "desc": "燃自身精血，换本场血祭之势。"
+      },
+      {
+        "id": "mo_chunhuijue",
+        "kind": "heal",
+        "name": "献魂印",
+        "cost": 2,
+        "dmg": 0,
+        "shield": 0,
+        "path": "xie",
+        "unlock_realm": 0,
+        "unlock_mo_realm": 0,
+        "hp_cost_pct": 3,
+        "hp_cost_floor_pct": 0.1,
+        "block_heal_pct": 0,
+        "lifesteal_pct": 0,
+        "blood_offering_gain": 1,
+        "atk_buff_pct": 6,
+        "buff_scope": "battle",
+        "price": 600,
+        "xuesha_cost": 16,
+        "desc": "燃自身精血，换本场血祭之势。"
+      },
+      {
+        "id": "mo_xunleiji",
+        "kind": "attack",
+        "name": "血影刺",
+        "cost": 1,
+        "dmg": 15,
+        "shield": 0,
+        "path": "xie",
+        "unlock_realm": 0,
+        "unlock_mo_realm": 0,
+        "hp_cost_pct": 4,
+        "hp_cost_floor_pct": 0.1,
+        "block_heal_pct": 0,
+        "lifesteal_pct": 0,
+        "blood_offering_gain": 0,
+        "atk_buff_pct": 0,
+        "el": null,
+        "cd": 0,
+        "price": 180,
+        "xuesha_cost": 8,
+        "desc": "以气血催动，强夺杀力。"
+      },
+      {
+        "id": "mo_zhuifengjian",
+        "kind": "attack",
+        "name": "追魂爪",
+        "cost": 3,
+        "dmg": 32,
+        "shield": 0,
+        "path": "xie",
+        "unlock_realm": 2,
+        "unlock_mo_realm": 1,
+        "hp_cost_pct": 5,
+        "hp_cost_floor_pct": 0.1,
+        "block_heal_pct": 0,
+        "lifesteal_pct": 0,
+        "blood_offering_gain": 0,
+        "atk_buff_pct": 0,
+        "el": null,
+        "cd": 1,
+        "price": 2400,
+        "xuesha_cost": 24,
+        "desc": "以气血催动，强夺杀力。"
+      },
+      {
+        "id": "mo_jingangquan",
+        "kind": "attack",
+        "name": "摧心拳",
+        "cost": 4,
+        "dmg": 42,
+        "shield": 0,
+        "path": "xie",
+        "unlock_realm": 3,
+        "unlock_mo_realm": 1,
+        "hp_cost_pct": 5,
+        "hp_cost_floor_pct": 0.1,
+        "block_heal_pct": 0,
+        "lifesteal_pct": 0,
+        "blood_offering_gain": 0,
+        "atk_buff_pct": 0,
+        "el": null,
+        "cd": 1,
+        "price": 18000,
+        "xuesha_cost": 32,
+        "desc": "以气血催动，强夺杀力。"
+      },
+      {
+        "id": "mo_fentianjin",
+        "kind": "attack",
+        "name": "焚脉劲",
+        "cost": 5,
+        "dmg": 55,
+        "shield": 0,
+        "path": "xie",
+        "unlock_realm": 4,
+        "unlock_mo_realm": 2,
+        "hp_cost_pct": 5,
+        "hp_cost_floor_pct": 0.1,
+        "block_heal_pct": 0,
+        "lifesteal_pct": 0,
+        "blood_offering_gain": 0,
+        "atk_buff_pct": 0,
+        "el": "火",
+        "cd": 1,
+        "price": 150000,
+        "xuesha_cost": 40,
+        "desc": "以气血催动，强夺杀力。"
+      },
+      {
+        "id": "mo_xingchenzhi",
+        "kind": "attack",
+        "name": "陨星指",
+        "cost": 6,
+        "dmg": 68,
+        "shield": 0,
+        "path": "xie",
+        "unlock_realm": 5,
+        "unlock_mo_realm": 3,
+        "hp_cost_pct": 5,
+        "hp_cost_floor_pct": 0.1,
+        "block_heal_pct": 0,
+        "lifesteal_pct": 0,
+        "blood_offering_gain": 0,
+        "atk_buff_pct": 0,
+        "el": "金",
+        "cd": 2,
+        "price": 900000,
+        "xuesha_cost": 48,
+        "desc": "以气血催动，强夺杀力。"
+      },
+      {
+        "id": "mo_hunyuanyiqi",
+        "kind": "attack",
+        "name": "血海一气",
+        "cost": 7,
+        "dmg": 82,
+        "shield": 0,
+        "path": "xie",
+        "unlock_realm": 6,
+        "unlock_mo_realm": 3,
+        "hp_cost_pct": 5,
+        "hp_cost_floor_pct": 0.1,
+        "block_heal_pct": 0,
+        "lifesteal_pct": 0,
+        "blood_offering_gain": 0,
+        "atk_buff_pct": 0,
+        "el": "土",
+        "cd": 2,
+        "price": 7200000,
+        "xuesha_cost": 56,
+        "desc": "以气血催动，强夺杀力。"
+      },
+      {
+        "id": "mo_dayan_shenlei",
+        "kind": "attack",
+        "name": "大衍血雷",
+        "cost": 8,
+        "dmg": 100,
+        "shield": 0,
+        "path": "xie",
+        "unlock_realm": 7,
+        "unlock_mo_realm": 4,
+        "hp_cost_pct": 5,
+        "hp_cost_floor_pct": 0.1,
+        "block_heal_pct": 0,
+        "lifesteal_pct": 0,
+        "blood_offering_gain": 0,
+        "atk_buff_pct": 0,
+        "el": "金",
+        "cd": 2,
+        "price": 150000000,
+        "xuesha_cost": 64,
+        "desc": "以气血催动，强夺杀力。"
+      },
+      {
+        "id": "mo_zhanxian_feidao",
+        "kind": "attack",
+        "name": "斩仙血刀",
+        "cost": 9,
+        "dmg": 125,
+        "shield": 0,
+        "path": "xie",
+        "unlock_realm": 8,
+        "unlock_mo_realm": 4,
+        "hp_cost_pct": 5,
+        "hp_cost_floor_pct": 0.1,
+        "block_heal_pct": 0,
+        "lifesteal_pct": 0,
+        "blood_offering_gain": 0,
+        "atk_buff_pct": 0,
+        "el": "金",
+        "pierce": true,
+        "cd": 4,
+        "price": 7200000000,
+        "xuesha_cost": 72,
+        "desc": "以气血催动，强夺杀力。"
+      },
+      {
+        "id": "mo_gengjinrui",
+        "kind": "element",
+        "name": "庚金掠",
+        "cost": 2,
+        "dmg": 15,
+        "shield": 0,
+        "path": "xie",
+        "unlock_realm": 1,
+        "unlock_mo_realm": 0,
+        "hp_cost_pct": 0,
+        "hp_cost_floor_pct": 0.1,
+        "block_heal_pct": 0,
+        "lifesteal_pct": 4,
+        "blood_offering_gain": 0,
+        "atk_buff_pct": 0,
+        "el": "金",
+        "cd": 0,
+        "price": 720,
+        "xuesha_cost": 16,
+        "desc": "掠敌精元，血祭越深，夺取越盛。"
+      },
+      {
+        "id": "mo_houtu_qing",
+        "kind": "element",
+        "name": "厚土噬",
+        "cost": 2,
+        "dmg": 13,
+        "shield": 0,
+        "path": "xie",
+        "unlock_realm": 1,
+        "unlock_mo_realm": 0,
+        "hp_cost_pct": 0,
+        "hp_cost_floor_pct": 0.1,
+        "block_heal_pct": 0,
+        "lifesteal_pct": 4,
+        "blood_offering_gain": 0,
+        "atk_buff_pct": 0,
+        "el": "土",
+        "cd": 0,
+        "price": 900,
+        "xuesha_cost": 16,
+        "desc": "掠敌精元，血祭越深，夺取越盛。"
+      },
+      {
+        "id": "mo_qingtengfu",
+        "kind": "element",
+        "name": "噬气藤",
+        "cost": 4,
+        "dmg": 22,
+        "shield": 0,
+        "path": "xie",
+        "unlock_realm": 3,
+        "unlock_mo_realm": 1,
+        "hp_cost_pct": 0,
+        "hp_cost_floor_pct": 0.1,
+        "block_heal_pct": 0,
+        "lifesteal_pct": 4,
+        "blood_offering_gain": 0,
+        "atk_buff_pct": 0,
+        "el": "木",
+        "cd": 2,
+        "price": 18000,
+        "xuesha_cost": 32,
+        "desc": "掠敌精元，血祭越深，夺取越盛。"
+      },
+      {
+        "id": "mo_tianleipo",
+        "kind": "element",
+        "name": "血雷噬",
+        "cost": 5,
+        "dmg": 38,
+        "shield": 0,
+        "path": "xie",
+        "unlock_realm": 4,
+        "unlock_mo_realm": 2,
+        "hp_cost_pct": 0,
+        "hp_cost_floor_pct": 0.1,
+        "block_heal_pct": 0,
+        "lifesteal_pct": 3,
+        "blood_offering_gain": 0,
+        "atk_buff_pct": 0,
+        "el": "金",
+        "cd": 2,
+        "price": 150000,
+        "xuesha_cost": 40,
+        "desc": "掠敌精元，血祭越深，夺取越盛。"
+      },
+      {
+        "id": "mo_liaoyuanhuo",
+        "kind": "element",
+        "name": "血焰噬",
+        "cost": 5,
+        "dmg": 36,
+        "shield": 0,
+        "path": "xie",
+        "unlock_realm": 4,
+        "unlock_mo_realm": 2,
+        "hp_cost_pct": 0,
+        "hp_cost_floor_pct": 0.1,
+        "block_heal_pct": 0,
+        "lifesteal_pct": 3,
+        "blood_offering_gain": 0,
+        "atk_buff_pct": 0,
+        "el": "火",
+        "cd": 2,
+        "price": 150000,
+        "xuesha_cost": 40,
+        "desc": "掠敌精元，血祭越深，夺取越盛。"
+      },
+      {
+        "id": "mo_canghaitun",
+        "kind": "element",
+        "name": "血海吞",
+        "cost": 5,
+        "dmg": 36,
+        "shield": 0,
+        "path": "xie",
+        "unlock_realm": 4,
+        "unlock_mo_realm": 2,
+        "hp_cost_pct": 0,
+        "hp_cost_floor_pct": 0.1,
+        "block_heal_pct": 0,
+        "lifesteal_pct": 3,
+        "blood_offering_gain": 0,
+        "atk_buff_pct": 0,
+        "el": "水",
+        "cd": 2,
+        "price": 150000,
+        "xuesha_cost": 40,
+        "desc": "掠敌精元，血祭越深，夺取越盛。"
+      },
+      {
+        "id": "mo_wulei_zhengfa",
+        "kind": "element",
+        "name": "五雷噬魂",
+        "cost": 9,
+        "dmg": 90,
+        "shield": 0,
+        "path": "xie",
+        "unlock_realm": 9,
+        "unlock_mo_realm": 5,
+        "hp_cost_pct": 0,
+        "hp_cost_floor_pct": 0.1,
+        "block_heal_pct": 0,
+        "lifesteal_pct": 3,
+        "blood_offering_gain": 0,
+        "atk_buff_pct": 0,
+        "el": "root",
+        "cd": 4,
+        "price": 24000000000,
+        "xuesha_cost": 72,
+        "desc": "掠敌精元，血祭越深，夺取越盛。"
+      },
+      {
+        "id": "mo_guixigong",
+        "kind": "defense",
+        "name": "龟息噬",
+        "cost": 1,
+        "dmg": 0,
+        "shield": 7,
+        "path": "xie",
+        "unlock_realm": 0,
+        "unlock_mo_realm": 0,
+        "hp_cost_pct": 0,
+        "hp_cost_floor_pct": 0.1,
+        "block_heal_pct": 20,
+        "lifesteal_pct": 0,
+        "blood_offering_gain": 0,
+        "atk_buff_pct": 0,
+        "cd": 0,
+        "price": 300,
+        "xuesha_cost": 8,
+        "desc": "血煞凝障，受击时反哺己身。"
+      },
+      {
+        "id": "mo_tiebushan",
+        "kind": "defense",
+        "name": "血痂衣",
+        "cost": 2,
+        "dmg": 0,
+        "shield": 15,
+        "path": "xie",
+        "unlock_realm": 1,
+        "unlock_mo_realm": 0,
+        "hp_cost_pct": 0,
+        "hp_cost_floor_pct": 0.1,
+        "block_heal_pct": 28,
+        "lifesteal_pct": 0,
+        "blood_offering_gain": 0,
+        "atk_buff_pct": 0,
+        "cd": 0,
+        "price": 1080,
+        "xuesha_cost": 16,
+        "desc": "血煞凝障，受击时反哺己身。"
+      },
+      {
+        "id": "mo_xuanwu_zhenyue",
+        "kind": "defense",
+        "name": "玄武血岳",
+        "cost": 3,
+        "dmg": 0,
+        "shield": 22,
+        "path": "xie",
+        "unlock_realm": 2,
+        "unlock_mo_realm": 1,
+        "hp_cost_pct": 0,
+        "hp_cost_floor_pct": 0.1,
+        "block_heal_pct": 29,
+        "lifesteal_pct": 0,
+        "blood_offering_gain": 0,
+        "atk_buff_pct": 0,
+        "cd": 1,
+        "price": 3000,
+        "xuesha_cost": 24,
+        "desc": "血煞凝障，受击时反哺己身。"
+      },
+      {
+        "id": "mo_jingang_buhuai",
+        "kind": "defense",
+        "name": "血骨不坏",
+        "cost": 6,
+        "dmg": 0,
+        "shield": 43,
+        "path": "xie",
+        "unlock_realm": 5,
+        "unlock_mo_realm": 3,
+        "hp_cost_pct": 0,
+        "hp_cost_floor_pct": 0.1,
+        "block_heal_pct": 29,
+        "lifesteal_pct": 0,
+        "blood_offering_gain": 0,
+        "atk_buff_pct": 0,
+        "cd": 2,
+        "price": 900000,
+        "xuesha_cost": 48,
+        "desc": "血煞凝障，受击时反哺己身。"
+      },
+      {
+        "id": "mo_zhoutian_xingdou",
+        "kind": "defense",
+        "name": "血斗大阵",
+        "cost": 9,
+        "dmg": 0,
+        "shield": 68,
+        "path": "xie",
+        "unlock_realm": 9,
+        "unlock_mo_realm": 5,
+        "hp_cost_pct": 0,
+        "hp_cost_floor_pct": 0.1,
+        "block_heal_pct": 23,
+        "lifesteal_pct": 0,
+        "blood_offering_gain": 0,
+        "atk_buff_pct": 0,
+        "cd": 4,
+        "price": 24000000000,
+        "xuesha_cost": 72,
+        "desc": "血煞凝障，受击时反哺己身。"
+      },
+      {
+        "id": "mo_yusui_danfang",
+        "kind": "heal",
+        "name": "噬命诀",
+        "cost": 4,
+        "dmg": 0,
+        "shield": 0,
+        "path": "xie",
+        "unlock_realm": 3,
+        "unlock_mo_realm": 1,
+        "hp_cost_pct": 6,
+        "hp_cost_floor_pct": 0.1,
+        "block_heal_pct": 0,
+        "lifesteal_pct": 0,
+        "blood_offering_gain": 2,
+        "atk_buff_pct": 6,
+        "buff_scope": "battle",
+        "cd": 1,
+        "price": 18000,
+        "xuesha_cost": 32,
+        "desc": "燃自身精血，换本场血祭之势。"
+      },
+      {
+        "id": "mo_taiqing_zaohua",
+        "kind": "heal",
+        "name": "太清血祭",
+        "cost": 9,
+        "dmg": 0,
+        "shield": 0,
+        "path": "xie",
+        "unlock_realm": 8,
+        "unlock_mo_realm": 4,
+        "hp_cost_pct": 14,
+        "hp_cost_floor_pct": 0.1,
+        "block_heal_pct": 0,
+        "lifesteal_pct": 0,
+        "blood_offering_gain": 4,
+        "atk_buff_pct": 6,
+        "buff_scope": "battle",
+        "cd": 4,
+        "price": 120000000,
+        "xuesha_cost": 72,
+        "desc": "燃自身精血，换本场血祭之势。"
       }
     ],
     "ai_cards": {

@@ -18,7 +18,15 @@
 
   function BAL() { return g.LS.BAL; }
   function S() { return g.LS.S; }
-  function bLevel(id) { const b = S().buildings[id]; return b || 0; }
+  function bLevel(id) {
+    const normal = S().buildings[id];
+    if (normal) return normal;
+    return (S().path === 'xie' && S().mo_buildings_level && S().mo_buildings_level[id]) || 0;
+  }
+  function productionBuildings() {
+    const bal = BAL();
+    return S().path === 'xie' ? bal.buildings.concat(bal.mo_buildings || []) : bal.buildings;
+  }
 
   function hasPrestige(id) { return S().prestige.bought.indexOf(id) !== -1; }
   /** 天赋等级 = bought 中出现次数（多级天赋：每级重算，甲§4陷阱①） */
@@ -109,7 +117,7 @@
 
     // 第1步：基础产量
     let base = 0;
-    for (const b of bal.buildings) {
+    for (const b of productionBuildings()) {
       const rate = b.effects && b.effects.rate && b.effects.rate[resId];
       if (!rate) continue;
       if (stalled(b.id, now)) continue; // F 类建筑异常：停产
@@ -118,7 +126,7 @@
 
     // 第2.5步：建筑全局乘算（藏经阁/诛仙剑阵 all_mult_per_level，乘算层）
     let allMult = 1;
-    for (const b of bal.buildings) {
+    for (const b of productionBuildings()) {
       const am = b.effects && b.effects.all_mult_per_level;
       if (am && bLevel(b.id) > 0 && !stalled(b.id, now)) allMult *= 1 + am * bLevel(b.id);
     }
@@ -386,6 +394,10 @@
     }
     s.xinmo_cd[actId] = now + cfg.cd_s * 1000;
     s.xinmo = Math.min(100, xm + cfg.xinmo);
+    if (cfg.no_decay_s) s.xinmo_no_decay_until = Math.max(s.xinmo_no_decay_until || 0, now + cfg.no_decay_s * 1000);
+    s.xie_stats = s.xie_stats || {};
+    s.xie_stats[actId] = (s.xie_stats[actId] || 0) + 1;
+    if (g.LS.path && BAL().xuesha && BAL().xuesha.sources) g.LS.path.addXuesha(BAL().xuesha.sources[actId] || 0);
     const lines = [cfg.name + '——心魔 +' + cfg.xinmo + '（现 ' + s.xinmo + '）'];
     if (actId === 'lve') {
       const ls = Math.max(50, Math.floor(computePerSecond('lingshi') * (120 + Math.random() * 120) * (1 + xm / 100)));
@@ -410,12 +422,19 @@
     return { ok: true, msg: lines.join('；') };
   }
   function xinmoDecay(now) {
-    // 惰性自然消退：−1/游戏年（60 现实秒），邪修面板打开时结算
+    // 惰性自然消退：间隔与每次衰减量都由 balance.xinmo 驱动。
     const s = S();
     if (typeof s.xinmo !== 'number' || s.xinmo <= 0) return;
-    if (!s.xinmo_ts) { s.xinmo_ts = now || Date.now(); return; }
-    const years = Math.floor(((now || Date.now()) - s.xinmo_ts) / 60000);
-    if (years > 0) { s.xinmo = Math.max(0, s.xinmo - years); s.xinmo_ts = now || Date.now(); }
+    now = now || Date.now();
+    if (now < (s.xinmo_no_decay_until || 0)) { s.xinmo_ts = now; return; }
+    if (!s.xinmo_ts) { s.xinmo_ts = now; return; }
+    const cfg = BAL().xinmo || {};
+    const interval = cfg.decay_ms_per_year || 120000;
+    const periods = Math.floor((now - s.xinmo_ts) / interval);
+    if (periods > 0) {
+      s.xinmo = Math.max(0, s.xinmo - periods * (cfg.decay_per_game_year == null ? 0.5 : cfg.decay_per_game_year));
+      s.xinmo_ts += periods * interval;
+    }
   }
 
   /* ── 防护 ── */
@@ -430,6 +449,7 @@
       if (v > ceiling) v = ceiling;
       s.resources[res] = v;
     }
+    if (g.LS.path) s.xuesha = g.LS.util.clamp(Number(s.xuesha) || 0, 0, (bal.xuesha && bal.xuesha.cap) || 100000);
     if (!isFinite(s.pill.progress_s)) s.pill.progress_s = 0;
   }
 
@@ -594,7 +614,10 @@
         if (bq) {
           reduce = bq.toxic_reduce;
           xadd = bq.toxic_add || 0;
-          if (bq.xinmo_reduce && typeof s.xinmo === 'number') s.xinmo = Math.max(0, s.xinmo - bq.xinmo_reduce);
+          if (bq.xinmo_reduce && typeof s.xinmo === 'number') {
+            const xinmoReduce = s.xinmo >= 60 ? bq.xinmo_reduce * 0.5 : bq.xinmo_reduce;
+            s.xinmo = Math.max(0, s.xinmo - xinmoReduce);
+          }
         } else {
           reduce = cat.effect.toxic_reduce * em;
         }

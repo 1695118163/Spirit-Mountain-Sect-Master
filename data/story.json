@@ -480,5 +480,51 @@
    ],
    "outro": "山下的弟子问：「师尊之后呢？」你望着云海：「灵山的故事，还长着。」"
   }
+ ],
+ "xie_chapters": [
+  {
+   "idx": 0,
+   "realm": 0,
+   "name": "魔章·堕心",
+   "intro": "旧道未断，新路已从血里生根。",
+   "tasks": [{ "id": "x1", "desc": "完成堕魔抉择", "check": ["path", "xie"], "reward": { "xuesha": 20 }, "story": "山门灯火尽染暗红，第一座血池在后山开凿。" }],
+   "outro": "从今往后，正邪都只是旁人替你取的名字。",
+   "hook": "xuechi"
+  },
+  {
+   "idx": 1,
+   "realm": 1,
+   "name": "魔章·血食",
+   "intro": "血池要活，便得有人把血带回来。",
+   "tasks": [{ "id": "x1", "desc": "完成十次下山劫掠", "check": ["xie_act", "lve", 10], "reward": { "xuesha": 40 }, "story": "血池第一次满溢，魂幡在池边无风自展。" }],
+   "outro": "山下开始流传一个没有名字的红影。",
+   "hook": "hunhfan"
+  },
+  {
+   "idx": 2,
+   "realm": 2,
+   "name": "魔章·夺道",
+   "intro": "仇家循血迹上山，正好替炼魂窟添第一炉柴。",
+   "tasks": [{ "id": "x1", "desc": "击杀五名寻仇者", "check": ["revenge_kill", 5], "reward": { "xuesha": 80 }, "story": "第五道残魂入窟，石壁里传来沉闷的呼吸。" }],
+   "outro": "来寻仇的人越来越少，山下的传闻却越来越多。",
+   "hook": "lianhungu"
+  },
+  {
+   "idx": 3,
+   "realm": 3,
+   "name": "魔章·传魔",
+   "intro": "一个人的魔道只是凶名，有了传人才算道统。",
+   "tasks": [{ "id": "x1", "desc": "向一名弟子传授魔功", "check": ["demonic_disciple", 1], "reward": { "xuesha": 120 }, "story": "弟子叩首时，影子比人先伏到了地上。" }],
+   "outro": "血脉之外，另一种传承开始延续。"
+  },
+  {
+   "idx": 4,
+   "realm": 4,
+   "name": "魔章·九雷炼魂",
+   "intro": "九道魔雷在天外排开，最后一步只能独自走完。",
+   "tasks": [{ "id": "x1", "desc": "晋至魔君并渡过魔劫", "check": ["mo_realm", 5], "reward": { "xuesha": 200 }, "story": "第九道雷落尽，血云向两侧裂开，露出一条无人走过的天路。" }],
+   "outro": "你已不必向任何人证明这条路是否存在。",
+   "hook": "xie_rebirth"
+  }
  ]
 }
