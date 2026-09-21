@@ -794,12 +794,13 @@ html.night body #version-mark { opacity: .3; }
 .deck-card-locked { opacity:.42; filter:grayscale(.7); cursor:not-allowed; }
 .deck-order { margin:0 0 14px; padding:10px; border:1px dashed rgba(122,106,85,.5); border-radius:6px; }
 .deck-order-title { margin-bottom:7px; text-align:center; color:var(--cinnabar,#c0392b); font-size:12px; letter-spacing:3px; }
-.deck-order-item { display:grid; grid-template-columns:26px minmax(0,1fr) 42px 32px 32px; align-items:center; gap:5px; min-height:34px; border-top:1px solid rgba(122,106,85,.18); }
+.deck-order-item { display:grid; grid-template-columns:26px minmax(0,1fr) 42px 32px 32px 32px; align-items:center; gap:5px; min-height:34px; border-top:1px solid rgba(122,106,85,.18); }
 .deck-order-item:first-of-type { border-top:0; }
 .deck-order-item b { min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; font-size:12px; }
 .deck-order-index { width:22px; height:22px; line-height:22px; border-radius:50%; background:var(--cinnabar,#c0392b); color:#fff; text-align:center; font-size:11px; }
 .deck-order-kind { color:var(--ink-soft); font-size:10px; text-align:center; }
 .deck-move { width:32px; min-width:32px; height:30px; padding:0; font-size:16px; }
+.deck-remove { color:var(--cinnabar,#c0392b); }
 .deck-order-empty { padding:7px; text-align:center; color:var(--ink-soft); font-size:12px; }
 .deck-actions { display:flex; justify-content:center; gap:8px; margin-top:8px; }
 .deck-actions #dk-save { padding:7px 26px; }

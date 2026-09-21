@@ -1406,7 +1406,8 @@ html,body{overflow-x:clip}
   .battle-guide .bg-list-2 li{font-size:11px;margin-bottom:4px;line-height:1.5}
   .battle-guide .bg-actions{position:sticky;bottom:calc(-14px - env(safe-area-inset-bottom));margin:8px -15px 0;padding:8px 15px calc(8px + env(safe-area-inset-bottom));background:var(--paper);border-top:1px solid rgba(122,106,85,.28)}
   html.night .battle-guide .bg-actions{background:#10141c}
-  .deck-order-item{grid-template-columns:24px minmax(0,1fr) 34px 34px 34px;gap:3px}
+  .deck-order-item{grid-template-columns:24px minmax(0,1fr) 34px 30px 30px 30px;gap:3px}
+  .deck-order-item .deck-move{width:30px;min-width:30px}
   .deck-login-actions{align-items:stretch;flex-direction:column}
   .deck-login-actions label{flex-wrap:wrap}
   .deck-login-actions #dk-skip{min-height:38px}

@@ -2718,7 +2718,7 @@
       }
       const ordered = (s.deck || []).map((id, index) => {
         const c = pool.find(x => x.id === id);
-        return c ? '<div class="deck-order-item"><span class="deck-order-index">' + (index + 1) + '</span><b>' + escapeHtml(c.name) + '</b><span class="deck-order-kind">' + escapeHtml(KIND_NAME[c.kind] || c.kind) + '</span><button class="icon-btn deck-move" data-move="up" data-order="' + index + '" title="前移"' + (index === 0 ? ' disabled' : '') + '>↑</button><button class="icon-btn deck-move" data-move="down" data-order="' + index + '" title="后移"' + (index === (s.deck || []).length - 1 ? ' disabled' : '') + '>↓</button><button class="icon-btn deck-move" data-deck-remove="' + index + '" title="移除这张招式">×</button></div>' : '';
+        return c ? '<div class="deck-order-item"><span class="deck-order-index">' + (index + 1) + '</span><b>' + escapeHtml(c.name) + '</b><span class="deck-order-kind">' + escapeHtml(KIND_NAME[c.kind] || c.kind) + '</span><button class="icon-btn deck-move deck-remove" data-deck-remove="' + index + '" title="取消这张招式">×</button><button class="icon-btn deck-move" data-move="up" data-order="' + index + '" title="前移"' + (index === 0 ? ' disabled' : '') + '>↑</button><button class="icon-btn deck-move" data-move="down" data-order="' + index + '" title="后移"' + (index === (s.deck || []).length - 1 ? ' disabled' : '') + '>↓</button></div>' : '';
       }).join('') || '<div class="deck-order-empty">尚未编入招式</div>';
       card.innerHTML =
         '<div class="modal-title">招 式 录<button class="icon-btn" id="dk-close" style="float:right;font-size:12px;padding:3px 12px">合 上</button></div>' +
