@@ -1,5 +1,5 @@
 {
-  "port": 8787,
+  "port": 8090,
   "ark_base_url": "https://ark.cn-beijing.volces.com/api/v3",
   "ark_model": "glm-5-3-flash",
   "ark_api_key": "",
