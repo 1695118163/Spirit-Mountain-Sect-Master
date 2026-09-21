@@ -60,6 +60,8 @@
       mainquest: { ch: 0, idx: 0, claimed: 0, done: false },
       disciple: null,
       disciples: [],
+      disciple_recent_names: [],
+      disciple_recent_traits: [],
       disciple_recruit_at: 0,
       disciple_seek_ready_day: {},
       disciple_revenge: [],

@@ -182,12 +182,12 @@ hr.brush { border: 0; height: 2px; background: linear-gradient(90deg, transparen
 #buff-bar { display: flex; min-width:0; gap: 8px; }
 .buff-chip { font-size: 12px; color: var(--cinnabar); border: 1px solid var(--cinnabar); border-radius: 10px; padding: 1px 8px; }
 
-#top-right { margin-left: auto; min-width:0; display: flex; align-items: center; gap: 10px; }
-.dot { width: 10px; height: 10px; border-radius: 50%; display: inline-block; }
+#top-right { margin-left: auto; min-width:0; display: flex; align-items: center; gap: 10px; flex: 0 0 auto; }
+.dot { width: 10px; min-width: 10px; max-width: 10px; height: 10px; min-height: 10px; max-height: 10px; flex: 0 0 10px; aspect-ratio: 1 / 1; border-radius: 50%; display: inline-block; }
 .dot.ok { background: #3a7d44; box-shadow: 0 0 6px #3a7d44; }
 .dot.degraded { background: #c9a227; box-shadow: 0 0 6px #c9a227; }
 .dot.off { background: #999; }
-.icon-btn { background: none; border: 1px solid var(--ink-soft); border-radius: 4px; color: var(--ink); padding: 6px 12px; cursor: pointer; font-family: inherit; }
+.icon-btn { box-sizing: border-box; flex: 0 0 auto; white-space: nowrap; background: none; border: 1px solid var(--ink-soft); border-radius: 4px; color: var(--ink); padding: 6px 12px; cursor: pointer; font-family: inherit; }
 
 /* ── 按钮体系 ── */
 button { font-family: inherit; min-height: 30px; }
@@ -414,7 +414,8 @@ button:not(:disabled):active { transform: translateY(1px); }
 #taichi-monk.cursed .fx-curse { display: block; }
 @keyframes curseSwirl { from { transform: rotate(-8deg) scale(1); opacity: .75; } to { transform: rotate(10deg) scale(1.08); opacity: .95; } }
 
-#forewarn { color: var(--cinnabar); font-size: 13px; letter-spacing: 2px; animation: pulse 2s infinite; }
+#forewarn { box-sizing: border-box; color: var(--cinnabar); background: rgba(184, 62, 62, .06); border: 1px solid currentColor; border-radius: 999px; padding: 4px 12px; min-height: 30px; font: inherit; font-size: 13px; letter-spacing: 2px; cursor: pointer; white-space: nowrap; animation: pulse 2s infinite; }
+#forewarn:hover { background: rgba(184, 62, 62, .14); }
 .hidden { display: none !important; }
 
 /* ── 建筑卡 ── */
@@ -506,6 +507,8 @@ body:has(#battle-hands) .modal-card { max-width: 680px; }
   border: 1px solid var(--ink-soft); background: rgba(255, 255, 255, .4);
   border-radius: 4px; font-size: 15px; cursor: pointer; text-align: center; font-family: inherit;
 }
+.ev-option.is-locked-choice { border-style:dashed; opacity:.72; }
+.ev-option.is-locked-choice small { display:block; margin-top:4px; color:var(--cinnabar); font-size:11px; }
 .ev-option:hover { border-color: var(--cinnabar); color: var(--cinnabar); }
 .ev-leave { color: var(--ink-soft); border-style: dashed; }
 .ev-countdown { position: absolute; top: 10px; right: 46px; color: var(--ink-soft); font-size: 13px; }

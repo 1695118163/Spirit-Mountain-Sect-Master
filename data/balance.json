@@ -1742,8 +1742,8 @@
   "path": {
     "enter": {
       "name": "堕魔",
-      "xinmo_min": 50,
-      "chain_xinmo_min": 40,
+      "xinmo_min": 40,
+      "chain_xinmo_min": 30,
       "chapter_min": 2,
       "chain_id": "mo_xin_chu_dong",
       "dark_pool": "DARK",
@@ -1753,7 +1753,7 @@
     },
     "xie": {
       "name": "魔道",
-      "deep_xinmo": 85,
+      "deep_xinmo": 75,
       "deep_daoxing_cost": 0.3,
       "deep_optional": true,
       "battle_pool": "replace",

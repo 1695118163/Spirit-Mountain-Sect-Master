@@ -915,9 +915,24 @@
 
   /* ── 奇遇弹窗（不暂停产量） ── */
   function showEventModal(ev) {
+    // 事件出现与玩家打开其他面板撞车时，不抢占当前界面；放回队列，等面板关闭后再展示。
+    const existing = refs.modalRoot && refs.modalRoot.querySelector('.modal-card');
+    if (existing && !existing.classList.contains('event-card')) {
+      const st = g.LS.S && g.LS.S.event_state;
+      if (st) {
+        st.event_state = st.event_state || {};
+        st.event_state.open = null;
+        st.event_state.queue = st.event_state.queue || [];
+        if (st.event_state.queue.length >= 3) st.event_state.queue.shift();
+        st.event_state.queue.push(ev);
+        setTimeout(() => { if (g.LS.events && g.LS.events.pumpQueue) g.LS.events.pumpQueue(0); }, 300);
+      }
+      return;
+    }
     sfx('guqin');
     removeModals();
-    const { mask, card } = makeModal(() => g.LS.events.chooseOption('C')); // 中途关闭等同于「离去」
+    const { mask, card } = makeModal(null); // 事件必须明确点选；点击遮罩不再误触「离去」
+    card.classList.add('event-card');
     // A6 卷轴初展：横卷展开仪式（500ms 锁死；仙品先一道朱线扫过）
     mask.classList.add('scroll-open');
     if ((ev.rarity || '') === '仙') {
@@ -944,8 +959,8 @@
       // 选项不再挂效果方向标签（势/仁/益/耗/恒/缘/异/贪 一律去掉，2026-09-21 玩家口径）
       const tail = (opt.key === 'C' || ev.no_choice || ev.five_choice) ? '' : '（' + (opt.key === 'A' ? '其一' : '其二') + '）';
       const missingXinmo = opt.requires_xinmo ? Math.max(0, opt.requires_xinmo - (g.LS.S.xinmo || 0)) : 0;
-      btn.disabled = missingXinmo > 0;
-      btn.innerHTML = escapeHtml(opt.text) + tail + (missingXinmo ? '<small>（再积 ' + missingXinmo + ' 点心魔）</small>' : '');
+      if (missingXinmo) btn.classList.add('is-locked-choice');
+      btn.innerHTML = escapeHtml(opt.text) + tail + (missingXinmo ? '<small>（心魔不足，还差 ' + missingXinmo + ' 点）</small>' : '');
       btn.addEventListener('click', () => g.LS.events.chooseOption(opt.key));
       card.appendChild(btn);
     }

@@ -13,6 +13,21 @@
   function traitDef(key) { return (DATA().traits || []).find(t => t.key === key) || null; }
   function skillDef(id) { return (DATA().skills || []).find(sk => sk.id === id) || null; }
 
+  function recent(listKey, limit) {
+    const s = S();
+    if (!Array.isArray(s[listKey])) s[listKey] = [];
+    if (s[listKey].length > limit) s[listKey] = s[listKey].slice(-limit);
+    return s[listKey];
+  }
+
+  function remember(listKey, value, limit) {
+    const list = recent(listKey, limit);
+    const i = list.indexOf(value);
+    if (i !== -1) list.splice(i, 1);
+    list.push(value);
+    while (list.length > limit) list.shift();
+  }
+
   function weightedTrait(excluded) {
     const pool = (DATA().traits || []).filter(t => excluded.indexOf(t.key) === -1);
     return g.LS.util.weightedPick(pool, t => S().path === 'xie' && t.polarity < 0 ? (CFG().negative_weight_xie || 2) : 1);
@@ -23,7 +38,11 @@
     const traits = [], count = g.LS.util.randInt(2, 4);
     while (traits.length < count) {
       const excluded = traits.map(t => t.key);
-      const pool = (DATA().traits || []).filter(def => excluded.indexOf(def.key) === -1);
+      const recentTraits = recent('disciple_recent_traits', 12);
+      const poolAll = (DATA().traits || []).filter(def => excluded.indexOf(def.key) === -1);
+      // 第一条性格作为主要性格，短期内避免重复；其他词条仍保持完全随机。
+      const freshPool = poolAll.filter(def => recentTraits.indexOf(def.key) === -1);
+      const pool = traits.length === 0 && freshPool.length ? freshPool : poolAll;
       const preferred = profile.traits || [];
       const def = g.LS.util.weightedPick(pool, item => {
         const base = preferred.indexOf(item.key) !== -1 ? 2.2 : 1;
@@ -31,6 +50,7 @@
       });
       if (!def) break;
       traits.push({ key: def.key, revealed: false });
+      if (traits.length === 1) remember('disciple_recent_traits', def.key, 12);
     }
     const skillPool = (DATA().skills || []).filter(sk => S().path === 'xie' ? sk.path === 'xie' : !sk.path);
     const skills = [], skillMin = Math.max(1, profile.skill_min || 1);
@@ -54,9 +74,14 @@
     for (let i = 0; i < revealSkills; i++) skills[i].revealed = true;
     const hintTrait = traitDef(traits[0] && traits[0].key);
     const names = DATA().names || [];
+    const recentNames = recent('disciple_recent_names', 8);
+    const availableNames = names.filter(name => recentNames.indexOf(name) === -1);
+    const namePool = availableNames.length ? availableNames : names;
+    const name = namePool.length ? namePool[g.LS.util.randInt(0, namePool.length - 1)] : '无名弟子';
+    if (namePool.length) remember('disciple_recent_names', name, 8);
     return {
       id: g.LS.util.uid(),
-      name: names.length ? names[g.LS.util.randInt(0, names.length - 1)] : '无名弟子',
+      name,
       root, stage: 0, progress: profile.progress || 0, traits, skills,
       suspicion: 0, mood: 'normal', events_log: [], betray_warned: false,
       status: 'active', fed: 0, agent: false, realm: 0,
