@@ -112,6 +112,38 @@
     return null;
   }
 
+  /** 一次摊几桩候选（balance.json events.pick_count，默认 5；设 1 即回到「随机撞见」） */
+  function pickCount() {
+    const v = (BAL().events || {}).pick_count;
+    return typeof v === 'number' && v > 0 ? Math.floor(v) : 5;
+  }
+
+  /** 同稀有度候选卡：选池逻辑与 pickByRarity 同源（道心偏好的池加权），但要凑够 n 张不同的卡 */
+  function pickCandidates(rarity, n) {
+    const s = S();
+    const cfg = BAL().events.rarity;
+    const now = Date.now();
+    const blocked = new Set((s.event_state.recent_ids || [])
+      .filter(x => now - x.ts < cfg.recent_repeat_block_ms).map(x => x.id));
+    const picked = [];
+    const poolsLeft = poolsUnlocked();
+    const pw = BAL().events.pool_weight;
+    let guard = 0;
+    while (picked.length < n && poolsLeft.length && guard++ < 60) {
+      const pool = U().weightedPick(poolsLeft, p => {
+        let w = 1;
+        if (s.dao_heart > pw.dao_high_threshold && pw.pools_dao_high.indexOf(p) !== -1) w *= pw.boost_mult;
+        if (s.dao_heart < pw.dao_low_threshold && pw.pools_dao_low.indexOf(p) !== -1) w *= pw.boost_mult;
+        return w;
+      });
+      const cands = EVT().filter(e => e.pool === pool && e.rarity === rarity && !e.recycle
+        && !blocked.has(e.id) && !picked.some(x => x.id === e.id));
+      if (!cands.length) { poolsLeft.splice(poolsLeft.indexOf(pool), 1); continue; }   // 该池此稀有度没库存了
+      picked.push(cands[U().randInt(0, cands.length - 1)]);
+    }
+    return picked;
+  }
+
   /* ── effect_slots 预掷（LLM 只产文案，数值本地预掷注入） ── */
 
   function materializeSlot(type, rarity, evId) {
@@ -262,6 +294,22 @@
       g.LS.ui.showOfflinePopup(ev.payload);
       return;
     }
+    // 山门来报（离线 5 选 1）：挑一桩，选中后才成型
+    if (ev.kind === 'pick' && g.LS.ui && g.LS.ui.showEventPicker) {
+      const pickEv = ev;
+      g.LS.ui.showEventPicker(pickEv.candidates, (key) => {
+        const st = S();
+        st.event_state.open = null;
+        const entry = ((offlinePoolCfg() || {}).events || []).find(e => e.id === key)
+          || (((offlinePoolCfg() || {}).events || [])[0]);
+        if (!entry) { pumpQueue(0); return; }
+        const fin = buildOfflineFinal(entry, pickEv.gap);
+        st.event_state.open = fin;
+        st.event_state.opened_at = Date.now();
+        if (g.LS.ui && g.LS.ui.showEventModal) g.LS.ui.showEventModal(fin);
+      }, { title: '山 门 来 报', desc: '弟子们在殿外候着——你离山这几日的山中事，先听哪一桩？' });
+      return;
+    }
     if (g.LS.ui && g.LS.ui.showEventModal) g.LS.ui.showEventModal(ev);
   }
 
@@ -326,12 +374,13 @@
 
     // ② 稀有度 roll + 选卡（含 仙→珍→灵→凡 回退与保底顺延）
     let pickedRarity = null;
+    let cands = [];
     if (!ev) {
       rarity = rollRarity();
       const order = [rarity, '仙', '珍', '灵', '凡'];
       for (const rr of order) {
-        ev = pickByRarity(rr);
-        if (ev) { pickedRarity = rr; break; }
+        cands = pickCandidates(rr, Math.max(1, pickCount()));   // 同稀有度一次备好几桩，供「几件选一件」
+        if (cands.length) { ev = cands[0]; pickedRarity = rr; break; }
       }
       if (ev) {
         // 保底计数：出仙清双计数；出珍清 since_rare；库存顺延（用 pickedRarity 判定而非 rarity）
@@ -356,6 +405,19 @@
     if (g.LS.ui && g.LS.ui.setForewarn) g.LS.ui.setForewarn(true);
     setTimeout(() => {
       if (g.LS.ui && g.LS.ui.setForewarn) g.LS.ui.setForewarn(false);
+      // 「5 选 1」（2026-09-21 玩家口径）：普通奇遇先摊几桩候选，玩家自己挑一桩经历；
+      // 因果回收（fromKarma）这类「该来的」不入选单，直接结算
+      if (!fromKarma && cands.length > 1 && g.LS.ui && g.LS.ui.showEventPicker) {
+        g.LS.ui.showEventPicker(
+          cands.map(c => ({ key: c.id, title: c.title, desc: c.desc })),
+          (id) => {
+            const chosen = cands.find(c => c.id === id) || cands[0];
+            openEventFlow(chosen, pickedRarity, false);
+          },
+          { title: '山 中 数 事', desc: '山里同时起了这么几桩动静——挑一件去看，其余的随它去。' }
+        );
+        return;
+      }
       openEventFlow(ev, pickedRarity, fromKarma);
     }, 3000);
   }
@@ -508,14 +570,52 @@
     return table[table.length - 1][1];
   }
 
-  function rollOfflineEvents(gapSec) {
+  /** 单个离线事件 → finalEv：正/负与效果槽在这里才掷（所以候选卡只漏标题、不漏结果） */
+  function buildOfflineFinal(e, gapSec) {
+    const cfg = offlinePoolCfg() || {};
+    const rarity = cfg.default_rarity || '灵';
+    const away = awayWord(gapSec);
+    // 正/负随机：同一件事（比如弟子来报）可能是好事也可能是坏事。
+    // 权重 = 数据里的基线（这件事本身的倾向） + 玩家状态浮动：
+    //   道心厚则好事多，心魔重则坏事多 —— 「你修成什么样，山门就遇什么样的事」
+    const st0 = S();
+    const dx01 = Math.max(0, Math.min(120, st0.dao_heart || 0)) / 120;
+    const xm01 = Math.max(0, Math.min(100, st0.xinmo || 0)) / 100;
+    const shift = (dx01 - xm01) * 3;
+    const pw = Math.max(0.5, (e.pos_weight == null ? 5 : e.pos_weight) + shift);
+    const nw = Math.max(0.5, (e.neg_weight == null ? 5 : e.neg_weight) - shift);
+    const isGood = Math.random() * (pw + nw) < pw;
+    // 每个方向都是一组文案（好事也有好几种说法），随机挑一条，来回多挂几次不会老看同一句
+    const pickSide = (v) => Array.isArray(v) ? (v.length ? v[Math.floor(Math.random() * v.length)] : null) : (v || null);
+    const side = pickSide(isGood ? e.pos : e.neg) || pickSide(isGood ? e.neg : e.pos) || {};
+    const desc = String(side.desc || e.desc || '').split('{away}').join(away);   // 「离山这几日」按真实离线时长落字
+    const sideFits = side.fits || (isGood ? ['A'] : ['F']);
+    const stageEv = { id: e.id, pool: 'OFFLINE', rarity: rarity, title: e.title, desc: desc, options: [{ fits: sideFits }], tags: [] };
+    const slots = rollSlots(stageEv);
+    return {
+      id: 'offline:' + e.id,
+      source: 'offline',
+      rarity: rarity,
+      recycle: null,
+      after: null,
+      builtinTags: [],
+      title: e.title,
+      desc: desc,
+      no_choice: true,        // 离线事件不给选择：看到的就是已经发生的事
+      good: isGood,
+      options: [
+        { key: 'A', text: '知道了', slot: slots[0], daoxin: side.daoxin || 0, effect: side.effect || 'none' },
+        { key: 'C', text: BAL().texts.event_leave, slot: null, daoxin: 0, effect: 'none' }   // 只作倒计时兜底，不渲染
+      ]
+    };
+  }
+
+  /** 离线候选（2026-09-21 玩家口径「5 选 1」）：加权、不重复、按条件过滤，给几张由 offline_events.pick_count 定 */
+  function rollOfflineCandidates(gapSec) {
     const cfg = offlinePoolCfg();
     if (!cfg || !cfg.events || !cfg.events.length) return [];
-    // 一次离线只讲一件事（2026-09-19 定）：不再按时长抽多条，避免归来就被事件刷屏
-    const n = cfg.count != null ? cfg.count : offlineEventCount(gapSec);
-    if (!n) return [];
+    const n = Math.max(1, Math.floor(cfg.pick_count || 1));
     const pool = cfg.events.filter(offlineCondOk);
-    const rarity = cfg.default_rarity || '灵';
     const picked = [];
     for (let i = 0; i < n && pool.length; i++) {
       const total = pool.reduce((a, e) => a + (e.weight == null ? 1 : e.weight), 0);
@@ -525,42 +625,17 @@
         if (r <= 0) { hit = j; break; }
       }
       const e = pool.splice(hit, 1)[0];          // 同一次离线不重复
-      const away = awayWord(gapSec);
-      // 正/负随机：同一件事（比如弟子来报）可能是好事也可能是坏事。
-      // 权重 = 数据里的基线（这件事本身的倾向） + 玩家状态浮动：
-      //   道心厚则好事多，心魔重则坏事多 —— 「你修成什么样，山门就遇什么样的事」
-      const st0 = S();
-      const dx01 = Math.max(0, Math.min(120, st0.dao_heart || 0)) / 120;
-      const xm01 = Math.max(0, Math.min(100, st0.xinmo || 0)) / 100;
-      const shift = (dx01 - xm01) * 3;
-      const pw = Math.max(0.5, (e.pos_weight == null ? 5 : e.pos_weight) + shift);
-      const nw = Math.max(0.5, (e.neg_weight == null ? 5 : e.neg_weight) - shift);
-      const isGood = Math.random() * (pw + nw) < pw;
-      // 每个方向都是一组文案（好事也有好几种说法），随机挑一条，来回多挂几次不会老看同一句
-      const pickSide = (v) => Array.isArray(v) ? (v.length ? v[Math.floor(Math.random() * v.length)] : null) : (v || null);
-      const side = pickSide(isGood ? e.pos : e.neg) || pickSide(isGood ? e.neg : e.pos) || {};
-      const desc = String(side.desc || e.desc || '').split('{away}').join(away);   // 「离山这几日」按真实离线时长落字
-      const sideFits = side.fits || (isGood ? ['A'] : ['F']);
-      const stageEv = { id: e.id, pool: 'OFFLINE', rarity: rarity, title: e.title, desc: desc, options: [{ fits: sideFits }], tags: [] };
-      const slots = rollSlots(stageEv);
-      picked.push({
-        id: 'offline:' + e.id,
-        source: 'offline',
-        rarity: rarity,
-        recycle: null,
-        after: null,
-        builtinTags: [],
-        title: e.title,
-        desc: desc,
-        no_choice: true,        // 离线事件不给选择：看到的就是已经发生的事
-        good: isGood,
-        options: [
-          { key: 'A', text: '知道了', slot: slots[0], daoxin: side.daoxin || 0, effect: side.effect || 'none' },
-          { key: 'C', text: BAL().texts.event_leave, slot: null, daoxin: 0, effect: 'none' }   // 只作倒计时兜底，不渲染
-        ]
-      });
+      picked.push({ key: e.id, title: e.title, entry: e });
     }
     return picked;
+  }
+
+  /** 旧入口（一次直接给成型事件，不走选单）：抽 cfg.count 条 */
+  function rollOfflineEvents(gapSec) {
+    const cfg = offlinePoolCfg() || {};
+    const n = cfg.count != null ? cfg.count : offlineEventCount(gapSec);
+    if (!n) return [];
+    return rollOfflineCandidates(gapSec).slice(0, n).map(c => buildOfflineFinal(c.entry, gapSec));
   }
 
   /** 离线归来：结算单排第一，后面跟独立池事件 + 访客 / 托梦，然后开始依次弹 */
@@ -572,7 +647,19 @@
       id: 'offline:settle', source: 'offline', kind: 'settle', payload: settleResult,
       rarity: '灵', title: (BAL().texts || {}).offline_title || '山中无甲子', desc: '', options: []
     });
-    rollOfflineEvents(settleResult.gap).forEach(e => q.push(e));
+    // 离线事件（2026-09-21 玩家口径「5 选 1」）：摊开几桩山中事让玩家挑一桩听；
+    // pick_count 调成 1 就退回「随机听一桩」
+    const offCfg = offlinePoolCfg() || {};
+    const cands = rollOfflineCandidates(settleResult.gap);
+    if (cands.length > 1) {
+      q.push({
+        id: 'offline:pick', source: 'offline', kind: 'pick', gap: settleResult.gap,
+        rarity: offCfg.default_rarity || '灵', title: '山门来报', desc: '', options: [],
+        candidates: cands.map(c => ({ key: c.key, title: c.title }))
+      });
+    } else {
+      cands.forEach(c => q.push(buildOfflineFinal(c.entry, settleResult.gap)));
+    }
     const visitor = maybeVisitor('offline');
     if (visitor) q.push(visitor);
     const dream = rollDream(settleResult.gap);
@@ -798,7 +885,8 @@
     rollOfflineEvents, queueOfflineReturn,
     drawEvent, chooseOption, maybeTriggerEvent, scheduleNext, pumpQueue, maybeContinueChain, maybeAmbush,
     maybeVisitor, rollDream, isPastLife, chronicle, carveStele,
-    rollSlots, rollRarity, pickByRarity, materializeSlot,
+    rollSlots, rollRarity, pickByRarity, pickCandidates, pickCount, materializeSlot,
+    rollOfflineCandidates, buildOfflineFinal,
     buildFallbackEvent, buildBuiltinFinal, karmaCheck, resolveTag,
     intervalMs, isNegativeSlot
   };

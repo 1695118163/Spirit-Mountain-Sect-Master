@@ -145,15 +145,13 @@
   </main>
 
   <aside id="right-panel" class="panel">
-    <h2 class="panel-title">见闻 <span style="float:right"><button id="btn-help" class="icon-btn" style="font-size:11px;padding:2px 8px;min-height:0">指要</button> <button id="btn-codex" class="icon-btn" style="font-size:11px;padding:2px 8px;min-height:0">图鉴</button></span></h2>
+    <h2 class="panel-title">见闻 <span style="float:right"><button id="btn-help" class="icon-btn wen-tool-btn">指要</button> <button id="btn-codex" class="icon-btn wen-tool-btn">图鉴</button></span></h2>
     <div id="log-list"></div>
-    <div id="map-mini" aria-hidden="true">
-      <span class="mm-dot" style="left:30%;top:38%"><b>丹房</b></span><span class="mm-dot" style="left:62%;top:60%"><b>市场</b></span><span class="mm-dot" style="left:55%;top:30%"><b>擂台</b></span><span class="mm-dot locked" style="left:74%;top:26%"></span><span class="mm-dot locked" style="left:18%;top:68%"></span><span class="mm-dot locked" style="left:52%;top:14%"></span><span class="mm-dot locked" style="left:84%;top:80%"></span>
-    </div>
-    <div class="set-row" style="gap:6px"><button id="btn-map" class="btn-primary" style="flex:1">地  图</button></div>
-  <div class="set-row" style="gap:6px"><button id="btn-market" class="icon-btn" style="flex:1">坊 市</button><button id="btn-friends" class="icon-btn" style="flex:1">道友录</button></div>
-    <div class="set-row" style="gap:6px"><button id="btn-quest" class="btn-primary" style="flex:1;position:relative">主 线<span id="quest-dot" style="display:none;position:absolute;top:-5px;right:-5px;min-width:16px;height:16px;line-height:16px;border-radius:999px;background:var(--cinnabar);color:#fff6f2;font-size:10px;text-align:center;box-shadow:0 0 8px rgba(192,57,43,.5)">领</span></button><button id="btn-disciple" class="btn-primary" style="flex:1">传 承</button></div>
-  <div class="set-row" style="gap:6px"><button id="btn-trial" class="icon-btn" style="flex:1">试 炼 塔</button><button id="btn-codexpage" class="icon-btn" style="flex:1">体 系</button><button id="btn-xinmo" class="icon-btn" style="flex:1">邪 修</button></div>
+    <div id="map-mini" aria-hidden="true"><span class="mm-dot" style="left:17.3%;top:81.4%"><b>丹房</b></span><span class="mm-dot" style="left:41.8%;top:85.9%"><b>市场</b></span><span class="mm-dot" style="left:49.2%;top:52.7%"><b>擂台</b></span><span class="mm-dot locked" style="left:68.9%;top:18%"></span><span class="mm-dot locked" style="left:5.9%;top:58%"></span><span class="mm-dot locked" style="left:70.4%;top:88.3%"></span><span class="mm-dot locked" style="left:58.9%;top:73.7%"></span></div>
+    <div class="set-row wen-actions"><button id="btn-map" class="icon-btn wen-btn">地  图</button></div>
+    <div class="set-row wen-actions"><button id="btn-market" class="icon-btn wen-btn">坊 市</button><button id="btn-friends" class="icon-btn wen-btn">道友录</button><button id="btn-deck" class="icon-btn wen-btn">招式录</button></div>
+    <div class="set-row wen-actions"><button id="btn-quest" class="icon-btn wen-btn" style="position:relative">主 线<span id="quest-dot" style="display:none;position:absolute;top:-5px;right:-5px;min-width:16px;height:16px;line-height:16px;border-radius:999px;background:var(--cinnabar);color:#fff6f2;font-size:10px;text-align:center;box-shadow:0 0 8px rgba(192,57,43,.5)">领</span></button><button id="btn-disciple" class="icon-btn wen-btn">传 承</button></div>
+    <div class="set-row wen-actions"><button id="btn-trial" class="icon-btn wen-btn">试 炼 塔</button><button id="btn-codexpage" class="icon-btn wen-btn">体 系</button><button id="btn-xinmo" class="icon-btn wen-btn">邪 修</button></div>
     <h2 class="panel-title">福泽</h2>
     <div id="perm-list"></div>
     <button id="btn-rebirth" class="btn-primary">转 生</button>
@@ -168,7 +166,7 @@
 
 <div id="page-root"></div>
 <div id="modal-root"></div>
-<div id="version-mark">灵山掌门 v0.21.1</div>
+<div id="version-mark">灵山掌门</div>
 <div id="toast-root"></div>
 <div id="fatal-overlay" class="hidden"></div>
 
@@ -179,6 +177,7 @@
 <script src="js/events.js"></script>
 <script src="js/llm.js"></script>
 <script src="js/save.js"></script>
+<script src="js/mapart.js"></script>
 <script src="js/ui.js"></script>
 <script src="js/ambient.js"></script>
 <script src="js/battle_fx.js"></script>

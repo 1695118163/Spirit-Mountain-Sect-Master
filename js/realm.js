@@ -236,13 +236,20 @@
         if (dfc.qihuo_add) q += dfc.qihuo_add; // 难度修正：困难档更容易走火
         q = Math.max(0, Math.min(q, bt.qihuo.max_chance || 0.5));
         if (Math.random() < q) {
-          isQihuo = true;
-          s.resources.xiufu *= (1 - (bt.qihuo.xp_loss_ratio || 0.5));
-          g.LS.state.addBuff({
-            id: 'qihuo_debuff',
-            mult: bt.qihuo.debuff_mult || 0.5,
-            ts_end: now + g.LS.util.randInt(bt.qihuo.debuff_duration_s_min || 120, bt.qihuo.debuff_duration_s_max || 300) * 1000
-          });
+          // 护心镜（市集所备）：真要走火时挡下这一劫——修为照扣（上面失败那半已扣），走火免落、debuff 不落，镜子碎（用后即销）。
+          // 注意必须在这里拦：debuff 一旦加进 buffs 就撤不掉了，镜子会变成白碎。
+          if (typeof s.huxinjing === 'number' && s.huxinjing > 0) {
+            s.huxinjing -= 1;
+            if (g.LS.ui && g.LS.ui.toast) g.LS.ui.toast('【护心镜】替你受了这一记真气逆冲——镜子碎裂，走火免落（余 ' + s.huxinjing + ' 面）。', 4200);
+          } else {
+            isQihuo = true;
+            s.resources.xiufu *= (1 - (bt.qihuo.xp_loss_ratio || 0.5));
+            g.LS.state.addBuff({
+              id: 'qihuo_debuff',
+              mult: bt.qihuo.debuff_mult || 0.5,
+              ts_end: now + g.LS.util.randInt(bt.qihuo.debuff_duration_s_min || 120, bt.qihuo.debuff_duration_s_max || 300) * 1000
+            });
+          }
         }
       }
       const title = isQihuo ? (texts.qihuo_title || '走火入魔') : (texts.fail_title || '突破未成');

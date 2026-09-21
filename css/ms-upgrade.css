@@ -316,7 +316,7 @@ html.night .map-canvas{background:linear-gradient(180deg, #1a2130 0%, #12171f 10
   font-size:11px;
 }
 html.night .map-spot .ms-icon{background:rgba(20,26,36,.78);border-color:var(--ms-vermilion-lit);color:var(--ms-vermilion-lit)}
-.map-spot.locked .ms-icon{border-color:var(--ms-ink-5);color:var(--ms-ink-5);box-shadow:none;background:var(--ms-ink-7)}
+.map-spot.locked .ms-icon{background:none;border-color:transparent;box-shadow:none;order-color:var(--ms-ink-5);color:var(--ms-ink-5);box-shadow:none;background:var(--ms-ink-7)}
 .map-spot span{background:rgba(243,234,216,.7);padding:1px 5px;border-radius:var(--ms-r-s)}
 html.night .map-spot span{background:rgba(14,17,23,.7);color:#d9cbb0}
 
@@ -388,18 +388,32 @@ html.night .page-view{
    ============================================================================ */
 
 /* 旧波浪 SVG 与旧印章样式退役 */
-.map-canvas .map-svg{display:none}
-.map-canvas{position:relative;border-radius:var(--ms-r-l);overflow:hidden}
+.map-canvas .map-svg{display:block;position:absolute;inset:0;width:100%;height:100%;pointer-events:none}
+.map-canvas{position:relative;border-radius:var(--ms-r-l);overflow:hidden;
+  display:flex;align-items:center;justify-content:center;}
+/* 画卷：canvas 只居中，画面按 390:720 等比放进 .map-stage。
+   2026-09-19 修 —— 之前用 preserveAspectRatio:none 直接拉伸，桌面宽屏(1580x790)
+   会把竖幅画面压成一条；现在宽屏时居中留白（纸底 + 卷轴本来就不难看）。 */
+.map-canvas .map-stage{position:relative;flex:0 0 auto;width:100%;aspect-ratio:390/720;
+  box-shadow:0 0 0 1px var(--ms-dai-3), 0 10px 30px rgba(58,50,38,.10);}
+html.night .map-canvas .map-stage{box-shadow:0 0 0 1px rgba(142,166,189,.22), 0 10px 30px rgba(0,0,0,.35)}
 
 /* 昼版舆图（透明底·墨色系） */
-.map-canvas::before,#map-mini::before{
+
+/* 大舆图底纹（2026-09-19 重绘）：山水改由内联 .map-svg 画，这里只留纸底与右上柔光 */
+.map-canvas::before{
   content:"";position:absolute;inset:0;pointer-events:none;
-  background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 390 720' preserveAspectRatio='xMidYMid slice'><defs><filter id='mb' x='-20%' y='-20%' width='140%' height='140%'><feGaussianBlur stdDeviation='1.4'/></filter><filter id='mb2' x='-20%' y='-20%' width='140%' height='140%'><feGaussianBlur stdDeviation='.7'/></filter></defs><circle cx='322' cy='84' r='24' fill='%23f2e6cc' opacity='.55'/><circle cx='322' cy='84' r='34' fill='none' stroke='%23a6987f' stroke-width='.8' opacity='.30'/><g font-family='serif' font-size='9' fill='%237a6a55' opacity='.38'><text x='52' y='86'>北</text></g><g stroke='%237a6a55' opacity='.34' fill='none'><circle cx='62' cy='118' r='26' stroke-width='1'/><circle cx='62' cy='118' r='3' fill='%237a6a55' stroke='none' opacity='.6'/><path d='M62 92 L62 144 M36 118 L88 118' stroke-width='.8'/></g><g stroke='%238a93a0' stroke-width='1.1' fill='none' opacity='.20' filter='url(%23mb)'><path d='M-10,236 L18,196 L30,208 L52,180 L64,194 L86,168 L100,186 L122,162 L136,178 L158,154 L172,172 L196,150 L212,168 L236,146 L252,164 L276,142 L292,160 L316,140 L332,156 L356,136 L372,152 L400,132 L400,240 L-10,240 Z'/></g><g stroke='%237a6a55' stroke-width='1.5' fill='none' opacity='.32' filter='url(%23mb2)'><path d='M-10,300 L24,252 L40,268 L66,236 L82,254 L110,224 L128,244 L154,216 L172,236 L198,208 L216,228 L244,202 L262,222 L288,198 L308,218 L334,196 L352,214 L378,192 L400,206 L400,312 L-10,312 Z'/><path d='M60,262 L74,246 M120,240 L136,222 M196,226 L212,206 M268,214 L286,196' stroke-width='.9' opacity='.6'/></g><g stroke='%234a4033' stroke-width='2' fill='rgba(58,50,38,.07)' opacity='.52'><path d='M-10,430 L30,356 L48,376 L78,330 L96,352 L128,306 L148,330 L176,290 L198,314 L228,276 L252,300 L282,266 L306,290 L336,262 L360,286 L400,258 L400,440 L-10,440 Z'/></g><g stroke='%234a4033' stroke-width='1' fill='none' opacity='.30'><path d='M96,352 L88,380 M128,306 L122,336 M176,290 L172,322 M228,276 L224,308 M282,266 L278,298' stroke-dasharray='7 5'/></g><path d='M120,272 Q140,262 158,268 L162,282 Q140,290 124,284 Z' fill='none' stroke='%234a4033' stroke-width='1.2' opacity='.5'/><path d='M238,428 Q262,418 284,424 L288,438 Q262,446 242,440 Z' fill='none' stroke='%234a4033' stroke-width='1.2' opacity='.5'/><g font-family='serif' font-size='10' fill='%237a6a55' opacity='.40'><text x='132' y='252'>青莲峰</text><text x='300' y='470'>沉璧泽</text><text x='46' y='150'>北斗台</text></g><g fill='none' stroke-linecap='round'><path d='M74,486 C104,514 92,548 122,566' stroke='%234f7f9e' stroke-width='2.4' opacity='.34'/><path d='M122,566 C152,584 196,576 238,598' stroke='%234f7f9e' stroke-width='5' opacity='.30'/><path d='M238,598 C262,612 292,620 330,640' stroke='%234f7f9e' stroke-width='8.5' opacity='.26'/><path d='M74,486 C104,514 92,548 122,566' stroke='%23cfe0e8' stroke-width='.9' opacity='.5'/><path d='M122,566 C152,584 196,576 238,598' stroke='%23cfe0e8' stroke-width='1.4' opacity='.45'/></g><path d='M128,296 C160,346 196,386 234,430' fill='none' stroke='%234a4033' stroke-width='2.2' opacity='.50' stroke-linecap='round' stroke-dasharray='3 9'/><path d='M234,430 C214,486 244,520 210,560' fill='none' stroke='%234a4033' stroke-width='2' opacity='.38' stroke-linecap='round' stroke-dasharray='3 10'/><g stroke='%233a3226' stroke-width='2.4' fill='none' opacity='.26' stroke-dasharray='16 9 5 14' stroke-linecap='round'><path d='M-10,600 L36,548 L60,566 L96,522 L124,542 L156,508 L186,530 L220,500 L252,524 L286,494 L318,516 L352,490 L400,514'/></g><rect x='0' y='196' width='390' height='30' fill='%23fff6e0' opacity='.05'/><rect x='0' y='452' width='390' height='24' fill='%23fff6e0' opacity='.04'/><g transform='rotate(-4 342 622)'><rect x='322' y='600' width='42' height='46' fill='rgba(192,57,43,.10)' stroke='%23c0392b' stroke-width='2'/><text x='343' y='618' font-family='serif' font-size='13' fill='%23c0392b' text-anchor='middle' opacity='.85'>舆</text><text x='343' y='636' font-family='serif' font-size='13' fill='%23c0392b' text-anchor='middle' opacity='.85'>图</text></g></svg>");
-  background-repeat:no-repeat;background-size:cover;background-position:center;
+  background-image:
+    radial-gradient(120% 62% at 78% 6%, rgba(255,252,244,.50), rgba(255,252,244,0) 62%),
+    repeating-linear-gradient(0deg, rgba(120,102,74,.016) 0 1px, rgba(0,0,0,0) 1px 6px);
+  background-repeat:no-repeat,repeat;background-size:cover,100% 100%;
 }
 /* 夜版舆图（深底·淡米墨线） */
-html.night .map-canvas::before,html.night #map-mini::before{
-  background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 390 720' preserveAspectRatio='xMidYMid slice'><defs><filter id='mb' x='-20%' y='-20%' width='140%' height='140%'><feGaussianBlur stdDeviation='1.4'/></filter><filter id='mb2' x='-20%' y='-20%' width='140%' height='140%'><feGaussianBlur stdDeviation='.7'/></filter></defs><circle cx='322' cy='84' r='24' fill='%23dfe6f2' opacity='.45'/><circle cx='322' cy='84' r='34' fill='none' stroke='%238ea6bd' stroke-width='.8' opacity='.26'/><g font-family='serif' font-size='9' fill='%23d9cbb0' opacity='.30'><text x='52' y='86'>北</text></g><g stroke='%23a8bed3' opacity='.28' fill='none'><circle cx='62' cy='118' r='26' stroke-width='1'/><circle cx='62' cy='118' r='3' fill='%23a8bed3' stroke='none' opacity='.55'/><path d='M62 92 L62 144 M36 118 L88 118' stroke-width='.8'/></g><g stroke='%23a8bed3' stroke-width='1.1' fill='none' opacity='.16' filter='url(%23mb)'><path d='M-10,236 L18,196 L30,208 L52,180 L64,194 L86,168 L100,186 L122,162 L136,178 L158,154 L172,172 L196,150 L212,168 L236,146 L252,164 L276,142 L292,160 L316,140 L332,156 L356,136 L372,152 L400,132 L400,240 L-10,240 Z'/></g><g stroke='%23d9cbb0' stroke-width='1.4' fill='none' opacity='.26' filter='url(%23mb2)'><path d='M-10,300 L24,252 L40,268 L66,236 L82,254 L110,224 L128,244 L154,216 L172,236 L198,208 L216,228 L244,202 L262,222 L288,198 L308,218 L334,196 L352,214 L378,192 L400,206 L400,312 L-10,312 Z'/><path d='M60,262 L74,246 M120,240 L136,222 M196,226 L212,206 M268,214 L286,196' stroke-width='.9' opacity='.55'/></g><g stroke='%23f6ecd8' stroke-width='1.8' fill='rgba(246,236,216,.05)' opacity='.44'><path d='M-10,430 L30,356 L48,376 L78,330 L96,352 L128,306 L148,330 L176,290 L198,314 L228,276 L252,300 L282,266 L306,290 L336,262 L360,286 L400,258 L400,440 L-10,440 Z'/></g><g stroke='%23f6ecd8' stroke-width='.9' fill='none' opacity='.24'><path d='M96,352 L88,380 M128,306 L122,336 M176,290 L172,322 M228,276 L224,308 M282,266 L278,298' stroke-dasharray='7 5'/></g><path d='M120,272 Q140,262 158,268 L162,282 Q140,290 124,284 Z' fill='none' stroke='%23f6ecd8' stroke-width='1.1' opacity='.4'/><path d='M238,428 Q262,418 284,424 L288,438 Q262,446 242,440 Z' fill='none' stroke='%23f6ecd8' stroke-width='1.1' opacity='.4'/><g font-family='serif' font-size='10' fill='%23d9cbb0' opacity='.32'><text x='132' y='252'>青莲峰</text><text x='300' y='470'>沉璧泽</text><text x='46' y='150'>北斗台</text></g><g fill='none' stroke-linecap='round'><path d='M74,486 C104,514 92,548 122,566' stroke='%238fb8cf' stroke-width='2.4' opacity='.30'/><path d='M122,566 C152,584 196,576 238,598' stroke='%238fb8cf' stroke-width='5' opacity='.26'/><path d='M238,598 C262,612 292,620 330,640' stroke='%238fb8cf' stroke-width='8.5' opacity='.22'/><path d='M122,566 C152,584 196,576 238,598' stroke='%23ffffff' stroke-width='1.2' opacity='.30'/></g><path d='M128,296 C160,346 196,386 234,430' fill='none' stroke='%23f6ecd8' stroke-width='2' opacity='.42' stroke-linecap='round' stroke-dasharray='3 9'/><path d='M234,430 C214,486 244,520 210,560' fill='none' stroke='%23f6ecd8' stroke-width='1.8' opacity='.30' stroke-linecap='round' stroke-dasharray='3 10'/><g stroke='%23e8dcc8' stroke-width='2.2' fill='none' opacity='.20' stroke-dasharray='16 9 5 14' stroke-linecap='round'><path d='M-10,600 L36,548 L60,566 L96,522 L124,542 L156,508 L186,530 L220,500 L252,524 L286,494 L318,516 L352,490 L400,514'/></g><rect x='0' y='196' width='390' height='30' fill='%23ffffff' opacity='.03'/><rect x='0' y='452' width='390' height='24' fill='%23ffffff' opacity='.025'/><g transform='rotate(-4 342 622)'><rect x='322' y='600' width='42' height='46' fill='rgba(224,101,90,.12)' stroke='%23e0655a' stroke-width='2'/><text x='343' y='618' font-family='serif' font-size='13' fill='%23e0655a' text-anchor='middle' opacity='.8'>舆</text><text x='343' y='636' font-family='serif' font-size='13' fill='%23e0655a' text-anchor='middle' opacity='.8'>图</text></g></svg>");
+
+html.night .map-canvas::before{
+  background-image:
+    radial-gradient(120% 62% at 78% 6%, rgba(178,200,226,.10), rgba(0,0,0,0) 62%),
+    repeating-linear-gradient(0deg, rgba(232,220,200,.012) 0 1px, rgba(0,0,0,0) 1px 6px);
 }
 
 /* 云气漂移带（两条极淡横带缓移，只动 transform） */
@@ -409,6 +423,7 @@ html.night .map-canvas::before,html.night #map-mini::before{
 .map-spot{background:none;border:none;gap:2px}
 .map-spot .ms-icon{
   width:30px;height:30px;border-radius:6px;
+  display:flex;align-items:center;justify-content:center;
   border:1.6px solid var(--cinnabar);
   background:linear-gradient(180deg, var(--ms-paper-lit), var(--ms-paper-deep));
   color:var(--cinnabar);font-size:13px;font-family:"Kaiti SC","KaiTi",serif;
@@ -424,6 +439,9 @@ html.night .map-spot .ms-icon{
 }
 html.night .map-spot span{background:rgba(14,17,23,.6);color:#d9cbb0}
 .map-spot i{font-size:9px;color:var(--ms-ink-5);font-style:normal}
+/* 地点具象剪影（丹炉 / 幌子 / 擂台），颜色跟随 .ms-icon 的 currentColor */
+.map-spot .ms-glyph{width:19px;height:19px;display:block}
+.map-spot.locked .ms-glyph{width:20px;height:20px;filter:blur(.5px)}
 .map-spot:active .ms-icon{transform:scale(.92)}
 /* 当前所在（样式备好，待地点与玩家位置产生真实关联后由数据驱动启用） */
 .map-spot.is-here .ms-icon{background:var(--cinnabar);color:#fff6f2;border-color:var(--ms-vermilion-press)}
@@ -434,25 +452,25 @@ html.night .map-spot span{background:rgba(14,17,23,.6);color:#d9cbb0}
 }
 @keyframes map-ping{0%{transform:scale(.6);opacity:.9}100%{transform:scale(1.9);opacity:0}}
 /* 未开化：压缩为淡墨小记，不占三行 */
-.map-spot.locked{opacity:.30;gap:0}
+.map-spot.locked{opacity:.42;gap:0;width:38px;margin-left:-19px;margin-top:-21px}  /* 待开化点只有「待开化」三字，宽度 38px，负 margin 也要跟着取半 */
 .map-spot.locked .ms-icon{
   width:16px;height:16px;border-radius:3px;font-size:9px;
   border:1px solid var(--ms-ink-5);color:var(--ms-ink-5);
   background:var(--ms-ink-7);box-shadow:none;
 }
 .map-spot.locked span{font-size:9px;letter-spacing:.1em;color:var(--ms-ink-5);background:none}
-html.night .map-spot.locked .ms-icon{border-color:rgba(232,220,200,.24);color:rgba(232,220,200,.24);background:rgba(232,220,200,.05)}
+html.night .map-spot.locked .ms-icon{background:none;border-color:transparent;order-color:rgba(232,220,200,.24);color:rgba(232,220,200,.24);background:rgba(232,220,200,.05)}
 html.night .map-spot.locked span{color:rgba(232,220,200,.24)}
 
 /* 地图与列表承接：下沿卷轴（天杆+卷身），note 文字居卷上 */
-.map-canvas::after{
+.map-canvas .map-stage::after{
   content:"";position:absolute;left:-2%;right:-2%;bottom:-6px;height:26px;
   background:linear-gradient(180deg, var(--ms-paper-deep) 0%, var(--ms-paper) 30%, var(--ms-paper-deep) 100%);
   border-top:1px solid var(--ms-dai-2);
   box-shadow:0 -4px 10px rgba(58,50,38,.08), 0 2px 6px rgba(58,50,38,.14), inset 0 1px 0 rgba(255,255,255,.5);
   border-radius:4px;
 }
-html.night .map-canvas::after{
+html.night .map-canvas .map-stage::after{
   background:linear-gradient(180deg, #1c2432 0%, #12171f 30%, #1c2432 100%);
   border-top:1px solid rgba(142,166,189,.32);
   box-shadow:0 -4px 10px rgba(0,0,0,.3), 0 2px 6px rgba(0,0,0,.4), inset 0 1px 0 rgba(255,255,255,.06);
@@ -469,15 +487,41 @@ html.night .map-canvas::after{
 .map-spot{z-index:2}
 .map-note{z-index:3}
 
+/* ── §12b-2 舆图设色（2026-09-19 宋画风）：墨为主，极淡赭石与花青为辅 ──
+   赭石（暖）点染山石、屋舍、舟帆；花青（冷）晕染远峰、流水、波纹。
+   两色都做昼夜两套：夜间提亮降饱和，免得在深底上发脏、发跳。 */
+.map-canvas,#map-mini{
+  --map-ink-solid:#4a4033;               /* 实色墨：浓淡全靠 opacity 拿捏，别用半透明墨再叠 opacity */
+  --map-zhe:rgba(168,107,60,.30);
+  --map-qing:rgba(74,107,138,.28);
+  --map-qing-lit:rgba(104,142,176,.26);
+}
+html.night .map-canvas,html.night #map-mini{
+  --map-ink-solid:#d9cbb0;
+  --map-zhe:rgba(196,148,108,.24);
+  --map-qing:rgba(128,170,205,.28);
+  --map-qing-lit:rgba(152,192,226,.24);
+}
+
 /* ── §12c 见闻区下方的舆图微缩（与见闻日志区同宽同高，底图复用 .map-canvas::before 的同一份 SVG） ── */
+
+/* 微缩舆图（2026-09-19）：底图改由 js/mapart.js 的横版画提供（内联 SVG，昼夜共用），
+   点位与大舆图同一套坐标 —— 这里只管定位与层级 */
+#map-mini .map-svg{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;z-index:0}
+#map-mini .map-stage{position:relative;flex:0 0 auto;width:100%;height:100%}
+#map-mini{display:flex;align-items:center;justify-content:center}
+
 #map-mini{
-  position:relative;flex:0 0 auto;width:100%;height:120px;margin:10px 0;
+  /* 2026-09-19 与大地图同步：容器比例跟地图页一致（竖屏 390:720、宽屏 1200:600），
+     画面用同一份 SVG，因此微缩 = 同一幅画的缩小版，标记百分比也与大地图相同 */
+  position:relative;flex:0 0 auto;width:min(100%,36%);aspect-ratio:390/720;height:auto;margin:10px auto;
   overflow:hidden;border-radius:var(--ms-r-l);
   background:linear-gradient(180deg, var(--ms-paper-lit) 0%, var(--paper) 100%);
   border:1px solid var(--ms-dai-2);
   box-shadow:var(--ms-sh-2), var(--ms-sh-in);
 }
 html.night #map-mini{background:linear-gradient(180deg, #1a2130 0%, #12171f 100%)}
+@media (min-width:900px){ #map-mini{width:100%;aspect-ratio:1200/600} }
 #map-mini span{position:absolute;z-index:2;width:10px;height:10px;margin:-5px 0 0 -5px;border-radius:3px;
   display:flex;align-items:center;justify-content:center;
   border:1.4px solid var(--cinnabar);background:rgba(255,253,247,.72);box-shadow:0 1px 2px rgba(58,50,38,.18)}
@@ -493,7 +537,11 @@ html.night #map-mini span.locked{border-color:rgba(232,220,200,.3)}
 .map-canvas{height:calc(100vh - 110px);min-height:470px}
 
 /* ── 地点印章定位（批二丢失段补回）：绝对定位按画布百分比落位 ── */
-.map-spot{position:absolute;margin-left:-60px;margin-top:-23px} /* 负 margin 居中替代 transform（:active 期间 transform 元素 hit-test 会穿透） */
+.map-spot{position:absolute;width:74px;text-align:center;margin-left:-37px;margin-top:-30px}
+/* 定位语义：left/top = 标记**正中**所在位置。
+   实测盒 74×60px，负 margin 取其半(-37/-30)即正中；
+   不用 transform 居中 —— :active 期间 transform 元素 hit-test 会穿透。
+   改 marker 文案长度时要同步这两个值；见闻区微缩共用同一套百分比，会一起对上。 */
 
 /* ── 地图页禁滚动：消除「手指微动=滚动取消点击」的误触（画布高度自适应视口） ── */
 .page-view[data-view="map"]{overflow:hidden}
@@ -710,6 +758,58 @@ html.night .bfx-stage::before{opacity:.55}
 /* ── 招式飞影：五行各一形（2026-09-13 第二版） ──
    金＝斜切剑光  木＝弯藤带叶  水＝水箭带尾迹  火＝火球跳动  土＝双岩旋转  无相＝气浪圆环 */
 .bfx-fx{position:absolute;inset:0;pointer-events:none}
+
+/* Rebuilt layered skill language: orbit -> core -> bloom -> fragments. */
+.bfx-cast-scene,.bfx-impact-scene{position:absolute;width:1px;height:1px;pointer-events:none;z-index:5;color:var(--scene-a)}
+.bfx-cast-scene .scene-core,.bfx-impact-scene .scene-core{position:absolute;width:18px;height:18px;margin:-9px;border-radius:50%;background:radial-gradient(circle,#fff,var(--scene-a) 35%,var(--scene-b) 72%,transparent 74%);box-shadow:0 0 16px 5px var(--scene-b);animation:scene-core 1s ease-out both}
+.bfx-cast-scene .scene-ring{position:absolute;width:58px;height:58px;margin:-29px;border:1px solid var(--scene-a);border-radius:50%;box-shadow:0 0 14px var(--scene-b),inset 0 0 10px var(--scene-b);animation:scene-charge .72s ease-out both}
+.scene-orbit{position:absolute;width:7px;height:7px;margin:-3.5px;border-radius:50%;background:var(--scene-a);box-shadow:0 0 9px 3px var(--scene-b);animation:scene-orbit 1.2s linear both}
+.scene-orbit.o1{transform:rotate(0) translateX(33px)} .scene-orbit.o2{transform:rotate(120deg) translateX(26px);animation-delay:.08s}
+.scene-rune{position:absolute;font:16px serif;color:var(--scene-a);text-shadow:0 0 8px var(--scene-b);animation:scene-rune .7s ease-out both}
+.scene-rune.r1{left:-42px;top:-9px}.scene-rune.r2{left:25px;top:-35px}.scene-rune.r3{left:18px;top:20px}
+.bfx-impact-scene .scene-bloom{position:absolute;width:90px;height:90px;margin:-45px;border-radius:50%;background:radial-gradient(circle,var(--scene-a),color-mix(in srgb,var(--scene-b) 45%,transparent) 24%,transparent 70%);filter:blur(2px);animation:scene-bloom .72s ease-out both}
+.bfx-impact-scene .scene-ring{position:absolute;border:2px solid var(--scene-a);border-radius:50%;animation:scene-impact-ring .8s cubic-bezier(.12,.75,.26,1) both}
+.bfx-impact-scene .ir1{width:42px;height:42px;margin:-21px;border-color:var(--scene-a)}
+.bfx-impact-scene .ir2{width:76px;height:32px;margin:-16px -38px;border-color:var(--scene-b);animation-delay:.1s}
+.scene-cross{position:absolute;width:112px;height:3px;margin:-1.5px -56px;background:linear-gradient(90deg,transparent,var(--scene-a),transparent);animation:scene-cross .52s ease-out both}.scene-cross.c2{transform:rotate(90deg);background:linear-gradient(90deg,transparent,var(--scene-b),transparent);animation-delay:.05s}
+.scene-shard{position:absolute;width:4px;height:15px;margin:-7px -2px;background:linear-gradient(var(--scene-a),transparent);transform:rotate(var(--a)) translateY(var(--d));transform-origin:2px 7px;animation:scene-shard .72s ease-out both}
+@keyframes scene-charge{0%{opacity:0;transform:scale(.35) rotate(-30deg)}35%{opacity:1}100%{opacity:0;transform:scale(1.25) rotate(100deg)}}
+@keyframes scene-core{0%{opacity:0;transform:scale(.2)}30%{opacity:1;transform:scale(1.3)}100%{opacity:0;transform:scale(.8)}}
+@keyframes scene-orbit{0%{opacity:0;transform:rotate(0) translateX(9px)}30%{opacity:1}100%{opacity:0;transform:rotate(300deg) translateX(38px)}}
+@keyframes scene-rune{0%{opacity:0;transform:scale(.5) rotate(-30deg)}35%{opacity:1}100%{opacity:0;transform:scale(1.3) rotate(45deg)}}
+@keyframes scene-bloom{0%{opacity:0;transform:scale(.2)}28%{opacity:1}100%{opacity:0;transform:scale(1.7)}}
+@keyframes scene-impact-ring{0%{opacity:0;transform:scale(.2)}24%{opacity:1}100%{opacity:0;transform:scale(1.8)}}
+@keyframes scene-cross{0%{opacity:0;transform:scaleX(.1)}30%{opacity:1}100%{opacity:0;transform:scaleX(1.2)}}
+@keyframes scene-shard{0%{opacity:1;transform:rotate(var(--a)) translateY(5px) scale(.5)}100%{opacity:0;transform:rotate(var(--a)) translateY(var(--d)) scale(1)}}
+html.lowfx .bfx-cast-scene,html.lowfx .bfx-impact-scene{filter:none}
+@media (prefers-reduced-motion:reduce){.bfx-cast-scene,.bfx-impact-scene{animation:none}.bfx-cast-scene .scene-orbit,.bfx-cast-scene .scene-rune,.bfx-cast-scene .scene-ring,.bfx-impact-scene>*{animation-duration:.2s}}
+.bfx-cast-telegraph{
+  position:absolute;left:50%;top:43%;width:58px;height:58px;margin:-29px 0 0 -29px;
+  border:1px solid var(--fx-accent);
+  border-color:color-mix(in srgb,var(--fx-accent) 80%,white 20%);
+  border-radius:50%;opacity:0;pointer-events:none;z-index:3;
+  box-shadow:0 0 10px color-mix(in srgb,var(--fx-accent) 70%,transparent),inset 0 0 12px color-mix(in srgb,var(--fx-accent) 28%,transparent);
+  animation:bfx-telegraph .62s ease-out forwards;
+}
+.bfx-cast-telegraph::before,.bfx-cast-telegraph::after{
+  content:"";position:absolute;left:50%;top:50%;width:76px;height:1px;margin:-.5px 0 0 -38px;
+  background:linear-gradient(90deg,transparent,var(--fx-accent),transparent);opacity:.72;
+}
+.bfx-cast-telegraph::after{transform:rotate(90deg)}
+.bfx-cast-telegraph.fx-fire{filter:saturate(1.35)}
+.bfx-cast-telegraph.fx-water{border-radius:44% 56% 50% 50%}
+.bfx-cast-telegraph.fx-earth{border-radius:12px;transform:rotate(45deg)}
+@keyframes bfx-telegraph{
+  0%{opacity:0;transform:scale(.42) rotate(0)}
+  28%{opacity:.95}
+  100%{opacity:0;transform:scale(1.18) rotate(90deg)}
+}
+.bfx-stage.bfx-casting::after{
+  content:"";position:absolute;inset:0;pointer-events:none;z-index:2;
+  background:radial-gradient(circle at 50% 52%,color-mix(in srgb,var(--fx-accent,#e8d7a2) 9%,transparent),transparent 58%);
+  animation:bfx-cast-wash .62s ease-out forwards;
+}
+@keyframes bfx-cast-wash{0%,100%{opacity:0}35%{opacity:1}}
 .bfx-proj{position:absolute;animation-name:bfx-fly;animation-fill-mode:forwards;animation-timing-function:cubic-bezier(.36,.03,.9,.62)}
 @keyframes bfx-fly{0%{transform:translate(0,0) scale(.5);opacity:.35}55%{opacity:1}100%{transform:translate(var(--fx-to-x),var(--fx-to-y)) scale(1);opacity:1}}
 
@@ -1190,6 +1290,13 @@ html.lowfx #ms-scene .moon,html.lowfx #ms-scene .moon-halo,html.lowfx #ms-scene 
 html.lowfx #ms-scene .ms-qi,html.lowfx #ms-scene .ms-qi2,html.lowfx #ms-scene .ms-pulse,
 html.lowfx #ms-scene .seal,html.lowfx #btn-breath{animation:none !important}
 html.lowfx #ms-scene .moon,html.lowfx #ms-scene .moon-halo{box-shadow:none !important}
+html.lowfx .bfx-cast-telegraph{box-shadow:none;filter:none;animation-duration:.35s}
+html.lowfx .bfx-stage.bfx-casting::after{display:none}
+
+@media (prefers-reduced-motion:reduce){
+  .bfx-cast-telegraph{animation:none;opacity:.65}
+  .bfx-stage.bfx-casting::after{animation:none;opacity:.2}
+}
 
 /* ── 斗法中：提示条让位（原本 fixed 居中上方，会压住斗法弹窗的舞台/手牌） ──
    宽屏挪到弹窗右侧空白，窄屏落到底部，都不再盖住牌面 */
@@ -1277,9 +1384,9 @@ html,body{overflow-x:clip}
 /* ── 洞天福地「一键升级」（2026-09-19）───────────────────────────────────────
    放在标题行右侧，「一键升级」四字与「洞天福地」四字同宽，尺寸相当。
    .on = 有可建造/可升级的建筑（实心深色，强调）；无则淡底弱化。
-   可升级态昼夜各一套实心色：白天深褐 #241f18、夜间朱红 #c0392b（米白实心会与夜间
-   界面自带的浅色文字抢视线，故取全局强调色）：语义变量在夜间会翻转成浅底，与要求相反；
-   无可升级态才用会翻转的淡变量（夜间自然更淡）。 */
+   可升级态：青底米白字（var(--cyan) / var(--paper)），与建筑行「升级」按钮 .b-buy 同族。
+   var(--cyan) 昼夜自翻转（白天 #3d5a6c / 夜间 #8fadc0），无需另写夜间规则；
+   无可升级态仍用会翻转的淡墨变量弱化，夜间不会闪出一块固定亮灰。 */
 .panel-title.with-action{display:flex;align-items:center;justify-content:space-between;gap:10px}
 .panel-title.with-action>span{letter-spacing:4px}
 .buyall{
@@ -1291,10 +1398,14 @@ html,body{overflow-x:clip}
   -webkit-tap-highlight-color:transparent;
 }
 .buyall:active{transform:scale(.96)}
-.buyall.on{background:#241f18;border-color:#c0392b;color:#fdf8ec;box-shadow:var(--ms-sh-2)}
-.buyall.on:hover{background:#c0392b;border-color:#c0392b;color:#fdf8ec}
-html.night .buyall.on{background:#c0392b;border-color:#e8b9b0;color:#fdf8ec}   /* 夜间：朱红实心 */
-html.night .buyall.on:hover{background:#a83232;border-color:#e8b9b0}
+/* 2026-09-19 改：可升级态不再是深褐/朱红实心（在宣纸上像块墨砖），改用淡墨底，
+   与右侧「选丹 / 丹房」那排小按钮同族。全用会翻转的语义变量，昼夜自动适配：
+   底 ink-6、字 ink-deep、线 dai-2；与「无可升级」态（ink-7 / ink-4 / dai-3）差一档，
+   能不能买仍然一眼看得出。 */
+/* 2026-09-19 定案：跟建筑行的「升级」按钮（.b-buy）同一族 —— 青底米白字。
+   即下方洞天福地里每个建筑右侧那个按钮的配色，一键升级只是它的「一键」版。 */
+.buyall.on{background:var(--cyan);border-color:var(--cyan);color:var(--paper);box-shadow:none}
+.buyall.on:hover{background:var(--cyan);border-color:var(--cyan);color:var(--paper);filter:brightness(.94)}
 .buyall:focus-visible{outline:2px solid var(--cinnabar);outline-offset:2px}
 
 /* ── 一键升级 · 齿轮设置菜单（2026-09-19）───────────────────────────────────
@@ -1315,8 +1426,7 @@ html.night .buyall.on:hover{background:#a83232;border-color:#e8b9b0}
   stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
 .buyall-gear:hover{color:var(--ms-ink-deep);border-color:var(--ms-dai-2)}
 .buyall-gear:active{transform:scale(.94)}
-.buyall-gear.on{background:#241f18;border-color:#c0392b;color:#fdf8ec}
-html.night .buyall-gear.on{background:#c0392b;border-color:#e8b9b0;color:#fdf8ec}
+.buyall-gear.on{background:var(--cyan);border-color:var(--cyan);color:var(--paper)}
 .buyall-menu{
   position:absolute;right:0;top:calc(100% + 3px);z-index:20;
   min-width:170px;padding:6px 10px 9px;border-radius:var(--ms-r-m);
@@ -1330,3 +1440,293 @@ html.night .buyall-gear.on{background:#c0392b;border-color:#e8b9b0;color:#fdf8ec
 .bm-opt:hover{background:var(--ms-ink-7)}
 .bm-opt input{margin:0;accent-color:var(--cinnabar);flex:0 0 auto}
 .bm-hint{font-size:10px;color:var(--ms-ink-4);margin-top:8px;letter-spacing:.03em}
+
+/* ══ 招式专属形态（批次一，2026-09-20 wkh 逐张选定）══════════════
+   自带一套 class + keyframes，不改动原有 bfx-*；
+   凡是需要角度的（斩痕/冰棱/根须）都用 --r 变量，免得被 keyframes 写死。 */
+
+/* 吐纳掌：呼吸光环（吸气） */
+.bfx-breathring{position:absolute;width:96px;height:96px;margin:-48px 0 0 -48px;border-radius:50%;
+  border:2px solid rgba(255,246,226,.5);box-shadow:inset 0 0 18px 4px rgba(255,246,226,.22);
+  pointer-events:none;animation:bfxBreathRing .8s ease-out forwards}
+@keyframes bfxBreathRing{
+  0%{transform:scale(.16);opacity:0}
+  35%{opacity:.85}
+  100%{transform:scale(1);opacity:0}}
+
+/* 吐纳掌：掌风（无声推出） */
+.bfx-palmwave{position:absolute;width:76px;height:76px;margin:-38px 0 0 -38px;border-radius:50%;
+  background:radial-gradient(circle at 44% 46%,rgba(255,250,238,.40),rgba(255,250,238,0) 62%);
+  pointer-events:none;animation:bfxPalmWave .62s ease-out forwards}
+@keyframes bfxPalmWave{
+  0%{transform:scale(.30);opacity:0}
+  25%{opacity:.9}
+  100%{transform:scale(1.18);opacity:0}}
+
+/* 通用斩痕（角度由 --r 给，供十字斩/追风剑复用） */
+.bfx-cut{position:absolute;width:3px;height:88px;margin:-44px 0 0 -1.5px;border-radius:2px;
+  background:linear-gradient(180deg,transparent,#fffff0 28%,#fff3c0 68%,transparent);
+  box-shadow:0 0 16px 5px rgba(255,244,206,.7);pointer-events:none;
+  animation:bfxCut .45s ease-out forwards}
+@keyframes bfxCut{
+  0%{opacity:0;transform:rotate(var(--r,38deg)) scaleY(.3)}
+  25%{opacity:1}
+  100%{opacity:0;transform:rotate(var(--r,38deg)) scaleY(1.15)}}
+.bfx-cut.thin{width:2px;height:112px;margin:-56px 0 0 -1px;
+  background:linear-gradient(180deg,transparent,#f4fbf7 25%,#cfe9dd 70%,transparent);
+  box-shadow:0 0 12px 4px rgba(214,232,225,.6)}
+
+/* 追风剑：风痕 */
+.bfx-gale{position:absolute;width:104px;height:26px;margin:-13px 0 0 -52px;border-radius:50%;
+  background:linear-gradient(90deg,rgba(214,232,225,0),rgba(214,232,225,.40),rgba(214,232,225,0));
+  filter:blur(3px);pointer-events:none;animation:bfxGale .5s ease-out forwards}
+@keyframes bfxGale{
+  0%{transform:translateX(-26px) scaleX(.5);opacity:0}
+  40%{opacity:.8}
+  100%{transform:translateX(22px) scaleX(1.15);opacity:0}}
+
+/* 金刚拳：拳印（命中后残留、缓缓消退） */
+.bfx-palmseal{position:absolute;width:52px;height:52px;margin:-26px 0 0 -26px;border-radius:12px;
+  border:3px solid rgba(240,215,138,.85);
+  box-shadow:inset 0 0 14px 3px rgba(240,215,138,.35),0 0 12px 2px rgba(240,215,138,.3);
+  pointer-events:none;animation:bfxPalmSeal 1s ease-out forwards}
+@keyframes bfxPalmSeal{
+  0%{transform:scale(1.55) rotate(-8deg);opacity:.95}
+  30%{transform:scale(1) rotate(0deg);opacity:.85}
+  100%{transform:scale(.86);opacity:0}}
+
+/* 重击泛光 */
+.bfx-hitring{position:absolute;width:64px;height:64px;margin:-32px 0 0 -32px;border-radius:50%;
+  border:2px solid currentColor;color:#f0d78a;pointer-events:none;
+  animation:bfxHitRing .6s cubic-bezier(.2,.7,.3,1) forwards}
+@keyframes bfxHitRing{
+  0%{transform:scale(.35);opacity:.9}
+  100%{transform:scale(1.6);opacity:0}}
+
+/* 五行术：五行光柱（五色，自天而降） */
+.bfx-fivecol{position:absolute;width:11px;height:120px;margin:-60px 0 0 -5.5px;border-radius:5px 5px 3px 3px;
+  background:linear-gradient(180deg,rgba(255,255,255,0),currentColor 30%,currentColor 88%,rgba(255,255,255,.1));
+  box-shadow:0 0 12px 2px currentColor;pointer-events:none;
+  animation:bfxFiveCol .9s cubic-bezier(.2,.8,.3,1) forwards}
+@keyframes bfxFiveCol{
+  0%{transform:scaleY(0);opacity:0}
+  35%{transform:scaleY(1);opacity:.95}
+  70%{opacity:.8}
+  100%{transform:scaleY(1);opacity:0}}
+
+/* 玄冰箭：冰花地纹（命中处结霜） */
+.bfx-frost{position:absolute;width:92px;height:56px;margin:-28px 0 0 -46px;border-radius:50%;
+  background:radial-gradient(ellipse at 50% 50%,rgba(226,244,255,.52),rgba(226,244,255,.12) 55%,rgba(226,244,255,0) 74%);
+  box-shadow:inset 0 0 16px 4px rgba(200,232,255,.35);
+  pointer-events:none;animation:bfxFrost 1.3s ease-out forwards}
+@keyframes bfxFrost{
+  0%{transform:scale(.25) rotate(-12deg);opacity:0}
+  25%{transform:scale(.95) rotate(0deg);opacity:.9}
+  60%{opacity:.72}
+  100%{transform:scale(1.06);opacity:0}}
+
+/* 玄冰箭：冰棱 */
+.bfx-icespike{position:absolute;width:0;height:0;border-left:5px solid transparent;border-right:5px solid transparent;
+  border-bottom:26px solid rgba(210,236,252,.8);transform-origin:50% 100%;pointer-events:none;
+  filter:drop-shadow(0 0 6px rgba(168,214,242,.7));animation:bfxIceSpike .7s ease-out forwards}
+@keyframes bfxIceSpike{
+  0%{transform:translateY(10px) scaleY(.2) rotate(var(--r,0deg));opacity:0}
+  35%{opacity:.95}
+  100%{transform:translateY(-6px) scaleY(1) rotate(var(--r,0deg));opacity:0}}
+
+/* 青木缠：木根（自地面升起、收紧） */
+.bfx-root{position:absolute;width:4px;height:44px;margin:0 0 0 -2px;border-radius:3px;
+  background:linear-gradient(180deg,rgba(127,185,106,0),#7fb96a 40%,#4e7a3f);
+  transform-origin:50% 100%;pointer-events:none;box-shadow:0 0 5px 1px rgba(127,185,106,.4);
+  animation:bfxRoot 1.1s cubic-bezier(.2,.8,.3,1) forwards}
+@keyframes bfxRoot{
+  0%{transform:translateY(14px) scaleY(.15) rotate(var(--r,0deg));opacity:0}
+  30%{opacity:.95}
+  70%{transform:translateY(-2px) scaleY(1) rotate(var(--r,0deg))}
+  100%{transform:translateY(-6px) scaleY(.86) rotate(var(--r,0deg));opacity:0}}
+
+/* ══ 招式专属形态（批次二，2026-09-20 wkh 逐张选定）══════════════ */
+
+/* 庚金锐：金屑迸散（泛光） */
+.bfx-goldshine{position:absolute;width:96px;height:96px;margin:-48px 0 0 -48px;border-radius:50%;
+  background:radial-gradient(circle,rgba(255,246,208,.5),rgba(255,246,208,0) 66%);
+  pointer-events:none;animation:bfxGoldShine .6s ease-out forwards}
+@keyframes bfxGoldShine{0%{transform:scale(.3);opacity:0}30%{opacity:.9}100%{transform:scale(1.3);opacity:0}}
+
+/* 厚土诀：地陷 + 碎石向内合拢 */
+.bfx-sinkhole{position:absolute;width:104px;height:44px;margin:-22px 0 0 -52px;border-radius:50%;
+  background:radial-gradient(ellipse at 50% 40%,rgba(30,22,14,.62),rgba(30,22,14,.28) 60%,rgba(30,22,14,0) 78%);
+  box-shadow:inset 0 6px 12px rgba(0,0,0,.5);pointer-events:none;
+  animation:bfxSinkhole 1s ease-out forwards}
+@keyframes bfxSinkhole{
+  0%{transform:scale(.4);opacity:0}
+  30%{transform:scale(1);opacity:.95}
+  80%{transform:scale(1.06);opacity:.7}
+  100%{transform:scale(1.1);opacity:0}}
+
+.bfx-rubble{position:absolute;width:9px;height:8px;margin:-4px 0 0 -4px;border-radius:2px;
+  background:linear-gradient(150deg,#d8b98a,#7d6140);pointer-events:none;
+  animation:bfxRubble .9s cubic-bezier(.3,.8,.3,1) forwards}
+@keyframes bfxRubble{
+  0%{transform:translateX(0) translateY(4px) rotate(0deg);opacity:0}
+  35%{opacity:.95}
+  100%{transform:translateX(var(--dx,0px)) translateY(-8px) rotate(38deg);opacity:0}}
+
+/* 周天运转：经脉光点 + 连线 */
+.bfx-acupoint{position:absolute;width:7px;height:7px;margin:-3.5px 0 0 -3.5px;border-radius:50%;
+  background:#fff6e2;box-shadow:0 0 8px 3px rgba(255,246,226,.75);pointer-events:none;
+  animation:bfxAcupoint 1.1s ease-out forwards}
+@keyframes bfxAcupoint{
+  0%{transform:scale(.4);opacity:0}
+  30%{transform:scale(1.25);opacity:1}
+  60%{transform:scale(1);opacity:.9}
+  100%{transform:scale(.9);opacity:0}}
+
+.bfx-meridian{position:absolute;width:64px;height:64px;margin:-32px 0 0 -32px;border-radius:50%;
+  border:1.5px solid rgba(255,246,226,.55);box-shadow:0 0 12px 2px rgba(255,246,226,.3);
+  pointer-events:none;animation:bfxMeridian .85s ease-out forwards}
+@keyframes bfxMeridian{
+  0%{transform:scale(.6);opacity:0}
+  35%{opacity:.85}
+  100%{transform:scale(1.15);opacity:0}}
+
+/* 春回诀：枯纹 → 新芽 */
+.bfx-wither{position:absolute;width:70px;height:70px;margin:-35px 0 0 -35px;border-radius:50%;
+  background:repeating-conic-gradient(from 0deg,rgba(90,74,54,.55) 0 3deg,rgba(0,0,0,0) 3deg 30deg);
+  filter:blur(1px);pointer-events:none;animation:bfxWither .75s ease-out forwards}
+@keyframes bfxWither{
+  0%{transform:scale(1.2);opacity:0}
+  25%{transform:scale(1);opacity:.8}
+  100%{transform:scale(.86);opacity:0}}
+
+.bfx-sprout{position:absolute;width:8px;height:16px;margin:0 0 0 -4px;
+  border-radius:50% 50% 40% 40%/60% 60% 40% 40%;
+  background:linear-gradient(180deg,#a8d693,#4e7a3f);transform-origin:50% 100%;pointer-events:none;
+  box-shadow:0 0 6px 2px rgba(140,196,122,.45);
+  animation:bfxSprout 1s cubic-bezier(.25,.85,.3,1) forwards}
+@keyframes bfxSprout{
+  0%{transform:translateY(8px) scaleY(.2) rotate(var(--rot,0deg));opacity:0}
+  35%{opacity:1}
+  70%{transform:translateY(0) scaleY(1.05) rotate(var(--rot,0deg))}
+  100%{transform:translateY(-4px) scaleY(1) rotate(var(--rot,0deg));opacity:0}}
+
+/* 本命飞剑：剑光绕弧 + 贯入 */
+.bfx-swordarc{position:absolute;width:44px;height:44px;pointer-events:none;
+  animation:bfxSwordArc .72s cubic-bezier(.35,.05,.25,1) forwards}
+.bfx-swordarc::before{content:'';position:absolute;left:20px;top:0;width:3px;height:34px;border-radius:2px;
+  background:linear-gradient(180deg,rgba(255,255,255,0),#f6f2ff 40%,#cfe0ff);
+  box-shadow:0 0 10px 3px rgba(190,205,255,.8);transform:rotate(38deg)}
+@keyframes bfxSwordArc{
+  0%{transform:translate(-44px,-16px) rotate(-40deg);opacity:0}
+  25%{opacity:1}
+  70%{transform:translate(18px,26px) rotate(28deg);opacity:1}
+  100%{transform:translate(30px,34px) rotate(38deg);opacity:0}}
+
+.bfx-swordpierce{position:absolute;width:4px;height:66px;margin:-33px 0 0 -2px;border-radius:2px;
+  background:linear-gradient(180deg,rgba(255,255,255,0),#ffffff 35%,#d8e6ff);
+  box-shadow:0 0 16px 5px rgba(200,216,255,.85);pointer-events:none;
+  animation:bfxSwordPierce .5s ease-out forwards}
+@keyframes bfxSwordPierce{
+  0%{transform:scaleY(.3) rotate(24deg);opacity:0}
+  30%{transform:scaleY(1.1) rotate(24deg);opacity:1}
+  100%{transform:scaleY(1) rotate(24deg);opacity:0}}
+
+/* 三昧真火：三簇螺旋 + 合一成柱 */
+.bfx-flamespiral{position:absolute;width:22px;height:44px;margin:-22px 0 0 -11px;
+  border-radius:50% 50% 30% 30%/60% 60% 40% 40%;
+  background:linear-gradient(180deg,rgba(255,214,140,.95),rgba(255,120,60,.55),rgba(255,90,40,0));
+  filter:blur(.6px);pointer-events:none;
+  animation:bfxFlameSpiral .85s cubic-bezier(.3,.7,.3,1) forwards}
+@keyframes bfxFlameSpiral{
+  0%{transform:translate(0,26px) scaleY(.35);opacity:0}
+  35%{opacity:.95}
+  70%{transform:translate(var(--sx,0px),-10px) scaleY(1.1)}
+  100%{transform:translate(0,-26px) scaleY(.7);opacity:0}}
+
+.bfx-flamepillar2{position:absolute;width:26px;height:96px;margin:-48px 0 0 -13px;
+  border-radius:50% 50% 40% 40%/40% 40% 20% 20%;
+  background:linear-gradient(180deg,rgba(255,236,180,.95),rgba(255,150,70,.7) 45%,rgba(255,90,40,0));
+  filter:blur(1px);pointer-events:none;box-shadow:0 0 26px 8px rgba(255,140,60,.35);
+  animation:bfxFlamePillar .8s ease-out forwards}
+@keyframes bfxFlamePillar{
+  0%{transform:scaleY(.2) scaleX(.6);opacity:0}
+  30%{transform:scaleY(1) scaleX(1);opacity:.95}
+  100%{transform:scaleY(1.1) scaleX(.8);opacity:0}}
+
+/* 青藤缚：古藤成笼 */
+.bfx-vinecage{position:absolute;width:6px;height:78px;margin:0 0 0 -3px;border-radius:4px;
+  background:linear-gradient(180deg,rgba(110,168,95,0),#6ea85f 30%,#3f6634);
+  transform-origin:50% 100%;pointer-events:none;box-shadow:0 0 7px 2px rgba(110,168,95,.4);
+  animation:bfxVineCage .95s cubic-bezier(.25,.8,.3,1) forwards}
+@keyframes bfxVineCage{
+  0%{transform:translateY(22px) scaleY(.15) rotate(var(--rot,0deg));opacity:0}
+  30%{opacity:.95}
+  75%{transform:translateY(-4px) scaleY(1.02) rotate(var(--rot,0deg))}
+  100%{transform:translateY(-6px) scaleY(1) rotate(var(--rot,0deg));opacity:.85}}
+
+.bfx-vinecage-lid{position:absolute;width:74px;height:20px;margin:-10px 0 0 -37px;border-radius:50%;
+  border-top:5px solid #6ea85f;border-left:3px solid rgba(110,168,95,.7);border-right:3px solid rgba(110,168,95,.7);
+  box-shadow:0 -3px 10px 1px rgba(110,168,95,.35);pointer-events:none;
+  animation:bfxVineLid .8s ease-out forwards}
+@keyframes bfxVineLid{
+  0%{transform:translateY(-16px) scaleX(.5);opacity:0}
+  40%{transform:translateY(0) scaleX(1);opacity:.95}
+  100%{transform:translateY(0) scaleX(1);opacity:0}}
+
+/* 玉髓丹方：丹鼎虚影 + 药光滴落 */
+.bfx-cauldron{position:absolute;width:56px;height:38px;margin:-19px 0 0 -28px;
+  border-radius:6px 6px 22px 22px/6px 6px 26px 26px;
+  border:2px solid rgba(232,220,200,.8);border-top-width:5px;background:rgba(232,220,200,.12);
+  box-shadow:0 0 18px 4px rgba(232,220,200,.35),inset 0 -6px 12px rgba(232,220,200,.25);
+  pointer-events:none;animation:bfxCauldron 1.4s ease-out forwards}
+.bfx-cauldron::after{content:'';position:absolute;left:-22px;right:-22px;top:-3px;height:3px;border-radius:2px;
+  background:rgba(232,220,200,.55)}
+@keyframes bfxCauldron{
+  0%{transform:scale(.7) rotate(-14deg);opacity:0}
+  22%{transform:scale(1) rotate(0deg);opacity:.95}
+  78%{transform:scale(1) rotate(0deg);opacity:.9}
+  100%{transform:scale(1.05) rotate(6deg);opacity:0}}
+
+.bfx-pilldrop{position:absolute;width:5px;height:5px;margin:-2.5px 0 0 -2.5px;border-radius:50%;
+  background:#f4ecdc;box-shadow:0 0 8px 3px rgba(244,236,220,.7);pointer-events:none;
+  animation:bfxPillDrop .9s ease-in forwards}
+@keyframes bfxPillDrop{
+  0%{transform:translateY(0);opacity:0}
+  25%{opacity:.95}
+  100%{transform:translateY(40px);opacity:0}}
+/* ── 留言板（设置页，2026-09-21）───────────────────────────────────────────────
+   设置面板底部一块：输入框 + 递交按钮 + 一行标语。底色/线色全用会翻转的语义变量，
+   昼夜自动适配；与上方「导入存档」那排表单同一族（dai 线、paper 底、ink 字）。 */
+.fb-box{margin-top:14px;padding-top:10px;border-top:1px dashed var(--ms-dai-3)}
+.fb-title{font-size:14px;letter-spacing:4px;color:var(--cinnabar);margin-bottom:4px}
+.fb-textarea{height:84px;font-family:inherit;font-size:13px;line-height:1.8;resize:vertical}
+.fb-slogan{text-align:center;font-size:13px;letter-spacing:1px;color:var(--cinnabar);margin-top:4px}
+#fb-send:disabled{opacity:.5;cursor:default}
+
+/* ── 奇遇「几件选一件」（2026-09-21）────────────────────────────────────────────
+   候选卡沿用 .ev-option 的底/线/悬停，只改成左对齐两段式：标题 + 一行概要。
+   概要字色用 ink-4（会翻转的淡墨），夜间不会糊成一片。 */
+.ev-pick-row{display:flex;align-items:baseline;flex-wrap:wrap;gap:4px 8px;text-align:left;padding:12px 14px}
+.ev-pick-row b{font-size:16px;letter-spacing:1px}
+.ev-pick-desc{font-size:12.5px;color:var(--ms-ink-4);line-height:1.7}
+
+/* 市集新品行里的「已淬 / 现存」徽标 */
+.rebirth-item .ev-badge{margin-left:6px}
+
+/* ── 手机端同步（2026-09-21）─────────────────────────────────────────────────
+   ① 留言板：小屏收一档高度，按钮撑满一行好点；
+   ② 候选卡：字号各降一档，标题与概要分行，长文案不挤成一条；
+   ③ 手牌：改成自配卡组后张数固定（最多 8 张），窄屏两行放得下就让它自然撑开，
+      放不下才在区内滚动——不再固定 172px 把牌裁掉。 */
+@media (max-width:480px){
+  /* 设置页里的主按钮不许换行（「保存」曾被压成竖排两字） */
+  .set-row .btn-primary{white-space:nowrap;flex:0 0 auto}
+  #set-key{min-width:0}
+  .fb-textarea{height:74px;font-size:12.5px}
+  .fb-box .set-row{justify-content:stretch}
+  .fb-box #fb-send{flex:1;padding:8px 0}
+  .ev-pick-row{padding:10px 12px}
+  .ev-pick-row b{font-size:14.5px}
+  .ev-pick-desc{font-size:11.5px;flex-basis:100%}
+  .battle-hands{height:auto;max-height:190px}
+}

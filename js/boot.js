@@ -50,7 +50,17 @@
             const r9 = await fetch('./data/offline_events.json');
             if (r9.ok) balance.offline_events = (await r9.json());
           } catch (e) {}
-          return { balance, events, chains };
+          let changelog = null;
+          try {
+            const r10 = await fetch('./data/changelog.json', { cache: 'no-store' });
+            if (r10.ok) changelog = await r10.json();
+          } catch (e) {}
+          let version = '';
+          try {
+            const r11 = await fetch('./data/version.json', { cache: 'no-store' });
+            if (r11.ok) version = (await r11.json()).version || '';
+          } catch (e) {}
+          return { balance, events, chains, changelog, version };
         }
       }
     } catch (e) { /* file:// 下此处会留一条 CORS 控制台噪音，属预期 */ }
@@ -61,7 +71,7 @@
         r.balance.pills = r.pills || {};
         r.balance.help = r.help || {}; r.balance.cultivation = r.cultivation || {};
         r.balance.offline_events = r.offline_events || {};
-        return { balance: r.balance, events: r.events, chains: r.chains || [] };
+        return { balance: r.balance, events: r.events, chains: r.chains || [], changelog: r.changelog || null, version: r.game_version || '' };
       }
     } catch (e) {}
     // ③ 双双失败：整屏遮罩报错
@@ -75,10 +85,19 @@
     g.LS.BAL = data.balance;
     g.LS.EVT = data.events;
     g.LS.CHAINS = data.chains || [];
+    g.LS.CHANGELOG = data.changelog || {
+      current_version: data.version || data.balance.version || '',
+      entries: data.balance.update_notes ? [Object.assign({ id: data.balance.update_notes.version }, data.balance.update_notes)] : []
+    };
+    if (data.version) g.LS.CHANGELOG.current_version = data.version;
+    if (g.LS.CHANGELOG.current_version) g.LS.BAL.version = g.LS.CHANGELOG.current_version;
+    const versionMark = document.getElementById('version-mark');
+    if (versionMark) versionMark.textContent = '灵山掌门 ' + (g.LS.CHANGELOG.current_version || '');
 
     // 存档：load → migrate（失败已备份并开新档）
     const r = g.LS.save.load();
     g.LS.S = r.ok ? r.state : g.LS.state.NEW_STATE();
+    if (g.LS.ui && g.LS.ui.migrateLegacyUpdateRead) g.LS.ui.migrateLegacyUpdateRead(g.LS.S.seen_update);
 
     // UI 引用与首屏
     g.LS.ui.initRefs();
@@ -96,6 +115,7 @@
     g.LS.llm.checkHealth();
     setInterval(() => g.LS.llm.checkHealth(), 60000);
     g.LS.dev.initDev();
+    if (g.LS.ui.fbFlush) g.LS.ui.fbFlush(); // 留言板：有本机暂存的留言就趁机补交
     if (g.LS.ui.applyLowFx) g.LS.ui.applyLowFx(); // 低性能模式（存档设置）：先于环境层初始化，省掉雾带烘焙
     if (g.LS.ambient) g.LS.ambient.init(); // 环境动画层（云雾/墨鹤/天气）
     if (g.LS.ui.applyLowFx) g.LS.ui.applyLowFx();
@@ -112,22 +132,8 @@
     if (!g.LS.S.settings.difficulty && g.LS.S.stats.play_seconds < 5) {
       setTimeout(() => g.LS.ui.showDifficultyPick(), 800);
     }
-    // 版本更新公告：只给老玩家看。
-    //   新档（没存档 / 刚进游戏没玩过）→ 直接把当前版本记成已读，不拿公告糊新手；
-    //   老玩家版本变了且没读过 → 弹一次；点「知道了 / ✕」写 seen_update，之后不再弹；
-    //   下次更新改 balance.update_notes.version 才会再弹。
-    try {
-      const notes = g.LS.BAL.update_notes;
-      if (notes && notes.version) {
-        const played = (g.LS.S.stats && g.LS.S.stats.play_seconds) || 0;
-        if (!r.ok || played < 60) {
-          g.LS.S.seen_update = notes.version;
-          if (g.LS.save && g.LS.save.save) g.LS.save.save();
-        } else if (g.LS.S.seen_update !== notes.version && g.LS.ui.showUpdateNotes) {
-          setTimeout(() => g.LS.ui.showUpdateNotes(notes), 2600); // 让离线卷轴/首引先走
-        }
-      }
-    } catch (e) {}
+    // 最新重要公告进入统一延迟队列。若引导、离线事件或战斗占用弹窗，待它们结束后再展示。
+    if (g.LS.ui.scheduleUpdateNotes) g.LS.ui.scheduleUpdateNotes(g.LS.CHANGELOG, 2600);
   }
 
   g.LS.boot = { loadData, init };

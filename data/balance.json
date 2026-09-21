@@ -1,5 +1,5 @@
 {
-  "version": "v0.20.2",
+  "version": "v0.22.2",
   "value_ceiling": 9000000000000000,
   "resources": [
     {
@@ -580,6 +580,7 @@
     "interval_jitter_s": 30,
     "interval_min_s": 120,
     "modal_timeout_s": 30,
+    "pick_count": 5,
     "rarity": {
       "keys": [
         "凡",

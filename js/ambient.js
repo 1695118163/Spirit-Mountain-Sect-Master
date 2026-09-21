@@ -15,7 +15,39 @@
   let rafId = 0, lastFrame = 0;
   let running = false;
   let crane = null;                        // A2 墨鹤 {x,y,dir,frame,t0}
-  let cranePaths = null;                   // 6 帧翅姿 Path2D
+  /* 6 帧翅姿 Path2D —— 侧视线描墨鹤：长颈前伸带喙、双翼上下扇动、尾羽后掠。
+     2026-09-20 补全：原先这里只声明为 null、全文再没赋过值，
+     于是 frame() 每帧对 null 取下标抛 TypeError，并连带跳过其后的天气粒子。 */
+  const cranePaths = (function () {
+    const out = [];
+    for (let i = 0; i < 6; i++) {
+      const ang = Math.sin((i / 6) * Math.PI * 2);
+      const wy = -7 + ang * 10;            // 翅尖高度：-17（上举）～ +3（下压到身下），否则下压帧与身体重叠看不出扇动
+      const p = new Path2D();
+      // 颈（短而带弧，前伸）与头喙
+      p.moveTo(3.6, -0.8);
+      p.bezierCurveTo(6.6, -2.4, 9.4, -4.4, 11.8, -4.6);
+      p.lineTo(14.2, -4.2);
+      // 背与腹（小而扁的身）
+      p.moveTo(-3, -1.4);
+      p.quadraticCurveTo(0.5, -2.4, 3.8, -1.6);
+      p.moveTo(-3, 1);
+      p.quadraticCurveTo(0.5, 1.6, 3.6, 0.6);
+      // 双翼：自背部中段向后扇（主翅长、副翅短且略前）
+      p.moveTo(0.6, -1.8);
+      p.quadraticCurveTo(-3.2, wy * 0.5, -6.8, wy);
+      p.moveTo(2.4, -1.4);
+      p.quadraticCurveTo(0.8, wy * 0.6, -1.2, wy * 0.72);
+      // 尾羽（一笔后掠）
+      p.moveTo(-3, 0.4);
+      p.quadraticCurveTo(-5.6, 1.0, -7.6, 1.5);
+      // 腿（一笔后伸，飞鹤的辨识特征）
+      p.moveTo(-2.2, 0.9);
+      p.lineTo(-6.4, 2.7);
+      out.push(p);
+    }
+    return out;
+  })();
   let weather = { kind: 'clear', parts: [], until: 0 }; // A3 天气粒子
   let fireflies = [];                      // 加料：夜间萤火（灵光微点）
   let meteor = null;                       // 加料：流星 {x,y,vx,vy,t0}
@@ -173,10 +205,18 @@
         ctx.save();
         ctx.translate(x, y);
         if (crane.dir < 0) ctx.scale(-1, 1);
-        ctx.strokeStyle = 'rgba(43,43,43,.55)';
-        ctx.lineWidth = 2;
+        // 墨色随昼夜翻转：夜间深墨看不见，改用浅墨。
+        // 注意 night 这个 class 挂在 <html> 上（见 js/ui.js:628 的判定方式），body 上并没有，
+        // 只查 body 会永远得 false —— 两处都查才稳。
+        const nightNow = document.documentElement.classList.contains('night') ||
+                         document.body.classList.contains('night');
+        // 注意：墨鹤画在 z-index:0 的背景 canvas 上，其上是 #ms-scene 场景层（云雾/山影），
+        // 所以实际可见度会被压一层 —— 这里给足亮度，落到眼睛里才是「淡墨」而不是「看不见」
+        ctx.strokeStyle = nightNow ? 'rgba(255,251,240,.95)' : 'rgba(43,43,43,.55)';
+        ctx.lineWidth = nightNow ? 2.9 : 2.4;
         ctx.lineCap = 'round';
-        ctx.stroke(cranePaths[fi]);
+        ctx.scale(1.45, 1.45);      // 原路径约 32px，放大后约 46px
+        if (cranePaths) ctx.stroke(cranePaths[fi]);
         ctx.restore();
       }
     }

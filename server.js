@@ -10,9 +10,26 @@ const http = require('http');
 const fs = require('fs');
 const path = require('path');
 const url = require('url');
+const childProcess = require('child_process');
 
 const ROOT = __dirname;
 const VERSION = '1.0.0';
+
+function gameVersion() {
+  // 开发分支不自立版本号：只认 main 上可达的最高语义版本 Tag。
+  for (const ref of ['main', 'refs/remotes/origin/main']) {
+    try {
+      const tags = childProcess.execFileSync('git', ['tag', '--merged', ref, '--sort=-v:refname', '--list', 'v[0-9]*'], {
+        cwd: ROOT, encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'], timeout: 1500
+      }).trim();
+      if (tags) return tags.split(/\r?\n/)[0];
+    } catch (e) {}
+  }
+  // 正式发布包不含 .git，由工作流预先写入 version.json。
+  try {
+    return JSON.parse(fs.readFileSync(path.join(ROOT, 'data', 'version.json'), 'utf8')).version || '';
+  } catch (e) { return ''; }
+}
 
 /* ── 配置加载 ── */
 const CONFIG_PATH = path.join(ROOT, 'config.json');
@@ -279,6 +296,7 @@ async function handle(req, res) {
       let help = {};
       let cultivation = {};
       let offlineEvents = {};
+      let changelog = null;
       try {
         chains = JSON.parse(fs.readFileSync(path.join(ROOT, 'data', 'chains.json'), 'utf8')).chains || [];
       } catch (e) { /* chains.json 可选 */ }
@@ -294,7 +312,10 @@ async function handle(req, res) {
       try {
         offlineEvents = JSON.parse(fs.readFileSync(path.join(ROOT, 'data', 'offline_events.json'), 'utf8'));
       } catch (e) { /* offline_events.json 可选 */ }
-      return sendJSON(res, 200, { ok: true, balance, events, chains, pills, help, cultivation, offline_events: offlineEvents });
+      try {
+        changelog = JSON.parse(fs.readFileSync(path.join(ROOT, 'data', 'changelog.json'), 'utf8'));
+      } catch (e) { /* changelog.json 可选，旧版客户端仍可从 balance.update_notes 回退 */ }
+      return sendJSON(res, 200, { ok: true, balance, events, chains, pills, help, cultivation, offline_events: offlineEvents, changelog, game_version: gameVersion() });
     } catch (e) {
       return sendJSON(res, 500, { ok: false, message: '读取数据文件失败：' + e.message });
     }
@@ -336,6 +357,28 @@ async function handle(req, res) {
     } catch (e) {
       recordFailure();
       return sendJSON(res, 502, { ok: false, code: e.code || 'UPSTREAM_ERROR', message: String(e.message || e).slice(0, 300) });
+    }
+  }
+
+  /* 留言板（2026-09-21）：玩家建议落盘 data/feedback.jsonl，一行一条，方便直接翻看 */
+  if (req.method === 'POST' && pathname === '/api/feedback') {
+    try {
+      const body = JSON.parse(await readBody(req));
+      const text = typeof body.text === 'string' ? body.text.trim() : '';
+      if (!text) return sendJSON(res, 400, { ok: false, message: '留言不能为空' });
+      if ([...text].length > 500) return sendJSON(res, 400, { ok: false, message: '留言过长（500 字以内）' });
+      const file = path.join(ROOT, 'data', 'feedback.jsonl');
+      fs.appendFileSync(file, JSON.stringify({
+        t: Date.now(),
+        text: text,
+        realm: body.realm != null ? body.realm : null,
+        version: body.version || '',
+        ua: String(req.headers['user-agent'] || '').slice(0, 120)
+      }) + '\n', 'utf8');
+      console.log('[灵山掌门代理] 收到一条留言：' + text.slice(0, 40));
+      return sendJSON(res, 200, { ok: true });
+    } catch (e) {
+      return sendJSON(res, 400, { ok: false, message: '留言提交失败：' + e.message });
     }
   }
 

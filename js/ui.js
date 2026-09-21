@@ -23,6 +23,9 @@
   };
   const lastStr = {};
   let evTimer = null;
+  const UPDATE_READ_KEY = 'lingshan_update_read_v1';
+  let pendingUpdateNotes = null;
+  let updateNotesTimer = null;
   const newBuildingUntil = {};
   let buildingSig = '';
   let audioCtx = null;
@@ -81,21 +84,48 @@
         gn.gain.exponentialRampToValueAtTime(.001, t + .4);
         o.start(t); o.stop(t + .45);
       } else if (type === 'thunder') {
-        // 天劫雷声：噪声爆裂 + 低频轰鸣
-        const nb = ctx.createBufferSource();
-        const buf = ctx.createBuffer(1, Math.floor(ctx.sampleRate * .5), ctx.sampleRate);
+        // 天劫雷声：噪声爆裂 + 低频轰鸣（原用未定义的 ctx，整段被 try 吞掉 → 一直没声；改 audioCtx）
+        const nctx = audioCtx;
+        const nb = nctx.createBufferSource();
+        const buf = nctx.createBuffer(1, Math.floor(nctx.sampleRate * .5), nctx.sampleRate);
         const dd = buf.getChannelData(0);
         for (let i = 0; i < dd.length; i++) dd[i] = (Math.random() * 2 - 1) * Math.exp(-i / (dd.length / 4));
         nb.buffer = buf;
-        const nf = ctx.createBiquadFilter(); nf.type = 'lowpass'; nf.frequency.value = 900;
-        const ng = ctx.createGain(); ng.gain.setValueAtTime(.4, t); ng.gain.exponentialRampToValueAtTime(.001, t + .5);
-        nb.connect(nf); nf.connect(ng); ng.connect(ctx.destination);
+        const nf = nctx.createBiquadFilter(); nf.type = 'lowpass'; nf.frequency.value = 900;
+        const ng = nctx.createGain(); ng.gain.setValueAtTime(.4, t); ng.gain.exponentialRampToValueAtTime(.001, t + .5);
+        nb.connect(nf); nf.connect(ng); ng.connect(nctx.destination);
         nb.start(t);
-        const o2 = ctx.createOscillator(); o2.type = 'sine';
+        const o2 = nctx.createOscillator(); o2.type = 'sine';
         o2.frequency.setValueAtTime(90, t); o2.frequency.exponentialRampToValueAtTime(38, t + .5);
-        const g2 = ctx.createGain(); g2.gain.setValueAtTime(.28, t); g2.gain.exponentialRampToValueAtTime(.001, t + .55);
-        o2.connect(g2); g2.connect(ctx.destination);
+        const g2 = nctx.createGain(); g2.gain.setValueAtTime(.28, t); g2.gain.exponentialRampToValueAtTime(.001, t + .55);
+        o2.connect(g2); g2.connect(nctx.destination);
         o2.start(t); o2.stop(t + .6);
+      } else if (type === 'breakfail') {
+        // 冲关失败：一声闷锣——低沉下坠，尾音散在风里（与成功的清钟+鼓点区分开）
+        o.type = 'triangle';
+        o.frequency.setValueAtTime(200, t);
+        o.frequency.exponentialRampToValueAtTime(74, t + 1.1);
+        gn.gain.setValueAtTime(.24, t);
+        gn.gain.exponentialRampToValueAtTime(.001, t + 1.25);
+        o.start(t); o.stop(t + 1.3);
+      } else if (type === 'shihuo') {
+        // 走火入魔：闷锣之上再叠一层气逆的沙哑嘶声，比普通失败更凶
+        o.type = 'triangle';
+        o.frequency.setValueAtTime(150, t);
+        o.frequency.exponentialRampToValueAtTime(52, t + 1.3);
+        gn.gain.setValueAtTime(.26, t);
+        gn.gain.exponentialRampToValueAtTime(.001, t + 1.45);
+        o.start(t); o.stop(t + 1.5);
+        const sctx = audioCtx;
+        const sb = sctx.createBufferSource();
+        const sbuf = sctx.createBuffer(1, Math.floor(sctx.sampleRate * .7), sctx.sampleRate);
+        const sd = sbuf.getChannelData(0);
+        for (let i = 0; i < sd.length; i++) sd[i] = (Math.random() * 2 - 1) * Math.exp(-i / (sd.length / 5)) * .6;
+        sb.buffer = sbuf;
+        const sf = sctx.createBiquadFilter(); sf.type = 'bandpass'; sf.frequency.value = 420; sf.Q.value = .8;
+        const sg = sctx.createGain(); sg.gain.setValueAtTime(.16, t); sg.gain.exponentialRampToValueAtTime(.001, t + .7);
+        sb.connect(sf); sf.connect(sg); sg.connect(sctx.destination);
+        sb.start(t);
       } else if (type === 'guqin') {
         o.frequency.setValueAtTime(440, t);
         o.frequency.linearRampToValueAtTime(660, t + .25);
@@ -180,13 +210,14 @@
     });
     // 面板按钮统一事件委托（document 级）：元素被任何方式重建/替换都不会丢绑定
     document.addEventListener('click', (e) => {
-      const t = e.target.closest('#btn-market, #btn-friends, #btn-help, #btn-codex, #btn-pillhouse, #btn-settings, #btn-codexpage, #btn-trial, #btn-xinmo, #btn-map, #btn-quest, #btn-disciple, .map-spot');
+      const t = e.target.closest('#btn-market, #btn-friends, #btn-deck, #btn-help, #btn-codex, #btn-pillhouse, #btn-settings, #btn-codexpage, #btn-trial, #btn-xinmo, #btn-map, #btn-quest, #btn-disciple, .map-spot');
       if (!t) return;
       if (t.id === 'btn-market') showMarket();
       else if (t.id === 'btn-map') g.LS.page.go('map');
       else if (t.id === 'btn-quest') showQuest();
       else if (t.id === 'btn-disciple') showDisciple();
       else if (t.id === 'btn-friends') showFriends();
+      else if (t.id === 'btn-deck') showDeckEditor();
       else if (t.id === 'btn-help') showHelpPanel();
       else if (t.id === 'btn-codex') showCodex();
       else if (t.id === 'btn-pillhouse') showPillHouse();
@@ -538,12 +569,11 @@
       if (ok) anyAffordable = true;
       const txt = (lv === 0 ? '建造' : '升级') + ' · ' + eco.costText(cost);
       if (lastStr.bbtn[b.id] !== txt) { btn.textContent = txt; lastStr.bbtn[b.id] = txt; }
-      // B3 首次买得起：登记 + toast 一次建议（tooltip 从此刻起追加建议行）
+      // 首次买得起：只登记 first_afford_seen（tooltip 从此刻起会追加「建议」一行，玩家自己查）
+      // 2026-09-19 去掉这里的 toast —— 破境解锁已有交互向导，不再用消息条把同一件事讲一遍
       if (ok && !(s.first_afford_seen || {})[b.id]) {
         if (!s.first_afford_seen) s.first_afford_seen = {};
         s.first_afford_seen[b.id] = true;
-        const sug = (bal.help && bal.help.building_suggest) || {};
-        if (sug[b.id] && lv === 0) toast('【' + b.name + '】' + sug[b.id], 4600);
       }
       // 建筑主动技能：冷却倒计时与可用态
       const abBtn = card.querySelector('.b-ability');
@@ -772,6 +802,31 @@
   }
   function removeModals() {
     refs.modalRoot.innerHTML = '';
+    // 公告等待期间不轮询；当前弹窗释放后，仅尝试一次。
+    if (pendingUpdateNotes) setTimeout(tryShowScheduledUpdate, 60);
+  }
+
+  /* ── 奇遇候选（2026-09-21 玩家口径「5 选 1」）：一次摊开几桩事，玩家自己挑一件经历 ──
+     只在普通触发路径用；因果回收/故人上门/剧情链这类「该来的」不走选单。 */
+  function showEventPicker(list, onPick, opts) {
+    sfx('guqin');
+    removeModals();
+    const o = opts || {};
+    const { card } = makeModal(() => onPick(list[0] && list[0].key));   // 点罩子＝直接挑第一件
+    card.classList.add('ev-pick');
+    card.innerHTML =
+      '<div class="modal-title">' + escapeHtml(o.title || '山 中 数 事') + '</div>' +
+      '<div class="modal-desc">' + escapeHtml(o.desc || '今日山中同时起了这么几桩事——你想先看哪一件？') + '</div>' +
+      list.map(it =>
+        '<button class="ev-option tactic-row ev-pick-row" data-pick-key="' + escapeHtml(it.key) + '">' +
+          '<b>' + escapeHtml(it.title) + '</b>' +
+          (it.desc ? '　<span class="ev-pick-desc">' + escapeHtml(it.desc) + '</span>' : '') +
+        '</button>').join('');
+    card.querySelectorAll('[data-pick-key]').forEach(b => b.addEventListener('click', () => {
+      const key = b.dataset.pickKey;
+      removeModals();
+      onPick(key);
+    }));
   }
 
   /* ── 奇遇弹窗（不暂停产量） ── */
@@ -802,17 +857,9 @@
       if (ev.no_choice && opt.key !== 'A') continue;   // 离线事件不给选择，只留一个「知道了」
       const btn = document.createElement('button');
       btn.className = 'ev-option' + (opt.key === 'C' ? ' ev-leave' : '');
-      // 效果方向徽章（不给数值，只给方向感）
-      let badge = '';
-      if (opt.slot) {
-        const T = { A: ['益', 'ev-badeg-good'], B: ['耗', 'ev-badge-bad'], C: ['势', 'ev-badge-buff'], D: ['恒', 'ev-badge-perm'], E: ['缘', 'ev-badge-chain'], F: ['异', 'ev-badge-bad'] };
-        const t = T[opt.slot.type];
-        if (t) badge = '<span class="ev-badge ' + t[1] + '">' + t[0] + '</span>';
-        if (opt.daoxin > 0) badge += '<span class="ev-badge ev-badge-good">仁</span>';
-        else if (opt.daoxin < 0) badge += '<span class="ev-badge ev-badge-bad">贪</span>';
-      }
+      // 选项不再挂效果方向标签（势/仁/益/耗/恒/缘/异/贪 一律去掉，2026-09-21 玩家口径）
       const tail = (opt.key === 'C' || ev.no_choice) ? '' : '（' + (opt.key === 'A' ? '其一' : '其二') + '）';
-      btn.innerHTML = badge + ' ' + escapeHtml(opt.text) + tail;
+      btn.innerHTML = escapeHtml(opt.text) + tail;
       btn.addEventListener('click', () => g.LS.events.chooseOption(opt.key));
       card.appendChild(btn);
     }
@@ -1075,7 +1122,7 @@
 
   /* ── 突破失败 / 走火入魔过场（暗色水墨，数值代价显式呈现） ── */
   function showFailOverlay(title, text, isQihuo, details) {
-    sfx('bell');
+    sfx(isQihuo ? 'shihuo' : 'breakfail');   // 失败另有一声闷锣/气逆声：与成功的清钟分得开（2026-09-21）
     const ov = document.createElement('div');
     ov.id = 'breakthrough-overlay';
     ov.style.background = isQihuo ? '#2b2222' : '#3a3330';
@@ -1132,36 +1179,32 @@
     const bal = g.LS.BAL;
     const bt = bal.breakthrough || {};
     const render = (selTactic, usePill) => {
-      const base = g.LS.realm.breakthroughRate(next);
       const tactics = bt.tactics || {};
       const pill = bt.pill_guard || {};
-      const novice = (g.LS.S.stats.breakthroughs || 0) < 2; // 前两次突破给新手推荐
-      // 大帝走九重雷劫：策略与 rate 不参与，故不给假百分比，只标它对灵石奖励的影响
+      // 面板不显示任何概率、不给新手推荐（2026-09-21 玩家口径），只留连败保底提示
       const emperor = next.index >= 10;
       const odds = emperor && g.LS.realm.emperorOdds ? g.LS.realm.emperorOdds(usePill && pill.rate_add ? pill.rate_add : 0) : null;
       let rows = '';
       ['steady', 'normal', 'bold'].forEach(k => {
         const t = tactics[k];
         if (!t) return;
-        let r = Math.max(0.05, Math.min(1, base + t.rate_add + (usePill && pill.rate_add ? pill.rate_add : 0)));
         const sel = selTactic === k;
-        const rec = novice && k === 'normal';
-        const badge = emperor
-          ? (t.reward_mult !== 1 ? '<span class="ev-badge ' + (t.reward_mult > 1 ? 'ev-badge-good' : 'ev-badge-bad') + '">突破灵石 ×' + t.reward_mult + '</span> ' : '')
-          : '<span class="ev-badge ' + (t.rate_add > 0 ? 'ev-badge-good' : (t.rate_add < 0 ? 'ev-badge-bad' : 'ev-badge-buff')) + '">' + Math.round(r * 100) + '%</span> ';
+        const badge = (emperor && t.reward_mult !== 1)
+          ? '<span class="ev-badge ' + (t.reward_mult > 1 ? 'ev-badge-good' : 'ev-badge-bad') + '">突破灵石 ×' + t.reward_mult + '</span> '
+          : '';
         rows += '<button class="ev-option tactic-row' + (sel ? ' tactic-sel' : '') + '" data-t="' + k + '">' +
           badge +
-          '<b>' + escapeHtml(t.name) + '</b>' + (rec ? '<span class="ev-badge ev-badge-good">新手推荐</span>' : '') + '　' + escapeHtml(t.desc) +
+          '<b>' + escapeHtml(t.name) + '</b>　' + escapeHtml(t.desc) +
           (emperor ? '' : (t.reward_mult !== 1 ? '　<span class="log-gain">灵石 ×' + t.reward_mult + '</span>' : '')) + '</button>';
       });
       const canPill = g.LS.economy.pillCount ? g.LS.economy.pillCount('pozhang') > 0 : false;
       const head = emperor && odds
         ? '<div class="modal-title">冲关 · ' + escapeHtml(next.name) + '</div>' +
-          '<div class="modal-desc">帝劫 · 九重雷劫：连受 <b>' + odds.strikes + '</b> 道天雷，每道单独判定，你的过率 <b>' + Math.round(odds.p * 100) + '%</b>。<br>' +
-          '落空不超过 <b>' + odds.layers + '</b> 道即可破境称帝——总过率 <b>' + (odds.pass * 100).toFixed(1) + '%</b>' +
+          '<div class="modal-desc">帝劫 · 九重雷劫：连受 <b>' + odds.strikes + '</b> 道天雷，每道单独判定；' +
+          '落空不超过 <b>' + odds.layers + '</b> 道即可破境称帝' +
           (odds.hasMingdao ? '（名刀在身，多容一道）' : '') + '。</div>'
         : '<div class="modal-title">冲关 · ' + escapeHtml(next.name) + '</div>' +
-          '<div class="modal-desc">基础成功率 <b>' + Math.round(base * 100) + '%</b>' +
+          '<div class="modal-desc">气机已满，只待叩门。' +
           (g.LS.S.dao_heart > (bt.dao_heart_bonus || {}).high ? '（道心加持）' : (g.LS.S.dao_heart < (bt.dao_heart_bonus || {}).low ? '（道心拖累）' : '')) +
           '　连败保底：' + (bt.pity_success || 3) + ' 次必成</div>';
       const tail = emperor
@@ -1170,7 +1213,7 @@
       card.innerHTML =
         head +
         rows +
-        '<div class="set-row"><label>破障丹护法（1 颗，' + (emperor ? '每道过率' : '成功率') + ' +' + Math.round((pill.rate_add || 0) * 100) + '%）— 丹房现有 ' + (g.LS.economy.pillCount ? g.LS.economy.pillCount('pozhang') : 0) + '</label>' +
+        '<div class="set-row"><label>破障丹护法（1 颗，' + (emperor ? '护住每一道天雷' : '护住这一关的气机') + '）— 丹房现有 ' + (g.LS.economy.pillCount ? g.LS.economy.pillCount('pozhang') : 0) + '</label>' +
         '<input type="checkbox" id="bt-use-pill" ' + (usePill ? 'checked' : '') + (canPill ? '' : ' disabled') + '></div>' +
         tail +
         '<div style="text-align:center;margin-top:10px"><button class="btn-primary" id="bt-go" style="padding:10px 34px;font-size:16px">出 关</button> ' +
@@ -1232,7 +1275,7 @@
       '</div></div>' +
       (info.elRel ? '<div class="modal-desc" style="text-align:center;color:var(--cinnabar)">' + escapeHtml(info.elRel) + '</div>' : '') +
       '<div class="modal-desc" style="text-align:center">' + escapeHtml(info.weather) + '</div>' +
-      '<div class="modal-desc" style="font-size:11px;color:var(--ink-soft)">行动点=自身境界+1：出招按招式所需点数扣减，用光了点「调息 · 让招」回满（代价是白让一手）；每回合从你已参悟的招与基础牌里摸牌（付得起的、至多 8 张，境界越高越容易摸到重手）、只出一招；罡气护罩只保当回合。</div>' +
+      '<div class="modal-desc" style="font-size:11px;color:var(--ink-soft)">行动点=自身境界+1：出招按招式所需点数扣减，用光了点「调息 · 让招」回满（代价是白让一手）；手牌即你<b>招式录</b>里配好的那套卡组（付不起的置灰），一回合只出一招；罡气护罩只保当回合。</div>' +
       '<div style="text-align:center;margin-top:10px"><button class="btn-primary" id="battle-start" style="padding:10px 34px;font-size:16px">开 战</button> ' +
       '<button class="icon-btn" id="battle-cancel">改日再战</button></div>';
     card.querySelector('#battle-start').addEventListener('click', () => { onStart(); });
@@ -1278,7 +1321,7 @@
     gd.innerHTML =
       '<div class="bg-title">斗 法 须 知</div>' +
       '<ul class="bg-list">' +
-        '<li>每回合从你<b>已参悟的招与基础牌</b>里摸牌：只手摸得动付得起、且不在冷却的（至多八张，<b>境界越高越容易摸到重手</b>），只能出其中 <b>一张</b>。</li>' +
+        '<li>出战的牌就是你<b>招式录</b>里配好的卡组（8 槽：攻式 3 · 五行 2 · 守式 2 · 回式 1）：每回合这套牌全在手，只按<b>行动点</b>决定你能使哪几张，一回合只出 <b>一张</b>。</li>' +
         '<li>每局由<b>你先出手</b>——先手在你；日后或另立定先手之规，眼下不必挂心。</li>' +
         '<li>出招消耗 <b>行动点</b>（= 自身境界 + 1）；用光了点「调息 · 让招」回满，代价是白让一手。</li>' +
         '<li>对手吃同一套行动条：他的点数也会耗光，耗光那一手只能调息（意图里会写出来）——那是你的机会。</li>' +
@@ -1479,32 +1522,126 @@
     if (!g.LS.page || g.LS.page._registered) return;
     g.LS.page._registered = true;
 
-    g.LS.page.register('map', { title: '灵 山 舆 图', render: () => {
-      const spots = [
-        { id: 'dannfang', name: '丹 房', x: 30, y: 38, desc: '炼丹服丹 · 丹毒调理' },
-        { id: 'market', name: '市 场', x: 62, y: 60, desc: '灵石买卖 · 散修集市' },
-        { id: 'arena', name: '擂 台', x: 55, y: 30, desc: '论道切磋 · 以武会友' },
-        { id: 'locked1', name: '？', x: 74, y: 26, locked: true },
-        { id: 'locked2', name: '？', x: 18, y: 68, locked: true },
-        { id: 'locked3', name: '？', x: 52, y: 14, locked: true },
-        { id: 'locked4', name: '？', x: 84, y: 80, locked: true }
+    // 见闻区下方的舆图微缩：**与地图页同一份画**（竖屏 scene / 宽屏 wide），
+    // 不再另画一张 —— 这样两边看上去就是同一幅，标记百分比也天然一致
+    /* 舆图地点坐标 —— 唯一定义处，地图页与见闻区微缩共用同一份。
+       语义 = 标记正中所在的百分比位置（.map-spot 与微缩标记都是中心对齐），
+       所以同一串数字在两边落在同一处地物上，不会再各写各的。 */
+    function mapSpots(W) {
+      return W ? [
+        { id: 'dannfang', name: '丹 房', x: 11.6, y: 84.4, desc: '炼丹服丹' },
+        { id: 'market', name: '市 场', x: 49.6, y: 83.2, desc: '灵石买卖' },
+        { id: 'arena', name: '擂 台', x: 45.3, y: 56.6, desc: '论道切磋' },
+        { id: 'locked1', name: '？', x: 85.7, y: 24.8, locked: true },
+        { id: 'locked2', name: '？', x: 7.4, y: 69.8, locked: true },
+        { id: 'locked3', name: '？', x: 88.2, y: 89.8, locked: true },
+        { id: 'locked4', name: '？', x: 18.2, y: 83.1, locked: true }
+      ] : [
+        { id: 'dannfang', name: '丹 房', x: 17.3, y: 81.4, desc: '炼丹服丹' },
+        { id: 'market', name: '市 场', x: 41.8, y: 85.9, desc: '灵石买卖' },
+        { id: 'arena', name: '擂 台', x: 49.2, y: 52.7, desc: '论道切磋' },
+        { id: 'locked1', name: '？', x: 68.9, y: 18.0, locked: true },
+        { id: 'locked2', name: '？', x: 5.9, y: 58.0, locked: true },
+        { id: 'locked3', name: '？', x: 70.4, y: 88.3, locked: true },
+        { id: 'locked4', name: '？', x: 58.9, y: 73.7, locked: true }
       ];
+    }
+
+    function paintMini(st) {
+      const W = mapIsWide();
+      st.dataset.mode = W ? 'wide' : 'tall';
+      const oldSvg = st.querySelector('.map-svg');
+      if (oldSvg) oldSvg.remove();
+      st.insertAdjacentHTML('afterbegin', W
+        ? (g.MAPART.wide ? g.MAPART.wide() : '')
+        : (g.MAPART.scene ? g.MAPART.scene() : ''));
+      // 标记随视口取同一份坐标 —— 换了构图就一起换，永不脱节
+      const dots = [...st.querySelectorAll('span')];
+      mapSpots(W).forEach((sp, i) => {
+        const d = dots[i];
+        if (!d) return;
+        d.style.left = sp.x + '%';
+        d.style.top = sp.y + '%';
+      });
+    }
+
+    function buildMini() {
+      const mm = document.getElementById('map-mini');
+      if (!mm || !g.MAPART) return;
+      let st = mm.querySelector('.map-stage');
+      if (!st) {
+        st = document.createElement('div');
+        st.className = 'map-stage';
+        while (mm.firstChild) st.appendChild(mm.firstChild);
+        mm.appendChild(st);
+      }
+      paintMini(st);
+    }
+    if (!window.__miniBound) {
+      window.__miniBound = true;
+      window.addEventListener('resize', () => {
+        try {
+          const st = document.querySelector('#map-mini .map-stage');
+          if (!st) return;
+          if ((st.dataset.mode === 'wide') !== mapIsWide()) paintMini(st);
+        } catch (e) {}
+      });
+    }
+    try { buildMini(); } catch (e) {}
+
+    /* 舆图画卷自适应：画面按 390:720（手机竖幅）或 1200:600（宽屏横卷）等比，
+       宽屏时不再出现"竖画塞进横屏"的压扁/留白 */
+    function fitMapStage() {
+      const c = document.querySelector('.map-canvas');
+      if (!c) return;
+      const st = c.querySelector('.map-stage');
+      if (!st) return;
+      const r = c.getBoundingClientRect();
+      const K = (st.dataset.mode === 'wide') ? (1200 / 600) : (390 / 720);
+      let w = r.width, h = w / K;
+      if (h > r.height) { h = r.height; w = h * K; }
+      st.style.width = Math.max(1, Math.floor(w)) + 'px';
+      st.style.height = Math.max(1, Math.floor(h)) + 'px';
+    }
+    function mapIsWide() { return (window.innerWidth || 0) >= 900; }
+    if (!window.__mapStageBound) {
+      window.__mapStageBound = true;
+      window.addEventListener('resize', () => {
+        try {
+          const st = document.querySelector('.map-canvas .map-stage');
+          if (!st) return;
+          // 跨过宽窄阈值就整页重画（换构图也换点位），否则只重量尺寸
+          if ((st.dataset.mode === 'wide') !== mapIsWide()) g.LS.page.refresh();
+          else fitMapStage();
+        } catch (e) {}
+      });
+    }
+
+    g.LS.page.register('map', { title: '灵 山 舆 图', render: () => {
+      // 两套构图两套坐标，各自对得上自己画布里的地物；不变的是落点 ——
+      // 擂台在山巅平台、丹房在西侧山腰瀑溪旁、市场在山脚溪口与灵田之间，
+      // 四个待开化点分别落在云中、左岸/西麓、泽心礁洲、近景坡地。
+      const W = mapIsWide();
+      const spots = mapSpots(W);   // 与见闻区微缩同一份坐标
+      // 山水与地点剪影都来自 js/mapart.js；未加载时退化成空背景，地点仍可点
+      const drawScene = (W && g.MAPART && g.MAPART.wide) ? g.MAPART.wide
+                     : ((g.MAPART && g.MAPART.scene) ? g.MAPART.scene : null);
+      const art = drawScene ? drawScene() : '';
+      const glyph = (id) => ((g.MAPART && g.MAPART.glyph) ? g.MAPART.glyph(id) : '');
       const spotHtml = spots.map(s => s.locked
-        ? '<div class="map-spot locked" style="left:' + s.x + '%;top:' + s.y + '%"><div class="ms-icon">？</div><span>待开化</span></div>'
-        : '<button class="map-spot" data-spot="' + s.id + '" style="left:' + s.x + '%;top:' + s.y + '%"><div class="ms-icon">' + escapeHtml(s.name[0]) + '</div><span>' + escapeHtml(s.name) + '</span><i>' + escapeHtml(s.desc) + '</i></button>'
+        ? '<div class="map-spot locked" style="left:' + s.x + '%;top:' + s.y + '%"><div class="ms-icon">' + glyph('locked') + '</div><span>待开化</span></div>'
+        : '<button class="map-spot" data-spot="' + s.id + '" style="left:' + s.x + '%;top:' + s.y + '%"><div class="ms-icon">' + glyph(s.id) + '</div><span>' + escapeHtml(s.name) + '</span><i>' + escapeHtml(s.desc) + '</i></button>'
       ).join('');
-      return '<div class="map-canvas">' +
-        '<svg viewBox="0 0 390 620" preserveAspectRatio="xMidYMid slice" class="map-svg">' +
-          '<path d="M0,120 Q80,40 160,110 T390,90 L390,0 L0,0 Z" fill="rgba(70,92,110,.18)"/>' +
-          '<path d="M0,190 Q120,90 230,170 T390,150 L390,60 L0,60 Z" fill="rgba(70,92,110,.13)"/>' +
-          '<path d="M-10,610 Q90,470 200,560 T400,520 L400,640 L-10,640 Z" fill="rgba(60,82,100,.20)"/>' +
-          '<ellipse cx="120" cy="300" rx="90" ry="16" fill="rgba(255,255,255,.10)"/>' +
-          '<ellipse cx="300" cy="420" rx="110" ry="18" fill="rgba(255,255,255,.08)"/>' +
-          '<path d="M120,240 Q160,320 130,430" stroke="rgba(120,100,70,.4)" stroke-width="2" stroke-dasharray="6 5" fill="none"/>' +
-          '<path d="M130,430 Q220,470 244,540" stroke="rgba(120,100,70,.4)" stroke-width="2" stroke-dasharray="6 5" fill="none"/>' +
-        '</svg>' + spotHtml +
-        '<div class="map-note">─── 山径所至，皆是机缘 ───</div></div>';
-    }});
+      return '<div class="map-canvas"><div class="map-stage" data-mode="' + (W ? 'wide' : 'tall') + '">' +
+        art + spotHtml + '<div class="map-note">─── 山径所至，皆是机缘 ───</div></div></div>';
+    },
+    mount: () => {
+      // 刚建视图时还没布局（宽高为 0），所以下一帧与稍后各再量一次
+      const run = () => { try { fitMapStage(); } catch (e) {} };
+      run();
+      if (window.requestAnimationFrame) requestAnimationFrame(run);
+      setTimeout(run, 150);
+    } });
 
     g.LS.page.register('dannfang', { title: '丹 房', render: () => {
       // 与丹房弹窗同一套内容（服丹/丹毒条）
@@ -1578,6 +1715,7 @@
       html += '<h3 class="panel-title" style="font-size:14px">购 买</h3>';
       html += d.items.map(it =>
         '<div class="rebirth-item"><div><b>' + escapeHtml(it.name) + '</b>' +
+        (it.note ? '<span class="ev-badge ev-badge-buff">' + escapeHtml(it.note) + '</span>' : '') +
         '<div style="font-size:11px;color:var(--ink-soft)">' + escapeHtml(it.desc) + '</div></div>' +
         '<button class="icon-btn" data-mbuy="' + it.id + '" ' + (g.LS.S.resources.lingshi >= it.price ? '' : 'disabled') + '>' + g.LS.util.fmt(it.price) + ' 灵石</button></div>').join('');
       html += '<h3 class="panel-title" style="font-size:14px;margin-top:12px">卖 出</h3>';
@@ -2017,27 +2155,95 @@
     });
   }
 
-  /* ── 版本更新公告：balance.update_notes，版本变化弹一次，点叉关（存档 seen_update 记已读） ── */
-  function showUpdateNotes(notes) {
-    // 有别的弹窗开着（离线卷轴/首引等）就晚点再来
-    if (document.querySelector('.modal-mask') || g.LS.battle.active) { setTimeout(() => showUpdateNotes(notes), 3000); return; }
+  /* ── 更新公告中心：独立于游戏存档的设备级已读状态 + 可回看的历史版本 ── */
+  function updateEntries(data) {
+    if (data && Array.isArray(data.entries)) return data.entries.filter(x => x && (x.id || x.version));
+    if (data && data.version) return [Object.assign({ id: data.version }, data)];
+    return [];
+  }
+  function updateReadIds() {
+    try {
+      const v = JSON.parse(localStorage.getItem(UPDATE_READ_KEY) || '[]');
+      return Array.isArray(v) ? v : [];
+    } catch (e) { return []; }
+  }
+  function storeUpdateRead(ids) {
+    try { localStorage.setItem(UPDATE_READ_KEY, JSON.stringify(Array.from(new Set(ids)).slice(-100))); } catch (e) {}
+  }
+  function markUpdatesRead(ids) {
+    const read = updateReadIds();
+    (ids || []).forEach(id => { if (id && read.indexOf(id) === -1) read.push(id); });
+    storeUpdateRead(read);
+  }
+  function migrateLegacyUpdateRead(version) {
+    if (version) markUpdatesRead([version]);
+  }
+  function unreadUpdateCount(data) {
+    const read = updateReadIds();
+    return updateEntries(data).filter(e => read.indexOf(e.id || e.version) === -1).length;
+  }
+  function updateBody(entry) {
+    const sections = Array.isArray(entry.sections) ? entry.sections : [];
+    if (sections.length) return sections.map(section =>
+      '<section class="update-section"><h3>' + escapeHtml(section.title || '本次更新') + '</h3><ul>' +
+      (section.items || []).map(item => '<li>' + escapeHtml(item) + '</li>').join('') + '</ul></section>'
+    ).join('');
+    return '<div class="update-lines">' + (entry.lines || []).map(line => '<div class="un-line">' + escapeHtml(line) + '</div>').join('') + '</div>';
+  }
+  function showUpdateNotes(data, options) {
+    const entries = updateEntries(data);
+    if (!entries.length) return;
+    clearTimeout(updateNotesTimer);
+    updateNotesTimer = null;
+    pendingUpdateNotes = null;
     removeModals();
+    const opts = options || {};
+    const read = updateReadIds();
+    let activeId = opts.entryId || (entries.find(e => read.indexOf(e.id || e.version) === -1) || entries[0]).id || entries[0].version;
+    const viewed = new Set();
     const { card } = makeModal(null);
-    card.innerHTML =
-      '<div class="modal-title">' + escapeHtml(notes.title || '更 新 公 告') +
-        ' <span style="font-size:12px;color:var(--gold,#e8c34a)">' + escapeHtml(notes.version || '') + '</span>' +
-        '<button class="icon-btn" id="un-close" style="float:right;font-size:13px;padding:2px 10px;min-height:0">✕</button></div>' +
-      '<div class="update-notes">' +
-        (notes.lines || []).map(l => '<div class="un-line">' + escapeHtml(l) + '</div>').join('') +
-      '</div>' +
-      '<div style="text-align:center;margin-top:8px"><button class="btn-primary" id="un-ok" style="padding:6px 24px">知 道 了</button></div>';
-    const close = () => {
-      const s = g.LS.S;
-      if (s) { s.seen_update = notes.version; g.LS.save.save(); }
-      removeModals();
+    card.classList.add('update-center');
+    const render = () => {
+      const entry = entries.find(e => (e.id || e.version) === activeId) || entries[0];
+      activeId = entry.id || entry.version;
+      viewed.add(activeId);
+      const currentRead = updateReadIds();
+      card.innerHTML =
+        '<div class="update-head"><div><div class="modal-title">更 新 公 告</div><div class="update-current">当前版本 ' + escapeHtml((data && data.current_version) || entry.version || '') + '</div></div>' +
+        '<button class="icon-btn update-close" id="un-close" title="关闭" aria-label="关闭">✕</button></div>' +
+        '<div class="update-layout"><nav class="update-versions" aria-label="历史版本">' + entries.map(e => {
+          const id = e.id || e.version;
+          const unread = currentRead.indexOf(id) === -1;
+          return '<button class="update-version' + (id === activeId ? ' is-active' : '') + '" data-update-id="' + escapeHtml(id) + '">' +
+            '<span>' + escapeHtml(e.version || id) + '</span><small>' + escapeHtml(e.date || '') + '</small>' + (unread ? '<i>新</i>' : '') + '</button>';
+        }).join('') + '</nav>' +
+        '<article class="update-article"><div class="update-article-head"><span class="update-date">' + escapeHtml(entry.date || '') + '</span><h2>' + escapeHtml(entry.title || '版本更新') + '</h2>' +
+        (entry.summary ? '<p>' + escapeHtml(entry.summary) + '</p>' : '') + '</div><div class="update-notes">' + updateBody(entry) + '</div></article></div>' +
+        '<div class="update-actions"><button class="icon-btn" id="un-read-all">全部标为已读</button><button class="btn-primary" id="un-ok">知 道 了</button></div>';
+      const close = () => { markUpdatesRead(Array.from(viewed)); removeModals(); };
+      card.querySelector('#un-close').addEventListener('click', close);
+      card.querySelector('#un-ok').addEventListener('click', close);
+      card.querySelector('#un-read-all').addEventListener('click', () => {
+        markUpdatesRead(entries.map(e => e.id || e.version));
+        render();
+      });
+      card.querySelectorAll('[data-update-id]').forEach(btn => btn.addEventListener('click', () => { activeId = btn.dataset.updateId; render(); }));
     };
-    card.querySelector('#un-close').addEventListener('click', close);
-    card.querySelector('#un-ok').addEventListener('click', close);
+    render();
+  }
+  function tryShowScheduledUpdate() {
+    if (!pendingUpdateNotes || isModalOpen() || (g.LS.battle && g.LS.battle.active)) return;
+    const pending = pendingUpdateNotes;
+    pendingUpdateNotes = null;
+    showUpdateNotes(pending.data, { entryId: pending.entryId, startup: true });
+  }
+  function scheduleUpdateNotes(data, delay) {
+    const entries = updateEntries(data), read = updateReadIds();
+    const latest = entries.find(e => e.important !== false && read.indexOf(e.id || e.version) === -1);
+    if (!latest) return;
+    pendingUpdateNotes = { data: data, entryId: latest.id || latest.version };
+    clearTimeout(updateNotesTimer);
+    updateNotesTimer = setTimeout(tryShowScheduledUpdate, Math.max(0, delay || 0));
   }
 
   /* ── 大师兄档位选择（师弟/同门/师兄，正常修炼都能赢） ── */
@@ -2197,7 +2403,7 @@
     render('weapon');
   }
 
-  /* ── 招式录：已参悟招式一览（四类归类）+ 自己标星；斗法抽牌不看此处编成 ── */
+  /* ── 招式录：斗法出战卡组编成（四类各限槽数，共 8 槽）＋ 已参悟招式一览 ── */
   function showDeckEditor() {
     removeModals();
     const { card } = makeModal(removeModals);
@@ -2220,28 +2426,27 @@
             items += '<div class="deck-card deck-card-locked"><b>' + escapeHtml(c.name) + '</b><span>' +
               (locked ? '境界「' + ((g.LS.BAL.realms[c.unlock_realm] || {}).name || '?') + '」解锁' : (c.price ? '坊市秘传可参悟' : '尚未参悟')) + '</span></div>';
           } else {
-            items += '<button class="deck-card' + (activeNow ? ' deck-card-on' : '') + '" data-pick="' + c.id + '">' +
-              '<b>' + escapeHtml(c.name) + '</b><span>' + c.cost + '行动点 ' +
+            items += '<button class="deck-card' + (activeNow ? ' deck-card-on' : ' deck-card-off') + '" data-pick="' + c.id + '" aria-pressed="' + (activeNow ? 'true' : 'false') + '">' +
+              '<b>' + escapeHtml(c.name) + '</b><span class="deck-card-meta">' + c.cost + '行动点 ' +
               (c.dmg ? '杀' + c.dmg : '') + (c.shield ? '护' + c.shield : '') + (c.heal ? '回' + c.heal : '') +
               (c.el ? ' · ' + fmtEl(c.el) : (c.weapon ? ' · 随武器' : '')) + '</span></button>';
           }
         }
         cols += '<div class="deck-col"><div class="deck-kind">' + (KIND_NAME[kind] || kind) + '</div>' + items + '</div>';
       }
-      const deckDesc = (s.deck || []).map(id => { const c = pool.find(x => x.id === id); return c ? c.name : ''; }).filter(Boolean).join('、') || '（无）';
       card.innerHTML =
         '<div class="modal-title">招 式 录<button class="icon-btn" id="dk-close" style="float:right;font-size:12px;padding:3px 12px">合 上</button></div>' +
-        '<div class="modal-desc">已参悟的招式一览（按攻式 · 五行 · 守式 · 回式归类）。斗法每回合从<b>已参悟的全部招式与基础牌</b>里摸牌：只手摸得动付得起的（费用 ≤ 当前行动点），够格的不超 8 张就全给你、超过 8 张随机抽，且<b>境界越高越容易摸到重手</b>——不看此处标记。已标星：' + escapeHtml(deckDesc) + '</div>' +
+        '<div class="modal-desc"><b>斗法出战的就是你在这里配的卡组</b>（攻式 3 · 五行 2 · 守式 2 · 回式 1，共 8 槽）——每回合整套摊在手上，只按<b>行动点</b>决定你能使哪几张，每回合出一张。付不起、在冷却的会置灰；没配满的槽会从你已参悟的招里自动补位。想带重手，先把坊市「秘传」里的招买下来。</div>' +
         '<div class="deck-row">' + cols + '</div>' +
         '<div style="text-align:center;margin-top:8px"><button class="btn-primary" id="dk-save" style="padding:7px 26px">保 存 标 记</button> ' +
         '<button class="icon-btn" id="dk-reset">清 空 标 记</button></div>';
       card.querySelector('#dk-close').addEventListener('click', removeModals);
       card.querySelector('#dk-save').addEventListener('click', () => {
         g.LS.save.save();
-        toast('标记已保存（只作备忘，不影响斗法抽牌）');
+        toast('卡组已保存——下一场斗法就按这套出牌。');
         removeModals();
       });
-      card.querySelector('#dk-reset').addEventListener('click', () => { s.deck = []; g.LS.save.save(); toast('已清空标记'); render(); });
+      card.querySelector('#dk-reset').addEventListener('click', () => { s.deck = []; g.LS.save.save(); toast('已清空卡组（下次进斗法按已参悟的招自动补位）'); render(); });
       card.querySelectorAll('[data-pick]').forEach(btn => btn.addEventListener('click', () => {
         const id = btn.dataset.pick;
         const c = pool.find(x => x.id === id);
@@ -2286,8 +2491,7 @@
         '<div class="modal-desc">添加好友（粘贴对方名片）：</div>' +
         '<textarea class="set-textarea" id="fr-paste" placeholder="粘贴对方名片码"></textarea>' +
         '<div class="set-row"><button class="btn-primary" id="fr-add" style="padding:6px 16px">添加好友</button></div>' +
-        '<div class="set-row" style="justify-content:center;gap:8px"><button class="btn-primary" id="fr-arena" style="padding:6px 16px">擂 台</button><button class="icon-btn" id="fr-deck" style="padding:6px 12px">招式录</button></div>' +
-        '<div class="modal-desc" style="font-size:11px">抽牌不看此处编成：四路斗法（论道、试炼塔、奇遇强敌、好友切磋）每回合都从<b>你已参悟的全部招式与基础牌</b>里摸——只摸得动付得起的（费用 ≤ 当前行动点），够格的不超过 8 张就全给你、超过 8 张随机抽，<b>境界越高越容易摸到重手</b>。此处仅作招式一览与标星。</div>' +
+        '<div class="set-row" style="justify-content:center;gap:8px"><button class="btn-primary" id="fr-arena" style="padding:6px 16px">擂 台</button></div>' +
         '<div class="set-row" id="fr-join-row" style="display:none"><input class="set-input" id="fr-room-code" placeholder="输入房间码" style="flex:1"></div>' +
         '<h3 class="panel-title">道友录（' + fr.length + '）</h3><div class="modal-desc">论道积分 ' + (s.honor || 0) + ' · 段位 <b>' + (function(){ const ranks=(g.LS.BAL.battle||{}).ranks||[]; let cur=ranks[0]||{name:'凡品'}; for(const r of ranks){ if((s.honor||0)>=r.min) cur=r; } return cur.name; })() + '</b></div>' + rows +
         '<div style="text-align:center;margin-top:10px"><button class="icon-btn" id="fr-close2">合上</button></div>';
@@ -2328,11 +2532,6 @@
       card.querySelector('#fr-arena').addEventListener('click', () => {
         removeModals();
         g.LS.page.go('arena');
-      });
-      // 招式录（已参悟招式一览）
-      card.querySelector('#fr-deck').addEventListener('click', () => {
-        removeModals();
-        showDeckEditor();
       });
     };
     render();
@@ -2578,6 +2777,42 @@
     else { clearInterval(bgmTimer); bgmTimer = null; }
   }
 
+  /* ── 留言板（2026-09-21）：递给本地代理落盘；代理没开就存本机，下次进来自动补交 ── */
+  const FB_KEY = 'lingshan_feedback_pending';
+  /** 页面由代理托管时同源提交（端口以 config.json 为准，不写死）；file:// 直开则退回默认代理地址 */
+  function fbBase() {
+    if (typeof location !== 'undefined' && /^https?:$/.test(location.protocol)) return '';
+    return (g.LS.llm && g.LS.llm.PROXY) || 'http://127.0.0.1:8787';
+  }
+  function fbVer() { const el = document.getElementById('version-mark'); return el ? (el.textContent || '').trim() : ''; }
+  function fbPending() { try { return JSON.parse(localStorage.getItem(FB_KEY) || '[]'); } catch (e) { return []; } }
+  function fbStore(q) { try { localStorage.setItem(FB_KEY, JSON.stringify((q || []).slice(-50))); } catch (e) {} }
+  function fbPost(rec) {
+    return fetch(fbBase() + '/api/feedback', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(rec)
+    }).then(r => { if (!r.ok) throw new Error('http ' + r.status); return true; });
+  }
+  /** 递交一条：成功返回 {local:false}；代理不可用则存本机排队（{local:true}），绝不丢玩家的字 */
+  function fbSend(text) {
+    const s = g.LS.S || {};
+    const rec = { text: text, realm: (s.realm && s.realm.index) || 0, version: fbVer() };
+    return fbPost(rec).then(() => ({ local: false }))
+      .catch(() => { const q = fbPending(); q.push(Object.assign({ t: Date.now() }, rec)); fbStore(q); return { local: true }; });
+  }
+  /** 启动/打开设置时补交本机暂存的留言 */
+  function fbFlush() {
+    const q = fbPending();
+    if (!q.length) return;
+    (async () => {
+      const rest = [];
+      for (const rec of q) {
+        try { await fbPost(rec); } catch (e) { rest.push(rec); }
+      }
+      fbStore(rest);
+    })();
+  }
+
   /* ── 设置面板 ── */
   /** 低性能模式（设置开关）：给 html 挂 .lowfx 交给 CSS 简化背景，并停掉环境 canvas 与天气粒子 */
   function applyLowFx() {
@@ -2592,6 +2827,8 @@
     const { card, mask } = makeModal(removeModals);
     const s = g.LS.S;
     const label = (k) => (g.LS.BAL.difficulty && g.LS.BAL.difficulty[k] && g.LS.BAL.difficulty[k].label) || k;
+    const updateCount = unreadUpdateCount(g.LS.CHANGELOG);
+    const currentVersion = (g.LS.CHANGELOG && g.LS.CHANGELOG.current_version) || (g.LS.BAL && g.LS.BAL.version) || '';
     const bindDiff = () => {
       card.querySelectorAll('[data-setdiff]').forEach(btn => {
         btn.addEventListener('click', () => {
@@ -2620,9 +2857,17 @@
       '<div class="set-llm-status">奇遇文案由火山方舟免费额度生成；不填或额度耗尽时自动改用内置事件池，游戏始终完整可玩，绝不产生任何费用。</div>' +
       '<div class="set-row"><label>密钥（写入 config.json）</label><input class="set-input" id="set-key" type="password" placeholder="粘贴 ark_api_key"><button class="btn-primary" id="set-key-save">保存</button></div>' +
       '<div class="set-row"><button class="icon-btn" id="set-retry-llm">重试 LLM</button><button class="icon-btn" id="set-savenow">立即存档</button></div>' +
+      '<div class="set-row update-setting"><label>更新公告' + (updateCount ? '<span class="update-unread-count">' + updateCount + ' 条未读</span>' : '') + '</label><button class="icon-btn" id="set-updates">查看 ' + escapeHtml(currentVersion) + '</button></div>' +
       '<div class="set-row"><label>导出存档</label><button class="icon-btn" id="set-export">生成文本</button></div>' +
       '<textarea class="set-textarea" id="set-io" placeholder="导出后复制保存；导入时粘贴至此"></textarea>' +
       '<div class="set-row"><label>导入存档</label><button class="icon-btn" id="set-import">读取文本</button></div>' +
+      '<div class="fb-box">' +
+        '<div class="fb-title">留 言 板</div>' +
+        '<div class="modal-desc" style="font-size:11px;color:var(--ink-soft)">玩着哪里别扭、想要什么新玩法、哪里数值不对——写在这里，我一条条看。</div>' +
+        '<textarea class="set-textarea fb-textarea" id="fb-text" maxlength="500" placeholder="（500 字以内）"></textarea>' +
+        '<div class="set-row" style="justify-content:flex-end"><button class="btn-primary" id="fb-send" style="padding:6px 22px">递 上 留 言</button></div>' +
+        '<div class="fb-slogan">你们的建议都是我们前进的动力！</div>' +
+      '</div>' +
       '<div class="danger-zone set-row"><label>重置游戏（长按 3 秒）</label><button id="btn-reset"><span class="hold-fill"></span>长按重置</button></div>';
 
     bindDiff(); // 难度三选按钮事件（需在 innerHTML 渲染后绑定）
@@ -2641,6 +2886,7 @@
     });
     card.querySelector('#set-llm').addEventListener('change', (e) => { s.settings.llm_enabled = e.target.checked; g.LS.save.save(); });
     card.querySelector('#set-savenow').addEventListener('click', () => { g.LS.save.save(); toast('已存档'); });
+    card.querySelector('#set-updates').addEventListener('click', () => showUpdateNotes(g.LS.CHANGELOG, { history: true }));
     card.querySelector('#set-retry-llm').addEventListener('click', () => { g.LS.llm.retryLLM(); toast('正在重新探测 LLM……'); });
     card.querySelector('#set-export').addEventListener('click', () => {
       const ta = card.querySelector('#set-io');
@@ -2690,6 +2936,18 @@
       fill.style.transition = 'width .2s';
       fill.style.width = '0%';
     }));
+    card.querySelector('#fb-send').addEventListener('click', async () => {
+      const ta = card.querySelector('#fb-text');
+      const txt = ((ta && ta.value) || '').trim();
+      if (!txt) { toast('先写点什么吧'); return; }
+      const btn = card.querySelector('#fb-send');
+      btn.disabled = true;
+      const r = await fbSend(txt);
+      btn.disabled = false;
+      if (r.local) toast('本地代理没开，留言先替你收在本机了——下次带着 start.bat 进来会自动递上。', 4600);
+      else { if (ta) ta.value = ''; toast('留言已递上。你们的建议都是我们前进的动力！', 3800); }
+    });
+    fbFlush();   // 顺手把上次没递出去的补上
     card.querySelector('#set-close').addEventListener('click', removeModals);
   }
 
@@ -2853,12 +3111,12 @@
   g.LS.ui = {
     initRefs, renderAll, renderResources, renderBuildings, renderCenter,
     renderChronicle, renderPermList, pushLog, markNewBuildings, isModalOpen, hintOnce,
-    showEventModal, closeEventModal, showOfflinePopup, showBreakthroughOverlay, showFailOverlay,
+    showEventModal, showEventPicker, closeEventModal, showOfflinePopup, showBreakthroughOverlay, showFailOverlay,
     showRealmUnlockGuide,
-    showSettings, showRebirthPanel, showTutorial, showPillHouse, showHelpPanel, showMarket, showFriends, showDeckEditor, showSeniorPick, showCodexPage, showUpdateNotes, playEmperorTribulation, showTrial, showXinmo, showAmbushModal, showQuest, showDisciple, showGenerationChoice, showTutorialSteps,
+    showSettings, showRebirthPanel, showTutorial, showPillHouse, showHelpPanel, showMarket, showFriends, showDeckEditor, showSeniorPick, showCodexPage, showUpdateNotes, scheduleUpdateNotes, migrateLegacyUpdateRead, unreadUpdateCount, playEmperorTribulation, showTrial, showXinmo, showAmbushModal, showQuest, showDisciple, showGenerationChoice, showTutorialSteps,
     showBattleArena, showBattleGuide, updateBattleHP, updateBattleShields, updateBattleQi, renderBattleHands, showBattleIntent,
     showBattleScreen, battleLog, battleAppend, showBattleResult,
-    toast, tweenNumber, setBgm, applyLowFx,
+    toast, tweenNumber, setBgm, applyLowFx, fbFlush,
     setLLMStatus, setForewarn, updateBuffBar, drawBg, sfx, playTribulation,
   };
 })(typeof window !== 'undefined' ? window : globalThis);
