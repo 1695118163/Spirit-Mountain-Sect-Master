@@ -2296,10 +2296,16 @@
         const a = acts[k];
         const cd = (s.xinmo_cd || {})[k];
         const left = cd && cd > Date.now() ? Math.ceil((cd - Date.now()) / 60000) : 0;
+        const minRealm = a.min_realm == null ? 0 : a.min_realm;
+        const unlockXinmo = a.unlock_xinmo == null ? ((g.LS.BAL.xinmo || {}).unlock || 30) : a.unlock_xinmo;
+        const realmLocked = s.realm.index < minRealm;
+        const xinmoLocked = xm < unlockXinmo;
+        const lockText = realmLocked ? g.LS.BAL.realms[minRealm].name + '解锁' : (xinmoLocked ? '心魔 ' + unlockXinmo + ' 解锁' : '');
         return '<div class="rebirth-item"><div><b>' + escapeHtml(a.name) + '</b>' +
           '<span class="ev-badge" style="color:var(--cinnabar)">心魔 +' + a.xinmo + '</span>' +
           '<div style="font-size:11px;color:var(--ink-soft)">' + escapeHtml(a.desc) + '</div></div>' +
-          '<button class="icon-btn" data-xact="' + k + '" ' + (left ? 'disabled' : '') + '>' + (left ? left + ' 分' : '行 事') + '</button></div>';
+          '<button class="icon-btn" data-xact="' + k + '" ' + (left || realmLocked || xinmoLocked ? 'disabled' : '') + '>' +
+          (left ? left + ' 分' : (lockText || '行 事')) + '</button></div>';
       }).join('');
       card.innerHTML =
         '<div class="modal-title">邪 修 之 道<button class="icon-btn" id="xm-close" style="float:right;font-size:12px;padding:3px 12px">离 开</button></div>' +

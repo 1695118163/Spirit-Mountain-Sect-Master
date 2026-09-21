@@ -413,6 +413,62 @@
       { "text": "提灯上路", "fits": ["E"], "daoxin": 0 },
       { "text": "以血养灯", "fits": ["B", "E"], "daoxin": -2 } ] },
 
+  { "id": "dark_dream_flame", "pool": "DARK", "rarity": "凡", "title": "梦里残烛", "min_realm": 0,
+    "desc": "梦中有一截黑烛烧在丹田里，醒来后火光未灭，反把经脉照得纤毫毕现。",
+    "requires": { "not_flag": "refused_dark" }, "special": { "xinmo": 5, "next_xp_pct": 0.02 },
+    "options": [
+      { "text": "闭目续上残梦", "fits": ["A", "C"], "daoxin": -1 },
+      { "text": "记下烛火走向", "fits": ["E"], "daoxin": 0 } ] },
+
+  { "id": "dark_forbidden_page", "pool": "DARK", "rarity": "凡", "title": "禁页自翻", "min_realm": 1,
+    "desc": "藏经阁最底层的禁书无风自翻，停在一页被前人用墨涂黑的吐纳法上。",
+    "requires": { "not_flag": "refused_dark" }, "special": { "xinmo": 6, "next_xp_pct": 0.03 },
+    "options": [
+      { "text": "照着黑字行气", "fits": ["A", "B"], "daoxin": -1 },
+      { "text": "拓下经脉图", "fits": ["E"], "daoxin": 0 } ] },
+
+  { "id": "dark_well_echo", "pool": "DARK", "rarity": "凡", "title": "井底回声", "min_realm": 1,
+    "desc": "废井里传来你的声音，一遍遍问若不守戒律，这一身修为还能走多快。",
+    "requires": { "not_flag": "refused_dark" }, "special": { "xinmo": 5 },
+    "options": [
+      { "text": "俯身回答它", "fits": ["C", "E"], "daoxin": -1 },
+      { "text": "垂下绳索探井", "fits": ["A", "B"], "daoxin": 0 } ] },
+
+  { "id": "dark_bone_charm", "pool": "DARK", "rarity": "灵", "title": "白骨签", "min_realm": 1,
+    "desc": "山门石阶上多了一枚白骨签，正面刻着你的名，背面写着一桩尚未发生的横财。",
+    "requires": { "not_flag": "refused_dark" }, "special": { "xinmo": 9, "lingshi_seconds": 120 },
+    "options": [
+      { "text": "收签静候横财", "fits": ["A", "E"], "daoxin": -2 },
+      { "text": "循刻痕寻找来人", "fits": ["C", "E"], "daoxin": 0 } ] },
+
+  { "id": "dark_shadow_trade", "pool": "DARK", "rarity": "灵", "title": "影中交易", "min_realm": 1,
+    "desc": "月下影子忽然朝你伸手，说愿替你苦修一夜，只取走一段不愿再想起的旧事。",
+    "requires": { "not_flag": "refused_dark" }, "special": { "xinmo": 10, "next_xp_pct": 0.05 },
+    "options": [
+      { "text": "与影子击掌", "fits": ["A", "B"], "daoxin": -2 },
+      { "text": "先问它要哪段旧事", "fits": ["E"], "daoxin": 0 } ] },
+
+  { "id": "dark_blood_seed", "pool": "DARK", "rarity": "灵", "title": "血莲种", "min_realm": 2,
+    "desc": "药圃泥土里结出一粒暗红莲种，靠近时能听见它随你的心跳轻轻开裂。",
+    "requires": { "not_flag": "refused_dark" }, "special": { "xinmo": 11, "next_xp_pct": 0.06 },
+    "options": [
+      { "text": "以指尖血浇灌", "fits": ["A", "B"], "daoxin": -2 },
+      { "text": "移入密室培育", "fits": ["C", "E"], "daoxin": -1 } ] },
+
+  { "id": "dark_heart_calamity", "pool": "DARK", "rarity": "珍", "title": "心湖倒影", "min_realm": 2,
+    "desc": "入定时心湖映出的你已白骨加身，那道倒影却比现实中的你更早一步睁眼。",
+    "requires": { "not_flag": "refused_dark" }, "special": { "xinmo": 14, "next_xp_pct": 0.08 },
+    "options": [
+      { "text": "与倒影互换一息", "fits": ["D", "B"], "daoxin": -3 },
+      { "text": "向它讨教捷径", "fits": ["A", "E"], "daoxin": -1 } ] },
+
+  { "id": "dark_nameless_altar", "pool": "DARK", "rarity": "珍", "title": "无名祭坛", "min_realm": 2,
+    "desc": "后山塌方露出一座无名祭坛，供桌积灰千年，中央却留着一个与你掌纹相合的凹槽。",
+    "requires": { "not_flag": "refused_dark" }, "special": { "xinmo": 16, "lingshi_seconds": 240 },
+    "options": [
+      { "text": "将手按入凹槽", "fits": ["D", "B"], "daoxin": -3 },
+      { "text": "重燃祭坛幽火", "fits": ["A", "E"], "daoxin": -2 } ] },
+
   { "id": "ds_bei_fuyu", "pool": "DISCIPLE", "rarity": "凡", "title": "一诺成灰", "min_realm": 1,
     "desc": "你应允给弟子的修行资源迟迟未到，他把失望压进笑里，眼神却从此冷了。",
     "requires": { "active_disciple": true }, "disciple_effect": { "drift": ["shanliang", "yinhen"], "suspicion": 15 },

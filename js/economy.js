@@ -379,13 +379,16 @@
     return true;
   }
 
-  /* ── 邪修行为（甲§7）：心魔≥30 解锁，CD 现实时间，收益随产量水涨船高 ── */
+  /* ── 邪修行为：前期引念可主动积累心魔，重邪行仍需心魔达到门槛 ── */
   function xinmoAct(actId) {
     const s = S(), bal = BAL();
     const cfg = bal.xinmo && bal.xinmo.acts && bal.xinmo.acts[actId];
     if (!cfg) return { ok: false, msg: '查无此道' };
     const xm = s.xinmo || 0;
-    if (xm < (bal.xinmo.unlock || 30)) return { ok: false, msg: '心境清明，无需此道（心魔 ≥' + (bal.xinmo.unlock || 30) + ' 解锁）' };
+    const minRealm = cfg.min_realm == null ? 0 : cfg.min_realm;
+    if (s.realm.index < minRealm) return { ok: false, msg: '境界不足，需达到「' + bal.realms[minRealm].name + '」。' };
+    const unlockXinmo = cfg.unlock_xinmo == null ? (bal.xinmo.unlock || 30) : cfg.unlock_xinmo;
+    if (xm < unlockXinmo) return { ok: false, msg: '心魔不足（心魔 ≥' + unlockXinmo + ' 解锁）' };
     s.xinmo_cd = s.xinmo_cd || {};
     const now = Date.now();
     if (s.xinmo_cd[actId] && s.xinmo_cd[actId] > now) {
@@ -399,6 +402,15 @@
     s.xie_stats[actId] = (s.xie_stats[actId] || 0) + 1;
     if (g.LS.path && BAL().xuesha && BAL().xuesha.sources) g.LS.path.addXuesha(BAL().xuesha.sources[actId] || 0);
     const lines = [cfg.name + '——心魔 +' + cfg.xinmo + '（现 ' + s.xinmo + '）'];
+    if (cfg.xiufu_pct) {
+      const next = bal.realms[s.realm.index + 1];
+      const xp = next && next.need_xp ? Math.max(1, Math.floor(next.need_xp * cfg.xiufu_pct)) : 0;
+      if (xp) { s.resources.xiufu += xp; lines.push('修为 +' + g.LS.util.fmt(xp)); }
+    }
+    if (cfg.daoxin) {
+      g.LS.state.changeDaoHeart(cfg.daoxin);
+      lines.push('道心 ' + cfg.daoxin);
+    }
     if (actId === 'lve') {
       const ls = Math.max(50, Math.floor(computePerSecond('lingshi') * (120 + Math.random() * 120) * (1 + xm / 100)));
       s.resources.lingshi += ls;

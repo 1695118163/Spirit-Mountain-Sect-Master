@@ -1,6 +1,6 @@
 {
   "version": "v0.22.2",
-  "value_ceiling": 9000000000000000,
+  "value_ceiling": 27000000000000000,
   "resources": [
     {
       "id": "lingqi",
@@ -303,7 +303,7 @@
     {
       "index": 1,
       "name": "筑基",
-      "need_xp": 150,
+      "need_xp": 450,
       "reward_lingshi": 100,
       "mult_passive": 2,
       "unlock_buildings": [
@@ -320,7 +320,7 @@
     {
       "index": 2,
       "name": "金丹",
-      "need_xp": 1500,
+      "need_xp": 4500,
       "reward_lingshi": 500,
       "mult_passive": 3,
       "unlock_buildings": [
@@ -339,7 +339,7 @@
     {
       "index": 3,
       "name": "元婴",
-      "need_xp": 15000,
+      "need_xp": 45000,
       "reward_lingshi": 2500,
       "mult_passive": 4,
       "unlock_buildings": [
@@ -358,7 +358,7 @@
     {
       "index": 4,
       "name": "化神",
-      "need_xp": 200000,
+      "need_xp": 600000,
       "reward_lingshi": 12500,
       "mult_passive": 6,
       "unlock_buildings": [
@@ -376,7 +376,7 @@
     {
       "index": 5,
       "name": "炼虚",
-      "need_xp": 3000000,
+      "need_xp": 9000000,
       "reward_lingshi": 60000,
       "mult_passive": 10,
       "unlock_buildings": [
@@ -392,7 +392,7 @@
     {
       "index": 6,
       "name": "合体",
-      "need_xp": 50000000,
+      "need_xp": 150000000,
       "reward_lingshi": 300000,
       "mult_passive": 15,
       "unlock_buildings": [
@@ -408,7 +408,7 @@
     {
       "index": 7,
       "name": "大乘",
-      "need_xp": 4000000000,
+      "need_xp": 12000000000,
       "reward_lingshi": 1500000,
       "mult_passive": 25,
       "unlock_buildings": [],
@@ -424,7 +424,7 @@
     {
       "index": 8,
       "name": "渡劫",
-      "need_xp": 300000000000,
+      "need_xp": 900000000000,
       "reward_lingshi": 7500000,
       "mult_passive": 40,
       "unlock_buildings": [],
@@ -440,7 +440,7 @@
     {
       "index": 9,
       "name": "飞升",
-      "need_xp": 25000000000000,
+      "need_xp": 75000000000000,
       "reward_lingshi": 37500000,
       "mult_passive": 100,
       "unlock_buildings": [],
@@ -456,7 +456,7 @@
     {
       "index": 10,
       "name": "大帝",
-      "need_xp": 6000000000000000,
+      "need_xp": 18000000000000000,
       "reward_lingshi": 150000000,
       "mult_passive": 200,
       "unlock_pool": "K",
@@ -587,12 +587,12 @@
     }
   ],
   "events": {
-    "first_delay_s": 150,
-    "interval_base_s": 240,
+    "first_delay_s": 60,
+    "interval_base_s": 120,
     "interval_jitter_s": 30,
-    "interval_min_s": 120,
+    "interval_min_s": 60,
     "modal_timeout_s": 30,
-    "pick_count": 5,
+    "choice_count": 5,
     "rarity": {
       "keys": [
         "凡",
@@ -706,12 +706,12 @@
         "C",
         "H"
       ],
-      "xinmo_high_threshold": 30,
+      "xinmo_high_threshold": 12,
       "pools_xinmo_high": [
         "DARK"
       ],
-      "xinmo_boost_mult": 2,
-      "xinmo_linear_cap": 3,
+      "xinmo_boost_mult": 2.5,
+      "xinmo_linear_cap": 3.5,
       "pools_disciple": [
         "DISCIPLE"
       ]
@@ -1681,6 +1681,25 @@
     "rage_chance": 0.15,
     "rage_xiufu_loss_pct": 0.5,
     "acts": {
+      "guanxiang": {
+        "name": "妄念观想",
+        "cd_s": 180,
+        "xinmo": 3,
+        "unlock_xinmo": 0,
+        "min_realm": 0,
+        "xiufu_pct": 0.005,
+        "desc": "放任杂念游走一周天——少量增长心魔，并取得些许修为"
+      },
+      "jinyan": {
+        "name": "偷阅禁卷",
+        "cd_s": 480,
+        "xinmo": 5,
+        "unlock_xinmo": 0,
+        "min_realm": 1,
+        "daoxin": -1,
+        "xiufu_pct": 0.01,
+        "desc": "翻阅封存禁法——增长心魔与修为，道心略损"
+      },
       "lve": {
         "name": "下山劫掠",
         "cd_s": 480,

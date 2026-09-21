@@ -20,8 +20,11 @@
     const s = S();
     return BAL().pools.filter(p => {
       if (p.unlock_realm > s.realm.index) return false;
-      if (p.id === 'DARK') return (s.xinmo || 0) >= ((BAL().events.pool_weight || {}).xinmo_high_threshold || 30)
-        && !(s.flags && s.flags[((BAL().path || {}).enter || {}).refuse_flag || 'refused_dark']) && s.path !== 'xie';
+      if (p.id === 'DARK') {
+        if (s.path === 'xie') return true;
+        return (s.xinmo || 0) >= ((BAL().events.pool_weight || {}).xinmo_high_threshold || 12)
+          && !(s.flags && s.flags[((BAL().path || {}).enter || {}).refuse_flag || 'refused_dark']);
+      }
       if (p.id === 'DISCIPLE') return (s.disciples || []).some(d => d.status === 'active');
       return true;
     }).map(p => p.id);
@@ -136,10 +139,19 @@
     return null;
   }
 
-  /** 一次摊几桩候选（balance.json events.pick_count，默认 5；设 1 即回到「随机撞见」） */
-  function pickCount() {
-    const v = (BAL().events || {}).pick_count;
-    return typeof v === 'number' && v > 0 ? Math.floor(v) : 5;
+  /** 普通奇遇固定展示五个行动。旧事件数据保留两条专属文案，其余行动在此补齐。 */
+  function fiveChoiceDefs(ev) {
+    const defs = (ev.options || []).slice(0, 5).map(opt => Object.assign({}, opt));
+    const fallbacks = [
+      { text: '先查清其中蹊跷', fits: ['C'] },
+      { text: '召集门人共同商议', fits: ['A', 'C'] },
+      { text: '暂且静观其变', fits: ['C', 'F'] }
+    ];
+    for (const fallback of fallbacks) {
+      if (defs.length >= 5) break;
+      if (!defs.some(opt => opt.text === fallback.text)) defs.push(Object.assign({}, fallback));
+    }
+    return defs.slice(0, 5);
   }
 
   /** 同稀有度候选卡：选池逻辑与 pickByRarity 同源（道心偏好的池加权），但要凑够 n 张不同的卡 */
@@ -261,7 +273,9 @@
 
   /* ── 事件对象构建 ── */
 
-  function buildBuiltinFinal(ev, slots) {
+  function buildBuiltinFinal(ev, slots, choiceDefs) {
+    const defs = choiceDefs || fiveChoiceDefs(ev);
+    const keys = ['A', 'B', 'D', 'E', 'F']; // C 专用于超时/关闭时的「离去」
     return {
       id: ev.id,
       source: 'builtin',
@@ -274,11 +288,14 @@
       special: ev.special || null,
       disciple_effect: ev.disciple_effect || null,
       requires: ev.requires || null,
-      options: [
-        { key: 'A', text: ev.options[0].text, slot: slots[0], daoxin: ev.options[0].daoxin || 0, special: ev.options[0].special || null },
-        { key: 'B', text: ev.options[1].text, slot: slots[1], daoxin: ev.options[1].daoxin || 0, special: ev.options[1].special || null },
-        { key: 'C', text: BAL().texts.event_leave, slot: null, daoxin: 0 }
-      ]
+      five_choice: true,
+      options: defs.map((opt, index) => ({
+        key: keys[index],
+        text: opt.text,
+        slot: slots[index],
+        daoxin: opt.daoxin || 0,
+        special: opt.special || null
+      }))
     };
   }
 
@@ -346,8 +363,9 @@
 
   function openEventFlow(ev, rarity, fromKarma) {
     const s = S();
-    const slots = rollSlots(ev);
-    let finalEv = buildBuiltinFinal(ev, slots);
+    const choiceDefs = fiveChoiceDefs(ev);
+    const slots = rollSlots(Object.assign({}, ev, { options: choiceDefs }));
+    let finalEv = buildBuiltinFinal(ev, slots, choiceDefs);
     if (rarity) finalEv.rarity = rarity;
     const hint = fromKarma ? '本次事件必须与此前的『' + ev.title + '』形成呼应，写它回来报恩或讨债' : '';
 
@@ -363,11 +381,14 @@
           builtinTags: ev.tags || [],
           title: useLLMResult.title,
           desc: useLLMResult.desc,
-          options: [
-            { key: 'A', text: useLLMResult.optionA, slot: slots[0], daoxin: ev.options[0].daoxin || 0 },
-            { key: 'B', text: useLLMResult.optionB, slot: slots[1], daoxin: ev.options[1].daoxin || 0 },
-            { key: 'C', text: BAL().texts.event_leave, slot: null, daoxin: 0 }
-          ]
+          five_choice: true,
+          options: ['A', 'B', 'D', 'E', 'F'].map((key, index) => ({
+            key,
+            text: useLLMResult['option' + key],
+            slot: slots[index],
+            daoxin: choiceDefs[index].daoxin || 0,
+            special: choiceDefs[index].special || null
+          }))
         };
         S().stats.events_llm += 1;
       } else {
@@ -406,13 +427,12 @@
 
     // ② 稀有度 roll + 选卡（含 仙→珍→灵→凡 回退与保底顺延）
     let pickedRarity = null;
-    let cands = [];
     if (!ev) {
       rarity = rollRarity();
       const order = [rarity, '仙', '珍', '灵', '凡'];
       for (const rr of order) {
-        cands = pickCandidates(rr, Math.max(1, pickCount()));   // 同稀有度一次备好几桩，供「几件选一件」
-        if (cands.length) { ev = cands[0]; pickedRarity = rr; break; }
+        ev = pickByRarity(rr); // 每次只随机一件奇遇，五选一发生在事件内部
+        if (ev) { pickedRarity = rr; break; }
       }
       if (ev) {
         // 保底计数：出仙清双计数；出珍清 since_rare；库存顺延（用 pickedRarity 判定而非 rarity）
@@ -437,19 +457,6 @@
     if (g.LS.ui && g.LS.ui.setForewarn) g.LS.ui.setForewarn(true);
     setTimeout(() => {
       if (g.LS.ui && g.LS.ui.setForewarn) g.LS.ui.setForewarn(false);
-      // 「5 选 1」（2026-09-21 玩家口径）：普通奇遇先摊几桩候选，玩家自己挑一桩经历；
-      // 因果回收（fromKarma）这类「该来的」不入选单，直接结算
-      if (!fromKarma && cands.length > 1 && g.LS.ui && g.LS.ui.showEventPicker) {
-        g.LS.ui.showEventPicker(
-          cands.map(c => ({ key: c.id, title: c.title, desc: c.desc })),
-          (id) => {
-            const chosen = cands.find(c => c.id === id) || cands[0];
-            openEventFlow(chosen, pickedRarity, false);
-          },
-          { title: '山 中 数 事', desc: '山里同时起了这么几桩动静——挑一件去看，其余的随它去。' }
-        );
-        return;
-      }
       openEventFlow(ev, pickedRarity, fromKarma);
     }, 3000);
   }
@@ -930,6 +937,10 @@
     const s = S();
     if (s.event_state.pending) return;      // 管线占用期间不触发；弹窗开着的新事件走队列
     if (typeof document !== 'undefined' && document.visibilityState !== 'visible') return;
+    const maxConfiguredWait = ((BAL().events.interval_base_s || 120) + (BAL().events.interval_jitter_s || 0)) * 1000;
+    if (s.event_state.next_event_at - now > maxConfiguredWait) {
+      s.event_state.next_event_at = now + maxConfiguredWait; // 老存档的旧长倒计时收敛到当前频率
+    }
     if (now < s.event_state.next_event_at) return;
     // 连锁标记：第 N 次抽取时插播（首发包连锁落空为一次普通抽取）
     if (s.chains.length) {
@@ -944,7 +955,7 @@
     rollOfflineEvents, queueOfflineReturn,
     drawEvent, chooseOption, maybeTriggerEvent, scheduleNext, pumpQueue, maybeContinueChain, maybeStartDarkChain, maybeAmbush,
     maybeVisitor, rollDream, isPastLife, chronicle, carveStele,
-    rollSlots, rollRarity, pickByRarity, pickCandidates, pickCount, materializeSlot,
+    rollSlots, rollRarity, pickByRarity, pickCandidates, fiveChoiceDefs, materializeSlot,
     rollOfflineCandidates, buildOfflineFinal,
     buildFallbackEvent, buildBuiltinFinal, karmaCheck, resolveTag,
     intervalMs, isNegativeSlot
